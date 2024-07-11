@@ -32,23 +32,15 @@ const userSchema = new Schema(
       default: 0,
     },
     role: {
-      userType: {
-        type: String,
-        enum: ["user", "admin", "therapist"],
-        default: "user",
-      },
-      age: {
-        type: Number,
-      },
-      isVerified: {
-        type: Boolean,
-        default: false,
-      },
-      profileImage: {
-        type: String,
-        default: "",
-      },
-    
+      type: String,
+      default: "user",
+      required: true,
+      trim: true
+
+    },
+    education: {
+      type: Object,
+      default: "",
     },
     refreshToken: {
       type: String,

@@ -36,25 +36,31 @@ const login = AysncHandler(async (req, res) => {
         secure: true
     }
 
-
     const LoggedInUser = await User.findById(existUser._id).select('-password -refreshToken');
-    res.status(200).json(new ApiResponse(200, { accessToken: accessToken, refreshToken: refreshToken, user: LoggedInUser }));
+    res.status(200).cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).json(new ApiResponse(200, { accessToken: accessToken, refreshToken: refreshToken, user: LoggedInUser }));
 
 });
 
 const register = AysncHandler(async (req, res) => {
     const { email, password, mobile, name, role } = req.body;
-    console.log(req.body);
     if (!email || !password || !mobile || !name || !role) {
         res.status(400).json(new ApiError(400, "", "Please Provide all feilds!"))
     }
 
-    const exist = await User.findOne({ email });
-    if (exist) {
-        throw new ApiError(409, "Unique with username or email is already required!");
+    const allowedRule = ['user', 'admin', 'therapist']
+    if (!allowedRule.includes(role)) {
+        res.status(400).json(new ApiError("400", "", "Roles can be user , admin and therapist!"));
     }
 
+    if(role  ==  'therapist'){
+        const { dob, gender, education, license, role } = req.body;
+ 
+    }
 
+    const exist = await User.findOne({ email });
+    if (exist) {
+        res.staus(409).json(new ApiError(409, "Unique with username or email is already required!"));
+    }
     const createUser = await User.create({
         email: email,
         password: password,
@@ -62,14 +68,11 @@ const register = AysncHandler(async (req, res) => {
         mobile: mobile,
         role: role,
     });
-
     res.status(200).json(new ApiResponse(200, createUser, "User created successfully"));
-    // find ind
-
-
-
-
 });
+
+
+
 
 
 export { login, register };

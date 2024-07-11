@@ -1,7 +1,8 @@
 import express from 'express';
 import connectDB from '../db/connection.js';
 import dotenv from 'dotenv';
-import router from './routes/admin/auth.js';
+import authroutes from './routes/admin/auth.route.js';
+
 dotenv.config();
 const app = express();
 
@@ -11,11 +12,11 @@ app.use(express.urlencoded({extended:false}));
 
 
 
-
+// ###### ADMIN ROUTES  #####################
 
 // routes for admin
+app.use('/api/v1/admin',authroutes);
 
-app.use('/api/v1/admin',router);
 
 
 
