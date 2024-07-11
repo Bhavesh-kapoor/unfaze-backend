@@ -35,7 +35,7 @@ const userSchema = new Schema(
       userType: {
         type: String,
         enum: ["user", "admin", "therapist"],
-        default: "student",
+        default: "user",
       },
       age: {
         type: Number,
@@ -48,9 +48,10 @@ const userSchema = new Schema(
         type: String,
         default: "",
       },
-      refreshToken: {
-        type: String,
-      }
+    
+    },
+    refreshToken: {
+      type: String,
     }
   },
   {
@@ -74,6 +75,7 @@ userSchema.methods.generateAccessToken = function () {
       _id: this._id,
       email: this.email,
       name: this.name,
+      role: this.role
     },
     process.env.ACCESS_TOKEN_KEY,
     {
