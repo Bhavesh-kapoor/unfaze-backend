@@ -30,7 +30,7 @@ const AddressSchema = {
         type: String,
         trim: true
     },
-    zipcode: {
+    pincode: {
         type: String,
         trim: true
     },
@@ -109,9 +109,7 @@ const TherepistSchema = new mongoose.Schema(
             trim: true
 
         },
-        education: {
-            type: EductionSchema
-        },
+        education: EductionSchema,
         licence: {
             type: String,
             trim: true,
@@ -136,22 +134,15 @@ const TherepistSchema = new mongoose.Schema(
             type: String,
             trim: true
         },
-        address: {
-            type: AddressSchema
-        },
+        address: AddressSchema,
         language: {
             type: [String],
             trim: true
 
         },
-        social: {
-            type: socialSchema
-
-        }
+        social: socialSchema
         ,
-        bankdetail: {
-            type: bankSchema
-        }
+        bankdetail: bankSchema
 
 
 
@@ -160,4 +151,4 @@ const TherepistSchema = new mongoose.Schema(
     , { timestamps: true });
 
 
-export TherepisetModel = mongoose.Model('therepists', TherepistSchema);
+export const TherepisetModel = mongoose.model('therepists', TherepistSchema);
