@@ -105,10 +105,13 @@ const activateOrDeactivate = AysncHandler(async (req, res) => {
     // set the value of
     const UpdateValue = await TherepisetModel.findById(id);
     if (!UpdateValue) res.status(400).json(new ApiError(400, '', "No Data Found!"));
-
     UpdateValue.is_active = active;
     await UpdateValue.save();
     res.status(200).json(new ApiResponse(200, "", "Therepist Updated Succussfully!"));
 });
 
-export { register, validateRegister, activateOrDeactivate };
+const getAllTherepist = AysncHandler(async(req,res)=>{
+    let allTherepist  =  await TherepisetModel.find().sort({ _id: -1 }).lean();
+    res.status(200).json(new ApiResponse(200,allTherepist,"Therepist found Successfully!"))
+});
+export { register, validateRegister, activateOrDeactivate,getAllTherepist };
