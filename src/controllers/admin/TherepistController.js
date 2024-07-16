@@ -3,6 +3,7 @@ import { TherepisetModel } from "../../models/therepistModel.js";
 import { check, validationResult } from 'express-validator';
 import AysncHandler from "../../utils/AysncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
+import mongoose from "mongoose";
 
 const validateRegister = [
     check('firstName', 'First Name is required').notEmpty(),
@@ -91,4 +92,23 @@ const register = AysncHandler(async (req, res, next) => {
     }
 });
 
-export { register, validateRegister };
+const activateOrDeactivate = AysncHandler(async (req, res) => {
+    const { id, active } = req.body;
+    if (!id || !active) {
+        res.status(400).json(new ApiError(400, "", "Please pass object id and active status that want to set"));
+    }
+    let allowedValues = [0, 1];
+    if (!allowedValues.includes(active)) res.status(400).json(new ApiError(400, "", "You can set the activate calue  only 1 and 0 "));
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        res.status(400).json(new ApiError(400, "", "Invalid Object Id"));
+    }
+    // set the value of
+    const UpdateValue = await TherepisetModel.findById(id);
+    if (!UpdateValue) res.status(400).json(new ApiError(400, '', "No Data Found!"));
+
+    UpdateValue.is_active = active;
+    await UpdateValue.save();
+    res.status(200).json(new ApiResponse(200, "", "Therepist Updated Succussfully!"));
+});
+
+export { register, validateRegister, activateOrDeactivate };

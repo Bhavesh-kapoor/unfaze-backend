@@ -142,7 +142,14 @@ const TherepistSchema = new mongoose.Schema(
         },
         social: socialSchema
         ,
-        bankdetail: bankSchema
+        bankdetail: bankSchema,
+        is_active : {
+            type :Number,
+            enum : [0,1], // 0 - Not Active, 1 - Active
+            default : 0
+            
+
+        }
 
 
 
@@ -152,3 +159,4 @@ const TherepistSchema = new mongoose.Schema(
 
 
 export const TherepisetModel = mongoose.model('therepists', TherepistSchema);
+
