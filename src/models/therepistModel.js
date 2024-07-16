@@ -143,16 +143,10 @@ const TherepistSchema = new mongoose.Schema(
         social: socialSchema
         ,
         bankdetail: bankSchema,
-        is_active : {
-            type :Number,
-            enum : [0,1], // 0 - Not Active, 1 - Active
-            default : 0
-            
-
-        }
-
-
-
+        is_active: {
+            type: Boolean,
+            default: false
+          }
     }
 
     , { timestamps: true });
