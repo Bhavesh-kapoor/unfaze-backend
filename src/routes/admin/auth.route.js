@@ -10,5 +10,4 @@ authroutes.post('/register',verifyJwtToken,register);
 authroutes.use('/speclization',speclizationRoute);
 authroutes.use('/therepist',therepistRouter);
 
-
 export default authroutes;

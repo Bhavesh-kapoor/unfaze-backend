@@ -13,11 +13,11 @@ const createAccessOrRefreshToken = async (user_id) => {
     return { accessToken, refreshToken };
 
 
-
 }
 const login = AysncHandler(async (req, res) => {
 
     const { email, password } = req.body;
+   
     if (!email && !password) {
         return res.status(409).json(new ApiError(400, "", "Please pass username or email"));
     }
