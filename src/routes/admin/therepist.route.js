@@ -8,7 +8,7 @@ const multipleImages = upload.fields([{ name: 'passport', maxCount: 1 }, { name:
 
 therepistRouter.post('/register', verifyJwtToken, multipleImages, validateRegister, register);
 therepistRouter.post('/activate-or-deactive', verifyJwtToken, activateOrDeactivate);
-therepistRouter.get('/all',  getAllTherepist);
+therepistRouter.get('/all', verifyJwtToken ,  getAllTherepist);
 
 
 export default therepistRouter;
