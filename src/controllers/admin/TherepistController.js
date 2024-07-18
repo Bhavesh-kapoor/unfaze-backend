@@ -35,6 +35,10 @@ const register = AysncHandler(async (req, res, next) => {
     therepistdata.bankdetail = {};
 
     if (highSchool) therepistdata.education.highSchool = highSchool;
+
+
+    
+
     if (intermediate) therepistdata.education.intermediate = intermediate;
     if (graduation) therepistdata.education.graduation = graduation;
     if (postgraduation) therepistdata.education.postgraduation = postgraduation;

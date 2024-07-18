@@ -11,6 +11,8 @@ const storage = multer.diskStorage({
             folder = 'temp/uploads/passports';
         } else if (file.fieldname === 'pancard') {
             folder = 'temp/uploads/pancards';
+        }else if (file.fieldname =='blogImage'){
+            folder = 'temp/uploads/blogs'
         }
         cb(null, folder)
     },
