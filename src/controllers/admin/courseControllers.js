@@ -53,12 +53,14 @@ const updateCourse = AysncHandler(async (req, res) => {
   const therapist_id = req.user?._id;
   const { _id } = req.params;
   const { session_count, cost, specialization } = req.body;
- 
+
   try {
-    const course = await Course.find({_id})
-    if(course.therapist_id !== therapist_id){
-    throw new ApiError(501,"Unauthorized user request!")
-   }
+    const course = await Course.find({ _id });
+    console.log("checkkk", course);
+    
+    if (!course.therapist_id.equals(therapist_id)) {
+      throw new ApiError(501, "Unauthorized user request!");
+    }
     const updatedCourse = await Course.findByIdAndUpdate(
       _id,
       { therapist_id, session_count, cost, specialization },
