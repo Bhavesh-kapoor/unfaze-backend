@@ -17,5 +17,4 @@ authroutes.use('/feedback',feedbackRoute);
 authroutes.use('/blogs', blogsrouter);
 authroutes.use('/category',verifyJwtToken ,categoryRouter);
 
-
 export default authroutes;

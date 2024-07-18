@@ -27,4 +27,4 @@ import mongoose, { Schema } from "mongoose";
         default: "upcomming"
     } 
  })
- export const session = mongoose.model("session", sessionSchema);
+ export const Session = mongoose.model("Session", sessionSchema);
