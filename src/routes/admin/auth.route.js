@@ -8,7 +8,7 @@ import feedbackRoute from "../feeback.route.js";
 const authroutes =  Router();
 authroutes.post('/login',login);
 authroutes.post('/register',register);
-authroutes.use('/speclization',speclizationRoute);
+authroutes.use('/specialization',speclizationRoute);
 authroutes.use('/therepist',therepistRouter);
 authroutes.use('/feedback',feedbackRoute);
 

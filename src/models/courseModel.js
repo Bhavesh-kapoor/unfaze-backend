@@ -14,7 +14,7 @@ const courseSchema = new Schema(
       type: Number,
       required: true,
     },
-    specialization: {
+    specialization_id: {
       type: Schema.Types.ObjectId,
       ref: "Specialization",
       required: true,
