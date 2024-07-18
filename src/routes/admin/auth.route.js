@@ -11,7 +11,7 @@ const authroutes =  Router();
 authroutes.post('/login',login);
 authroutes.post('/register',verifyJwtToken , register);
 authroutes.post('/refreshToken',verifyJwtToken,  refreshToken);
-authroutes.use('/speclization',verifyJwtToken , speclizationRoute);
+authroutes.use('/specialization',verifyJwtToken , speclizationRoute);
 authroutes.use('/therepist',verifyJwtToken, therepistRouter);
 authroutes.use('/feedback',feedbackRoute);
 authroutes.use('/blogs', blogsrouter);
