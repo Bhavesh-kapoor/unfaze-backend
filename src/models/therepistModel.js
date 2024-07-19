@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const EductionSchema = {
   highSchool: {
@@ -89,6 +91,8 @@ const TherepistSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
+      unique: true,
+      lowercase: true,
       trim: true,
     },
     mobile: {
@@ -100,25 +104,33 @@ const TherepistSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      enum: ["male", "female", "non-binary", "other"],
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    refreshToken: {
+      type: String,
     },
     education: EductionSchema,
     licence: {
       type: String,
       trim: true,
     },
-    specailization: {
-      type: [String],
-      required: true,
-      trim: true,
-    },
+    specialization: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Specialization",
+        required: true,
+      },
+    ],
     experience: {
       type: String,
-      required: false,
       trim: true,
     },
     passport: {
       type: String,
-      required: false,
     },
     bio: {
       type: String,
@@ -140,4 +152,41 @@ const TherepistSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export const TherepisetModel = mongoose.model("Therepist", TherepistSchema);
+TherepistSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+TherepistSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+TherepistSchema.methods.generateAccessToken = function () {
+  return jwt.sign(
+    {
+      _id: this._id,
+      email: this.email,
+      name: this.name,
+      role: this.role,
+    },
+    process.env.ACCESS_TOKEN_KEY,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    }
+  );
+};
+
+TherepistSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    {
+      _id: this._id,
+    },
+    process.env.REFRESH_TOKEN_KEY,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+    }
+  );
+};
+
+export const Therapist = mongoose.model("Therapist", TherepistSchema);

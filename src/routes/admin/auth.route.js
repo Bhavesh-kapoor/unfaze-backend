@@ -2,7 +2,7 @@ import { Router } from "express";
 import { login  ,register} from "../../controllers/admin/AuthController.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 import speclizationRoute from "./specilization.route.js";
-import therepistRouter from "./therepist.route.js";
+import therepistRouter from "./therepist.auth.js";
 import feedbackRoute from "../feeback.route.js";
 
 const authroutes =  Router();

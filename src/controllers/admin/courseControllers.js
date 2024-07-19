@@ -1,7 +1,7 @@
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Course } from "../../models/courseModel.js";
-import AysncHandler from "../../utils/AysncHandler.js";
+import AysncHandler from "../../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
 
 const validateInput = [
@@ -55,9 +55,7 @@ const updateCourse = AysncHandler(async (req, res) => {
   const { session_count, cost, specialization } = req.body;
 
   try {
-    const course = await Course.find({ _id });
-    console.log("checkkk", course);
-    
+    const course = await Course.findOne({ _id, therapist_id });
     if (!course.therapist_id.equals(therapist_id)) {
       throw new ApiError(501, "Unauthorized user request!");
     }
@@ -81,10 +79,14 @@ const updateCourse = AysncHandler(async (req, res) => {
 });
 const deleteCourse = AysncHandler(async (req, res) => {
   const { _id } = req.params;
+  const therapist_id = req.user?._id;
 
   try {
+    const course = await Course.findOne({ _id, therapist_id });
+    if (!course.therapist_id.equals(therapist_id)) {
+      throw new ApiError(501, "Unauthorized user request!");
+    }
     const deletedCourse = await Course.findByIdAndDelete(_id);
-
     if (!deletedCourse) {
       throw new ApiError(404, "Course not found");
     }
