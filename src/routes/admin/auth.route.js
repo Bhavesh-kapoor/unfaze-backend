@@ -14,7 +14,7 @@ authroutes.post('/refreshToken',verifyJwtToken,  refreshToken);
 authroutes.use('/specialization',verifyJwtToken , speclizationRoute);
 authroutes.use('/therepist',verifyJwtToken, therepistRouter);
 authroutes.use('/feedback',feedbackRoute);
-authroutes.use('/blogs', blogsrouter);
+authroutes.use('/blogs', verifyJwtToken ,blogsrouter);
 authroutes.use('/category',verifyJwtToken ,categoryRouter);
 
 export default authroutes;
