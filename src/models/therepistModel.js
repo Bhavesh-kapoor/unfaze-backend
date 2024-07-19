@@ -78,6 +78,9 @@ const bankSchema = {
 
 const TherepistSchema = new mongoose.Schema(
   {
+    googleId: {
+      type: String,
+    },
     firstName: {
       type: String,
       required: true,

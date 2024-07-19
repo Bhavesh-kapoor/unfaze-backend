@@ -2,15 +2,20 @@
   "dependencies": {
     "autocannon": "^7.15.0",
     "bcryptjs": "^2.4.3",
+    "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-validator": "^7.1.0",
+    "i": "^0.3.7",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.8.0",
     "mongoose": "^8.5.0",
     "multer": "^1.4.5-lts.1",
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.4",
+    "npm": "^10.8.2",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
   },
   "type": "module",
   "scripts": {

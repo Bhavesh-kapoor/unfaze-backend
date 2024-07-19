@@ -71,12 +71,10 @@ const register = asyncHandler(async (req, res) => {
     experience,
     password,
   };
-
   therepistdata.address = {};
   therepistdata.social = {};
   therepistdata.education = {};
   therepistdata.bankdetail = {};
-
   if (highSchool) therepistdata.education.highSchool = highSchool;
   if (intermediate) therepistdata.education.intermediate = intermediate;
   if (graduation) therepistdata.education.graduation = graduation;

@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import authroutes from "./routes/admin/auth.route.js";
 import cors from "cors";
 import therapistRoutes from "./routes/therapist/therapist.route.js";
+import passport from "passport";
+import cookieSession from "cookie-session";
 
 dotenv.config();
 const app = express();
