@@ -100,18 +100,15 @@ const TherepistSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      required: true,
       trim: true,
     },
     gender: {
       type: String,
-      required: true,
       trim: true,
       enum: ["male", "female", "non-binary", "other"],
     },
     password: {
       type: String,
-      required: true,
     },
     refreshToken: {
       type: String,

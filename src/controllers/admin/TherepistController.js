@@ -248,6 +248,7 @@ const getAllTherepist = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, allTherepist, "Therepist found Successfully!"));
 });
+
 export {
   register,
   login,

@@ -22,6 +22,9 @@ const enrolledCoure = new Schema({
    amount:{
     type:Number,
     default:0
+   },
+   remaining_sessions:{
+      type:Number
    }
 })
 

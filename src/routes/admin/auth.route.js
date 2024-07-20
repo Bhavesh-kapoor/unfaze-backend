@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login  ,refreshToken,register} from "../../controllers/admin/AuthController.js";
+import { login  ,refreshToken,register} from "../../controllers/admin/user.controller.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 import speclizationRoute from "./specilization.route.js";
 import therepistRouter from "./therepist.auth.js";
@@ -16,5 +16,9 @@ authroutes.use('/therepist',verifyJwtToken, therepistRouter);
 authroutes.use('/feedback',feedbackRoute);
 authroutes.use('/blogs', verifyJwtToken ,blogsrouter);
 authroutes.use('/category',verifyJwtToken ,categoryRouter);
+
+// google login
+
+
 
 export default authroutes;

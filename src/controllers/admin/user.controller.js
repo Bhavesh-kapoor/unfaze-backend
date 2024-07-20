@@ -4,7 +4,6 @@ import AysncHandler from "../../utils/asyncHandler.js";
 import { User } from "../../models/userModel.js";
 import jwt from "jsonwebtoken";
 
-
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
   const accessToken = await user.generateAccessToken();
@@ -71,10 +70,9 @@ const register = AysncHandler(async (req, res) => {
       );
   }
 
-    if (role == 'therapist') {
-        const { dob, gender, education, license, role } = req.body;
-
-    }
+  if (role == "therapist") {
+    const { dob, gender, education, license, role } = req.body;
+  }
   if (role == "therapist") {
     const { dob, gender, education, license, role } = req.body;
   }
@@ -99,34 +97,63 @@ const register = AysncHandler(async (req, res) => {
     .json(new ApiResponse(200, createUser, "User created successfully"));
 });
 
-
-
 const refreshToken = AysncHandler(async (req, res) => {
-    const incommingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
-    if (!incommingRefreshToken) res.status(400).json(new ApiError(400, "", "Pleass Pass refresh token!"));
-    // now verify the jwt token 
-    const decodedToken = await jwt.verify(incommingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const getUserinfo = await User.findById(decodedToken?._id);
-    if (!getUserinfo) res.status(400).json(new ApiError(400, "", "Invaid User"));
+  const incommingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+  if (!incommingRefreshToken)
+    res.status(400).json(new ApiError(400, "", "Pleass Pass refresh token!"));
+  // now verify the jwt token
+  const decodedToken = await jwt.verify(
+    incommingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+  const getUserinfo = await User.findById(decodedToken?._id);
+  if (!getUserinfo) res.status(400).json(new ApiError(400, "", "Invaid User"));
 
-    if (getUserinfo?.refreshToken !== incommingRefreshToken) {
-        res.status(401).json(new ApiError(401, "", "Token has been expired or used"));
+  if (getUserinfo?.refreshToken !== incommingRefreshToken) {
+    res
+      .status(401)
+      .json(new ApiError(401, "", "Token has been expired or used"));
+  }
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  // now create token
+  const { accessToken, refreshToken } = createAccessOrRefreshToken(
+    getUserinfo?._id
+  );
+  res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(200, {
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        user: LoggedInUser,
+      })
+    );
+});
+
+const googleAuth =async (token, tokenSecret, profile, done) => {
+  try {
+    let user = await User.findOne({ googleId: profile.id });
+    if (!user) {
+      user = new User({
+        googleId: profile.id,
+        firstName: profile.name.givenName,
+        lastName: profile.name.familyName,
+        email: profile.emails[0].value,
+        // You can add more fields if needed
+      });
+      await user.save();
     }
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
+    done(null, therapist);
+  } catch (err) {
+    done(err, null);
+  }
+}
 
-    // now create token 
-     const {accessToken, refreshToken} =  createAccessOrRefreshToken(getUserinfo?._id);
-     res.status(200).cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).json(new ApiResponse(200, { accessToken: accessToken, refreshToken: refreshToken, user: LoggedInUser }));
-    });
-
-
-
-
-
-
-export { login, register ,refreshToken};
-
-export { login, register };
+export { login, register, refreshToken,googleAuth };

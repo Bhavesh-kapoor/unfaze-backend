@@ -1,6 +1,6 @@
 import Blog from "../../models/blogsModel.js";
 import { check, validationResult } from "express-validator";
-import AysncHandler from "../../utils/AysncHandler.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import mongoose from "mongoose";
@@ -12,7 +12,7 @@ const validateBlogs = [
 ]
 
 
-const getAllBlogs = AysncHandler(async (req, res) => {
+const getAllBlogs = asyncHandler(async (req, res) => {
 
     const aggregatePipeline = [
         {
@@ -38,7 +38,7 @@ const getAllBlogs = AysncHandler(async (req, res) => {
 
 });
 
-const createBlog = AysncHandler(async (req, res) => {
+const createBlog = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         res.status(400).json(new ApiError(400, "Validation Error", errors.array()));

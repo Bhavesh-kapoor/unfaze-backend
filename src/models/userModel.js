@@ -4,6 +4,9 @@ import jwt from "jsonwebtoken";
 
 const userSchema = new Schema(
   {
+    googleId: {
+      type: String,
+    },
     name: {
       type: String,
       required: true,
@@ -35,8 +38,7 @@ const userSchema = new Schema(
       type: String,
       default: "user",
       required: true,
-      trim: true
-
+      trim: true,
     },
     education: {
       type: Object,
@@ -44,7 +46,7 @@ const userSchema = new Schema(
     },
     refreshToken: {
       type: String,
-    }
+    },
   },
   {
     timestamps: true,
@@ -67,7 +69,7 @@ userSchema.methods.generateAccessToken = function () {
       _id: this._id,
       email: this.email,
       name: this.name,
-      role: this.role
+      role: this.role,
     },
     process.env.ACCESS_TOKEN_KEY,
     {
@@ -89,4 +91,3 @@ userSchema.methods.generateRefreshToken = function () {
 };
 
 export const User = mongoose.model("User", userSchema);
-
