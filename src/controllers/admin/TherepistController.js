@@ -249,11 +249,24 @@ const getAllTherepist = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, allTherepist, "Therepist found Successfully!"));
 });
 
+
+// fetch current user
+const getCurrentUser = asyncHandler(async(req, res) => {
+  console.log("user....------",req.user)
+  return res
+  .status(200)
+  .json(new ApiResponse(
+      200,
+      req.user,
+      "User fetched successfully"
+  ))
+})
 export {
   register,
   login,
   validateRegister,
   activateOrDeactivate,
   getAllTherepist,
-  logout
+  logout,
+  getCurrentUser
 };

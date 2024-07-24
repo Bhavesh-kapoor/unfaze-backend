@@ -5,7 +5,8 @@ import {
   register,
   validateRegister,
   login,
-  logout
+  logout,
+  getCurrentUser,
 } from "../../controllers/admin/TherepistController.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 import upload from "../../middleware/admin/multer.middleware.js";
@@ -20,6 +21,7 @@ const multipleImages = upload.fields([
 therapistAuth.post("/register", multipleImages, validateRegister, register);
 therapistAuth.post("/login", validateRegister, login);
 therapistAuth.post("/logout", verifyJwtToken, logout);
+therapistAuth.get("/current-user", verifyJwtToken, getCurrentUser);
 
 therapistAuth.post(
   "/activate-or-deactive",
