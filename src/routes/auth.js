@@ -22,8 +22,12 @@ router.get(
 
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", {
+    successRedirect: "http://localhost:3001/profile",
+    failureRedirect: "http://localhost:3001/login",
+  }),
   async (req, res) => {
+   try {
     const { user } = req;
     const { accessToken, refreshToken } = await createAccessOrRefreshToken(
       user._id
@@ -47,6 +51,9 @@ router.get(
           user: loggedInUser,
         })
       );
+   } catch (error) {
+    throw new ApiError(501, "Something went wrong while authenticating via google")
+   }
   }
 );
 
@@ -57,8 +64,13 @@ router.get(
 
 router.get(
   "/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: "/login" }),
+  passport.authenticate("facebook", {
+    successRedirect: "http://localhost:3001/profile",
+    failureRedirect: "http://localhost:3001/login",
+  }),
   async (req, res) => {
+   try {
+    
     const { user } = req;
     console.log("req----", req);
     let { accessToken, refreshToken } = await createAccessOrRefreshToken(
@@ -83,7 +95,10 @@ router.get(
           user: loggedInUser,
         })
       );
+   } catch (error) {
+    throw new ApiError(501, "Something went wrong while authenticating via facebook")
+
+   }
   }
 );
-
 export default router;

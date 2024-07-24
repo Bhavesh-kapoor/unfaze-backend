@@ -1,21 +1,16 @@
 import mongoose, { Schema } from "mongoose";
  const sessionSchema = new Schema({
-    user_id:{
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
-    },
-    therapist_id:{
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
-    },
+   enrolled_course_id:{
+    type: Schema.Types.ObjectId,
+    ref: "EnrolledCourse",
+    required: true,
+   },
     schedule_time:{
         type:String,
         required: true,
     }, 
-    cost:{
-        type:Number
+    held_time:{
+        type:String
     },
     duration:{
         type:String,
@@ -23,7 +18,7 @@ import mongoose, { Schema } from "mongoose";
     },
     status:{
         type: String,
-        enum: ["upcomming", "completed"],
+        enum: ["upcomming", "completed","expired"],
         default: "upcomming"
     } 
  })
