@@ -17,7 +17,6 @@ authroutes.use('/feedback',feedbackRoute);
 authroutes.use('/blogs', verifyJwtToken ,blogsrouter);
 authroutes.use('/category',verifyJwtToken ,categoryRouter);
 
-// google login
 
 
 

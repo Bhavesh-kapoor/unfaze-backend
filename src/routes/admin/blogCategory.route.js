@@ -4,6 +4,6 @@ const categoryRouter = Router();
 
 
 categoryRouter.post('/create' ,createBlogCategory);
-categoryRouter.post('/all' ,allBlogCategory);
+categoryRouter.get('/all' ,allBlogCategory);
 
 export default categoryRouter;

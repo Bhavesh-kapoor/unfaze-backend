@@ -30,3 +30,6 @@ const validateInput = [
 
     res.status(200).json(new ApiResponse())
   })
+
+  
+  export {enrollInCorse}

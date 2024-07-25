@@ -23,12 +23,12 @@ const login = AysncHandler(async (req, res) => {
 
   let existUser = await User.findOne({ $and: [{ email }, { role: "admin" }] });
   if (!existUser)
-    res.status(400).json(new ApiError(400, "", "Email Not Found!"));
+   return res.status(400).json(new ApiError(400, "", "Email Not Found!"));
 
   // now check password is correct  or not
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
   if (!isPasswordCorrect)
-    res.status(401).json(new ApiError(401, "", "Invalid Credentials!"));
+   return res.status(401).json(new ApiError(401, "", "Invalid Credentials!"));
 
   // generate token
   let { accessToken, refreshToken } = await createAccessOrRefreshToken(
@@ -42,7 +42,7 @@ const login = AysncHandler(async (req, res) => {
   const LoggedInUser = await User.findById(existUser._id).select(
     "-password -refreshToken"
   );
-  res
+ return res
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
@@ -58,31 +58,27 @@ const login = AysncHandler(async (req, res) => {
 const register = AysncHandler(async (req, res) => {
   const { email, password, mobile, name, role } = req.body;
   if (!email || !password || !mobile || !name || !role) {
-    res.status(400).json(new ApiError(400, "", "Please Provide all feilds!"));
+   return res.status(400).json(new ApiError(400, "", "Please Provide all feilds!"));
   }
 
-  const allowedRule = ["user", "admin", "therapist"];
+  const allowedRule = ["user", "admin"];
   if (!allowedRule.includes(role)) {
-    res
+   return res
       .status(400)
       .json(
-        new ApiError("400", "", "Roles can be user , admin and therapist!")
+        new ApiError("400", "", "Roles must be a user or admin")
       );
   }
 
-  if (role == "therapist") {
+  if (role == "user") {
     const { dob, gender, education, license, role } = req.body;
   }
-  if (role == "therapist") {
-    const { dob, gender, education, license, role } = req.body;
-  }
-
   const exist = await User.findOne({ email });
   if (exist) {
-    res
+  return  res
       .staus(409)
       .json(
-        new ApiError(409, "Unique with username or email is already required!")
+        new ApiError(409, "User with username or email is already exsist")
       );
   }
   const createUser = await User.create({
@@ -92,7 +88,7 @@ const register = AysncHandler(async (req, res) => {
     mobile: mobile,
     role: role,
   });
-  res
+ return res
     .status(200)
     .json(new ApiResponse(200, createUser, "User created successfully"));
 });
@@ -146,7 +142,6 @@ const googleAuth =async (token, tokenSecret, profile, done) => {
         firstName: profile.name.givenName,
         lastName: profile.name.familyName,
         email: profile.emails[0].value,
-        // You can add more fields if needed
       });
       await user.save();
     }
