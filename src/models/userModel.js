@@ -28,8 +28,7 @@ const userSchema = new Schema(
       trim: true,
     },
     mobile: {
-      type: String,
-      trim: true,
+      type: Number,
     },
     gender: {
       type: String,
@@ -38,13 +37,6 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-    },
-    refreshToken: {
-      type: String,
-    },
-    balance: {
-      type: Number,
-      default: 0,
     },
     role: {
       type: String,
@@ -75,7 +67,8 @@ userSchema.methods.generateAccessToken = function () {
     {
       _id: this._id,
       email: this.email,
-      name: this.name,
+      firstName: this.firstName,
+      lastName: this.lastName,
       role: this.role,
     },
     process.env.ACCESS_TOKEN_KEY,

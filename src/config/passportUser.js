@@ -42,17 +42,20 @@ passport.use(
 
 // facebook strategies
 passport.use(
+  "facebook-user",
   new FacebookStrategy(
     {
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: "/auth/facebook/callback",
+      callbackURL: "/auth/user/facebook/callback",
       profileFields: ["id", "emails", "name"],
       scope: ["email"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log("facebook user -----------", profile);
         let user = await User.findOne({ facebookId: profile.id });
+        console.log("user--", user);
 
         if (!user) {
           user = new User({
@@ -61,7 +64,6 @@ passport.use(
             lastName: profile.name.familyName,
             email: profile.emails[0].value,
           });
-
           await user.save();
         }
 

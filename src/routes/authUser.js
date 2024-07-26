@@ -60,13 +60,13 @@ router.get(
 );
 
 router.get(
-  "/facebook",
-  passport.authenticate("facebook", { scope: ["email"] })
+  "/user/facebook",
+  passport.authenticate("facebook-user", { scope: ["email"] })
 );
 
 router.get(
-  "/facebook/callback",
-  passport.authenticate("facebook", {
+  "/user/facebook/callback",
+  passport.authenticate("facebook-user", {
     successRedirect: "http://localhost:3001/profile",
     failureRedirect: "http://localhost:3001/login",
   }),

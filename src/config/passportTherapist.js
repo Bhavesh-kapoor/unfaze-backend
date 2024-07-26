@@ -8,7 +8,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // google strategy
-passport.use("google-therapist",
+passport.use(
+  "google-therapist",
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
@@ -40,12 +41,13 @@ passport.use("google-therapist",
 );
 
 // facebook strategies
-passport.use("facebook-therapist",
+passport.use(
+  "facebook-therapist",
   new FacebookStrategy(
     {
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: "/auth/facebook/callback",
+      callbackURL: "/auth/therapist/facebook/callback",
       profileFields: ["id", "emails", "name"],
       scope: ["email"],
     },

@@ -60,13 +60,13 @@ router.get(
 );
 
 router.get(
-  "/facebook",
-  passport.authenticate("facebook", { scope: ["email"] })
+  "/therapist/facebook",
+  passport.authenticate("facebook-therapist", { scope: ["email"] })
 );
 
 router.get(
-  "/facebook/callback",
-  passport.authenticate("facebook", {
+  "/therapist/facebook/callback",
+  passport.authenticate("facebook-therapist", {
     successRedirect: "http://localhost:3001/profile",
     failureRedirect: "http://localhost:3001/login",
   }),
