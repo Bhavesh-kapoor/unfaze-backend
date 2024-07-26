@@ -16,12 +16,12 @@ const createAccessOrRefreshToken = async (user_id) => {
   return { accessToken, refreshToken };
 };
 router.get(
-  "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  "/therapist/google",
+  passport.authenticate("google-therapist", { scope: ["profile", "email"] })
 );
 router.get(
-  "/google/callback",
-  passport.authenticate("google", {
+  "/therapist/google/callback",
+  passport.authenticate("google-therapist", {
     successRedirect: "http://localhost:3001/profile",
     failureRedirect: "http://localhost:3001/login",
   }),

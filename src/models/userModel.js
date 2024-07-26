@@ -7,28 +7,40 @@ const userSchema = new Schema(
     googleId: {
       type: String,
     },
-    name: {
+    facebookId: {
+      type: String,
+    },
+    firstName: {
       type: String,
       required: true,
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
     },
     email: {
       type: String,
       required: true,
+      unique: true,
       lowercase: true,
       trim: true,
-      unique: true,
-      index: true,
+    },
+    mobile: {
+      type: String,
+      trim: true,
+    },
+    gender: {
+      type: String,
+      trim: true,
+      enum: ["male", "female", "non-binary", "other"],
     },
     password: {
       type: String,
-      required: true,
     },
-    mobile: {
-      type: Number,
-      required: true,
-      trim: true,
-      unique: true,
-      index: true,
+    refreshToken: {
+      type: String,
     },
     balance: {
       type: Number,
@@ -37,12 +49,7 @@ const userSchema = new Schema(
     role: {
       type: String,
       default: "user",
-      required: true,
       trim: true,
-    },
-    education: {
-      type: Object,
-      default: "",
     },
     refreshToken: {
       type: String,

@@ -6,7 +6,8 @@ import therapistRoutes from "./routes/therapist/therapist.route.js";
 // import passport from "passport";
 import passport from "./config/passportTherapist.js";
 import session from "express-session";
-import auth from "./routes/auth.js";
+import authTherapist from "./routes/authTherapist.js";
+import authUser from "./routes/authUser.js";
 import userRoutes from "./routes/user/userRoutes.js";
 
 dotenv.config();
@@ -29,7 +30,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // social auth routes
-app.use("/auth", auth);
+app.use("/auth", authTherapist);
+app.use("/auth", authUser);
 
 // ###### ADMIN ROUTES  #####################
 
