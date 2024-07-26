@@ -1,9 +1,9 @@
 // authRoutes.js
 import express from "express";
-import passport from "../config/passportUser.js";
-import ApiResponse from "../utils/ApiResponse.js";
-import ApiError from "../utils/ApiError.js";
-import { User } from "../models/userModel.js";
+import passport from "../../config/passportUser.js";
+import ApiResponse from "../../utils/ApiResponse.js";
+import ApiError from "../../utils/ApiError.js";
+import { User } from "../../models/userModel.js";
 
 const router = express.Router();
 
