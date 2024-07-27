@@ -1,16 +1,16 @@
 import { Router } from "express";
 import {
-  createSpecilization,
-  getAllSpeziliation,
-  updateSpecilization,
+  createSpecialization,
+  getAllSpecialization,
+  updateSpecialization,
   deleteSpeclization,
 } from "../../controllers/admin/SpecilizationController.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 let speclizationRoute = Router();
 
-speclizationRoute.get("/all", verifyJwtToken, getAllSpeziliation);
-speclizationRoute.post("/create", verifyJwtToken, createSpecilization);
-speclizationRoute.post("/update", verifyJwtToken, updateSpecilization);
-speclizationRoute.post("/delete", verifyJwtToken, deleteSpeclization);
+speclizationRoute.get("/all", verifyJwtToken, getAllSpecialization);
+speclizationRoute.post("/create", verifyJwtToken, createSpecialization);
+speclizationRoute.put("/update/:_id", verifyJwtToken, updateSpecialization);
+speclizationRoute.delete("/delete/:_id", verifyJwtToken, deleteSpeclization);
 
 export default speclizationRoute;

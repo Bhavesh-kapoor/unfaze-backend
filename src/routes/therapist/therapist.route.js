@@ -1,5 +1,5 @@
 import { Router } from "express";
-import courseRouter from "../admin/course.route.js";
+import courseRouter from "./course.route.js";
 import therepistAuth from "../admin/therepist.auth.js";
 
 const therapistRouter = Router();

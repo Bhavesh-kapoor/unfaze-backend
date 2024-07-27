@@ -207,39 +207,29 @@ const logout = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
-
 const activateOrDeactivate = asyncHandler(async (req, res) => {
-  const { id, active } = req.body;
-  if (!id || !active) {
-    res
-      .status(400)
-      .json(
-        new ApiError(
-          400,
-          "",
-          "Please pass object id and active status that want to set"
-        )
-      );
+  const { _id } = req.params;
+
+  if (!_id) {
+    return res.status(400).json(new ApiError(400, "Therapist id required!"));
   }
-  let allowedValues = [0, 1];
-  if (!allowedValues.includes(active))
-    res
-      .status(400)
-      .json(
-        new ApiError(400, "", "You can set the activate calue  only 1 and 0 ")
-      );
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400).json(new ApiError(400, "", "Invalid Object Id"));
+
+  if (!mongoose.Types.ObjectId.isValid(_id)) {
+    return res.status(400).json(new ApiError(400, "Invalid Object Id"));
   }
-  // set the value of
-  const UpdateValue = await Therapist.findById(id);
-  if (!UpdateValue)
-    res.status(400).json(new ApiError(400, "", "No Data Found!"));
-  UpdateValue.is_active = active;
-  await UpdateValue.save();
-  res
+
+  // Mark active or deactivate
+  const therapist = await Therapist.findById(_id)
+  if (!therapist) {
+    return res.status(400).json(new ApiError(400, "Therapist not found!"));
+  }
+
+  therapist.is_active = !therapist.is_active;
+  await therapist.save();
+
+  return res
     .status(200)
-    .json(new ApiResponse(200, "", "Therepist Updated Succussfully!"));
+    .json(new ApiResponse(200, therapist, "Active status updated successfully!"));
 });
 
 const getAllTherepist = asyncHandler(async (req, res) => {

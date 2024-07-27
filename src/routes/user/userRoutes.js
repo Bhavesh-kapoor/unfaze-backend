@@ -11,6 +11,7 @@ import feedbackRoute from "../feeback.route.js";
 import {
   enrollInCourse,
   validateInput,
+  getEnrolledCourseList,
 } from "../../controllers/enrolledCourseController.js";
 
 const userRoutes = Router();
@@ -25,5 +26,6 @@ userRoutes.post(
   validateInput,
   enrollInCourse
 );
+userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
 
 export default userRoutes;

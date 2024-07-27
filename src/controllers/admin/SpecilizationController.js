@@ -2,15 +2,15 @@ import mongoose from "mongoose";
 import { Specialization } from "../../models/specilaizationModel.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
-import AysncHandler from "../../utils/asyncHandler.js";
+import AsyncHandler from "../../utils/asyncHandler.js";
 
-const getAllSpeziliation = AysncHandler(async (req, res) => {
-  // query that find all  spcializations
-  let Specialization = await Specialization.find().sort({ _id: -1 });
-  res.status(200).json(new ApiResponse(200, Specialization));
+// query that find all  spcializations
+const getAllSpecialization = AsyncHandler(async (req, res) => {
+  let specializations = await Specialization.find().sort({ _id: -1 });
+  res.status(200).json(new ApiResponse(200, specializations));
 });
-
-const createSpecilization = AysncHandler(async (req, res) => {
+//create new speciali
+const createSpecialization = AsyncHandler(async (req, res) => {
   const { name } = req.body;
   if (!name)
     res
@@ -19,58 +19,70 @@ const createSpecilization = AysncHandler(async (req, res) => {
 
   const createdExist = await Specialization.findOne({ name });
   if (createdExist) {
-    res.status(400).json(new ApiError(400, "", "Already created!"));
+    return res.status(400).json(new ApiError(400, "", "Already created!"));
   }
   let isCreated = await Specialization.create({ name });
-
   if (isCreated) {
     res
       .status(200)
       .json(new ApiResponse(200, "Specilization has been created!"));
   } else {
-    res.status(400).json(new ApiError(400, "", "Something went wrong!"));
+    return res.status(400).json(new ApiError(400, "", "Something went wrong!"));
   }
 });
 
-const updateSpecilization = AysncHandler(async (req, res) => {
-  const { name, id } = req.body;
-  if (!name || !id) {
-    res
-      .status(400)
-      .json(new ApiError(400, "", "Name and object id is required!"));
-  }
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400).json(new ApiError(400, "", "Invalid ObjectId"));
-  }
-  let Specilization = await Specialization.findById(id);
-  Specilization.name = name;
-  await Specilization.save();
+const updateSpecialization = AsyncHandler(async (req, res) => {
+  const { name } = req.body;
+  const { _id } = req.params;
+  
+  console.log("check", name, _id);
 
-  res
+  if (!name || !_id) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "", "Name and object id are required!"));
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(_id)) {
+    throw new ApiError(400, "Invalid ObjectId");
+  }
+
+  let specialization = await Specialization.findById(_id);
+  if (!specialization) {
+    throw new ApiError(404, "Specialization not found");
+  }
+
+  specialization.name = name;
+  await specialization.save();
+
+  return res
     .status(200)
     .json(
-      new ApiResponse(200, Specilization, "Speclization Updated Successfully!")
+      new ApiResponse(200, specialization, "Specialization Updated Successfully!")
     );
 });
 
-const deleteSpeclization = AysncHandler(async (req, res) => {
-  const { id } = req.body;
-  if (!id)
-    res.status(400).json(new ApiError(400, "", "Please pass object id "));
-  if (!mongoose.Types.ObjectId.isValid(id))
-    res.staus(400).json(400, "", "Invalid Object id");
-  const deletedSpecialization = await Specialization.findByIdAndDelete(id);
+
+const deleteSpeclization = AsyncHandler(async (req, res) => {
+  const { _id } = req.params;
+  if (!_id)
+    return res.status(400).json(new ApiError(400, "Please pass object id "));
+  if (!mongoose.Types.ObjectId.isValid(_id))
+    return res.staus(400).json(400, "Invalid Object id");
+  const deletedSpecialization = await Specialization.findByIdAndDelete(_id);
   if (!deletedSpecialization) {
-    res.status(400).json(new ApiError(400, "", "Speclization Not found!"));
+    return res
+      .status(400)
+      .json(new ApiError(400, "", "Speclization Not found!"));
   }
-  res
+  return res
     .status(200)
     .json(new ApiResponse(200, "", "Speclization Deleted Successfully!"));
 });
 
 export {
-  getAllSpeziliation,
-  createSpecilization,
-  updateSpecilization,
+  getAllSpecialization,
+  createSpecialization,
+  updateSpecialization,
   deleteSpeclization,
 };

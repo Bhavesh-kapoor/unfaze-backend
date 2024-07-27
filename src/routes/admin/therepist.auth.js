@@ -24,7 +24,7 @@ therapistAuth.post("/logout", verifyJwtToken, logout);
 therapistAuth.get("/current-user", verifyJwtToken, getCurrentUser);
 
 therapistAuth.post(
-  "/activate-or-deactive",
+  "/activate-or-deactive/:_id",
   verifyJwtToken,
   activateOrDeactivate
 );
