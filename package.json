@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "autocannon": "^7.15.0",
+    "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
@@ -17,7 +18,9 @@
     "npm": "^10.8.2",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "sha256": "^0.2.0",
+    "uniqid": "^5.4.0"
   },
   "type": "module",
   "scripts": {

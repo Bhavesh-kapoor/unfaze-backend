@@ -13,6 +13,7 @@ import {
   validateInput,
   getEnrolledCourseList,
 } from "../../controllers/enrolledCourseController.js";
+import { processPayment,validatePayment } from "../../middleware/admin/phonePayConfig.js";
 
 const userRoutes = Router();
 userRoutes.post("/register", validateRegister, register);
@@ -27,5 +28,7 @@ userRoutes.post(
   enrollInCourse
 );
 userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
+userRoutes.post('/pay/:course_id',verifyJwtToken, processPayment);
+userRoutes.get('/validate/:merchantTransactionId', validatePayment, enrollInCourse);
 
 export default userRoutes;
