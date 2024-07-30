@@ -9,11 +9,13 @@ import {
 import speclizationRoute from "../admin/specilization.route.js";
 import feedbackRoute from "../feeback.route.js";
 import {
-  enrollInCourse,
-  validateInput,
   getEnrolledCourseList,
+  handlePaymentSuccess,
 } from "../../controllers/enrolledCourseController.js";
-import { processPayment,validatePayment } from "../../middleware/admin/phonePayConfig.js";
+import {
+  processPayment,
+  validatePayment,
+} from "../../middleware/admin/phonePayConfig.js";
 
 const userRoutes = Router();
 userRoutes.post("/register", validateRegister, register);
@@ -21,16 +23,18 @@ userRoutes.post("/login", userlogin);
 userRoutes.post("/refreshToken", verifyJwtToken, refreshToken);
 userRoutes.use("/specialization", verifyJwtToken, speclizationRoute);
 userRoutes.use("/feedback", feedbackRoute);
-userRoutes.post(
-  "/course-enroll/:course_id",
-  verifyJwtToken,
-  validateInput,
-  enrollInCourse
-);
+// userRoutes.post(
+//   "/course-enroll/:course_id",
+//   verifyJwtToken,
+//   enrollInCourse
+// );
 userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
-userRoutes.post('/pay/:course_id',verifyJwtToken, processPayment);
-userRoutes.get('/validate/:merchantTransactionId', validatePayment);
-
-
+userRoutes.post("/pay/:course_id", verifyJwtToken, processPayment);
+userRoutes.get(
+  "/validate/:merchantTransactionId/:course_id",
+  verifyJwtToken,
+  validatePayment,
+  handlePaymentSuccess
+);
 
 export default userRoutes;
