@@ -29,6 +29,8 @@ userRoutes.post(
 );
 userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
 userRoutes.post('/pay/:course_id',verifyJwtToken, processPayment);
-userRoutes.get('/validate/:merchantTransactionId', validatePayment, enrollInCourse);
+userRoutes.get('/validate/:merchantTransactionId', validatePayment);
+
+
 
 export default userRoutes;

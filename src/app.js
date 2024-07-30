@@ -6,7 +6,7 @@ import therapistRoutes from "./routes/therapist/therapist.route.js";
 // import passport from "passport";
 import passport from "./config/passportTherapist.js";
 import session from "express-session";
-import authTherapist from "./routes/auth/authTherapist.js"
+import authTherapist from "./routes/auth/authTherapist.js";
 import authUser from "./routes/auth/authUser.js";
 import userRoutes from "./routes/user/userRoutes.js";
 
