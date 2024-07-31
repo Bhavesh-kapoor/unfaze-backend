@@ -150,6 +150,20 @@ const TherepistSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    availability:{
+      start_hour: {
+        type: Number,
+        required: true,
+        min: 0,
+        max: 23,
+      },
+      end_hour: {
+        type: Number,
+        required: true,
+        min: 0,
+        max: 23,
+      },
+    }
   },
 
   { timestamps: true }

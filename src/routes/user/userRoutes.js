@@ -17,17 +17,16 @@ import {
   validatePayment,
 } from "../../middleware/admin/phonePayConfig.js";
 
+import sessionRouter from "./session.routes.js";
+
 const userRoutes = Router();
 userRoutes.post("/register", validateRegister, register);
 userRoutes.post("/login", userlogin);
 userRoutes.post("/refreshToken", verifyJwtToken, refreshToken);
 userRoutes.use("/specialization", verifyJwtToken, speclizationRoute);
 userRoutes.use("/feedback", feedbackRoute);
-// userRoutes.post(
-//   "/course-enroll/:course_id",
-//   verifyJwtToken,
-//   enrollInCourse
-// );
+
+//courese enrollment route
 userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
 userRoutes.post("/pay/:course_id", verifyJwtToken, processPayment);
 userRoutes.get(
@@ -36,5 +35,10 @@ userRoutes.get(
   validatePayment,
   handlePaymentSuccess
 );
+
+
+userRoutes.use("/sessions",sessionRouter)
+
+
 
 export default userRoutes;

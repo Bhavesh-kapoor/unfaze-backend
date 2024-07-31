@@ -1,7 +1,6 @@
 import { EnrolledCourse } from "../models/enrolledCourse.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import { check, validationResult } from "express-validator";
 import asyncHandler from "../utils/asyncHandler.js";
 import { Course } from "../models/courseModel.js";
 
@@ -18,7 +17,6 @@ const getEnrolledCourseList = asyncHandler(async (req, res) => {
 
 const handlePaymentSuccess = asyncHandler(async (req, res) => {
   const { paymentDetails, course_id } = req;
-  console.log("req", paymentDetails, course_id);
   const course = await Course.findOne({ _id: course_id });
   if (paymentDetails.code === "PAYMENT_SUCCESS") {
     const newEnrollment = new EnrolledCourse({
