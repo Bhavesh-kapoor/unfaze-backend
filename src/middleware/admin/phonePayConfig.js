@@ -4,6 +4,7 @@ import sha256 from "sha256";
 import mongoose from "mongoose";
 import ApiError from "../../utils/ApiError.js";
 import { Course } from "../../models/courseModel.js";
+import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 const APP_BE_URL = "http://localhost:8080";
 
 export async function processPayment(req, res) {
@@ -12,11 +13,21 @@ export async function processPayment(req, res) {
     const { course_id } = req.params;
     const user_id = req.user?._id;
     if (!mongoose.Types.ObjectId.isValid(course_id)) {
-      return res.status(400).json({ message: "Invalid course ID" });
+      return res.status(400).json(new ApiError(404, "", "Invalid course id!!!"));
     }
     const course = await Course.findOne({ _id: course_id });
     if (!course) {
-      return res.status(404).json(new ApiError(404, "Invalid course !!!"));
+      return res.status(404).json(new ApiError(404, "", "Invalid course !!!"));
+    }
+    if (amount !== course.cost) {
+      return res.status(403).json(new ApiError(403, "", "invalid amount!!!"));
+    }
+    const alreadyEnrolled = await EnrolledCourse.findOne({
+      course_id: course_id,
+      user_id: user_id,
+    });
+    if (alreadyEnrolled) {
+      return res.status(403).json(new ApiError(403, "", "already enrolled"));
     }
     const transactionId = uniqid();
     const normalPayLoad = {

@@ -37,7 +37,6 @@ const register = asyncHandler(async (req, res) => {
     email,
     mobile,
     gender,
-    education,
     licenese,
     specialization,
     bio,
@@ -60,9 +59,11 @@ const register = asyncHandler(async (req, res) => {
     accoundNumber,
     accountHolder,
     password,
+    start_hour,
+    end_hour,
   } = req.body;
 
-  const therepistdata = {
+  const therapistData = {
     firstName,
     lastName,
     email,
@@ -71,29 +72,44 @@ const register = asyncHandler(async (req, res) => {
     experience,
     password,
   };
-  therepistdata.address = {};
-  therepistdata.social = {};
-  therepistdata.education = {};
-  therepistdata.bankdetail = {};
-  if (highSchool) therepistdata.education.highSchool = highSchool;
-  if (intermediate) therepistdata.education.intermediate = intermediate;
-  if (graduation) therepistdata.education.graduation = graduation;
-  if (postgraduation) therepistdata.education.postgraduation = postgraduation;
-  if (additional) therepistdata.education.additional = additional;
-  if (licenese) therepistdata.licenese = licenese;
-  if (experience) therepistdata.experience = experience;
-  if (state) therepistdata.address.state = state;
-  if (city) therepistdata.address.city = city;
-  if (pincode) therepistdata.address.pincode = pincode;
-  if (completeAddress) therepistdata.address.completeAddress = completeAddress;
-  if (linkedin) therepistdata.social.linkedin = linkedin;
-  if (instagram) therepistdata.social.instagram = instagram;
-  if (facebook) therepistdata.social.facebook = facebook;
-  if (bankName) therepistdata.bankdetail.bankName = bankName;
-  if (ifsccode) therepistdata.bankdetail.ifsccode = ifsccode;
-  if (accountHolder) therepistdata.bankdetail.accountHolder = accountHolder;
-  if (accoundNumber) therepistdata.bankdetail.accoundNumber = accoundNumber;
-  if (bio) therepistdata.bio = bio;
+  console.log(
+    "checkk",
+    firstName,
+    lastName,
+    email,
+    mobile,
+    gender,
+    password,
+    start_hour,
+    end_hour
+  );
+  therapistData.address = {};
+  therapistData.social = {};
+  therapistData.education = {};
+  therapistData.bankdetail = {};
+  therapistData.availability = {};
+
+  therapistData.availability.start_hour = start_hour;
+  therapistData.availability.end_hour = end_hour;
+  if (highSchool) therapistData.education.highSchool = highSchool;
+  if (intermediate) therapistData.education.intermediate = intermediate;
+  if (graduation) therapistData.education.graduation = graduation;
+  if (postgraduation) therapistData.education.postgraduation = postgraduation;
+  if (additional) therapistData.education.additional = additional;
+  if (licenese) therapistData.licenese = licenese;
+  if (experience) therapistData.experience = experience;
+  if (state) therapistData.address.state = state;
+  if (city) therapistData.address.city = city;
+  if (pincode) therapistData.address.pincode = pincode;
+  if (completeAddress) therapistData.address.completeAddress = completeAddress;
+  if (linkedin) therapistData.social.linkedin = linkedin;
+  if (instagram) therapistData.social.instagram = instagram;
+  if (facebook) therapistData.social.facebook = facebook;
+  if (bankName) therapistData.bankdetail.bankName = bankName;
+  if (ifsccode) therapistData.bankdetail.ifsccode = ifsccode;
+  if (accountHolder) therapistData.bankdetail.accountHolder = accountHolder;
+  if (accoundNumber) therapistData.bankdetail.accoundNumber = accoundNumber;
+  if (bio) therapistData.bio = bio;
 
   if (specialization) {
     if (!Array.isArray(specialization)) {
@@ -101,7 +117,7 @@ const register = asyncHandler(async (req, res) => {
         .status(400)
         .json(new ApiError(400, "", "specialization Should be array!"));
     }
-    therepistdata.specialization = specialization;
+    therapistData.specialization = specialization;
   }
 
   if (language) {
@@ -110,7 +126,7 @@ const register = asyncHandler(async (req, res) => {
         .status(400)
         .json(new ApiError(400, "", "Language should be array!"));
     }
-    therepistdata.language = language;
+    therapistData.language = language;
   }
 
   try {
@@ -120,16 +136,16 @@ const register = asyncHandler(async (req, res) => {
     }
 
     if (req.files?.passport) {
-      therepistdata.bankdetail.passport = req.files.passport[0]?.path;
+      therapistData.bankdetail.passport = req.files.passport[0]?.path;
     }
     if (req.files?.adharcard) {
-      therepistdata.bankdetail.adharcard = req.files.adharcard[0]?.path;
+      therapistData.bankdetail.adharcard = req.files.adharcard[0]?.path;
     }
     if (req.files?.pancard) {
-      therepistdata.bankdetail.pancard = req.files.pancard[0]?.path;
+      therapistData.bankdetail.pancard = req.files.pancard[0]?.path;
     }
 
-    let createTherepist = new Therapist(therepistdata);
+    let createTherepist = new Therapist(therapistData);
     await createTherepist.save();
     res
       .status(200)
@@ -141,7 +157,6 @@ const register = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
   const { email, mobile, password } = req.body;
-
   if (!email && !mobile) {
     return res
       .status(409)
@@ -154,6 +169,7 @@ const login = asyncHandler(async (req, res) => {
 
   // now check password is correct  or not
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
+  console.log("isPasswordCorrect", isPasswordCorrect);
   if (!isPasswordCorrect)
     return res.status(401).json(new ApiError(401, "", "Invalid Credentials!"));
 
@@ -183,12 +199,12 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-    console.log("console.log",req.user)
+  console.log("console.log", req.user);
   await Therapist.findByIdAndUpdate(
     req.user._id,
     {
       $unset: {
-        refreshToken: 1, 
+        refreshToken: 1,
       },
     },
     {
@@ -219,7 +235,7 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
   }
 
   // Mark active or deactivate
-  const therapist = await Therapist.findById(_id)
+  const therapist = await Therapist.findById(_id);
   if (!therapist) {
     return res.status(400).json(new ApiError(400, "Therapist not found!"));
   }
@@ -229,7 +245,9 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, therapist, "Active status updated successfully!"));
+    .json(
+      new ApiResponse(200, therapist, "Active status updated successfully!")
+    );
 });
 
 const getAllTherepist = asyncHandler(async (req, res) => {
@@ -239,18 +257,138 @@ const getAllTherepist = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, allTherepist, "Therepist found Successfully!"));
 });
 
-
 // fetch current user
-const getCurrentUser = asyncHandler(async(req, res) => {
-  console.log("user....------",req.user)
+const getCurrentUser = asyncHandler(async (req, res) => {
+  console.log("user....------", req.user);
   return res
-  .status(200)
-  .json(new ApiResponse(
-      200,
-      req.user,
-      "User fetched successfully"
-  ))
-})
+    .status(200)
+    .json(new ApiResponse(200, req.user, "User fetched successfully"));
+});
+
+const updateTherapist = asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "Validation Error", errors.array()));
+  }
+
+  const { _id } = req.user?._id;
+  const {
+    firstName,
+    lastName,
+    email,
+    mobile,
+    gender,
+    licenese,
+    specialization,
+    bio,
+    state,
+    city,
+    pincode,
+    completeAddress,
+    linkedin,
+    facebook,
+    highSchool,
+    intermediate,
+    graduation,
+    postgraduation,
+    additional,
+    language,
+    experience,
+    instagram,
+    bankName,
+    ifsccode,
+    accountNumber,
+    accountHolder,
+    password,
+  } = req.body;
+
+  const therapistData = {
+    firstName,
+    lastName,
+    email,
+    mobile,
+    gender,
+    experience,
+    password,
+  };
+  therapistData.address = {};
+  therapistData.social = {};
+  therapistData.education = {};
+  therapistData.bankdetail = {};
+  // EDUCATION FIELDS
+  if (highSchool) therapistData.education.highSchool = highSchool;
+  if (intermediate) therapistData.education.intermediate = intermediate;
+  if (graduation) therapistData.education.graduation = graduation;
+  if (postgraduation) therapistData.education.postgraduation = postgraduation;
+  if (additional) therapistData.education.additional = additional;
+  if (licenese) therapistData.licenese = licenese;
+  if (experience) therapistData.experience = experience;
+  // ADDRESS FIELDS
+  if (state) therapistData.address.state = state;
+  if (city) therapistData.address.city = city;
+  if (pincode) therapistData.address.pincode = pincode;
+  if (completeAddress) therapistData.address.completeAddress = completeAddress;
+  // SOCIAL ACCOUNT FIELDS
+  if (linkedin) therapistData.social.linkedin = linkedin;
+  if (instagram) therapistData.social.instagram = instagram;
+  if (facebook) therapistData.social.facebook = facebook;
+  // BANK FIELDS
+  if (bankName) therapistData.bankdetail.bankName = bankName;
+  if (ifsccode) therapistData.bankdetail.ifsccode = ifsccode;
+  if (accountHolder) therapistData.bankdetail.accountHolder = accountHolder;
+  if (accountNumber) therapistData.bankdetail.accountNumber = accountNumber;
+  if (bio) therapistData.bio = bio;
+
+  if (specialization) {
+    if (!Array.isArray(specialization)) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "specialization Should be array!"));
+    }
+    therapistData.specialization = specialization;
+  }
+
+  if (language) {
+    if (!Array.isArray(language)) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Language should be array!"));
+    }
+    therapistData.language = language;
+  }
+
+  try {
+    if (req.files?.passport) {
+      therapistData.bankdetail.passport = req.files.passport[0]?.path;
+    }
+    if (req.files?.adharcard) {
+      therapistData.bankdetail.adharcard = req.files.adharcard[0]?.path;
+    }
+    if (req.files?.pancard) {
+      therapistData.bankdetail.pancard = req.files.pancard[0]?.path;
+    }
+
+    let updateTherepist = await Therapist.findByIdAndUpdate(
+      _id,
+      therapistData,
+      {
+        new: true,
+        select: "-password -refreshToken",
+      }
+    );
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, updateTherepist, "profile updated Successfully")
+      );
+  } catch (err) {
+    res.status(500).send(new ApiError(500, "", err.message));
+  }
+});
+
 export {
   register,
   login,
@@ -258,5 +396,6 @@ export {
   activateOrDeactivate,
   getAllTherepist,
   logout,
-  getCurrentUser
+  getCurrentUser,
+  updateTherapist,
 };

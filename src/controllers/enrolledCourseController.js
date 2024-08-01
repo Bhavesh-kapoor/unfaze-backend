@@ -33,6 +33,7 @@ const handlePaymentSuccess = asyncHandler(async (req, res) => {
       status: paymentDetails.data.state,
       statusCode: paymentDetails.data.responseCode,
       paymentMode: paymentDetails.data.paymentInstrument.type,
+      active:true
     });
     await newEnrollment.save();
     res

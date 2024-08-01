@@ -37,7 +37,7 @@ app.use("/auth", authUser);
 
 // routes for admin
 app.use("/api/v1/admin", authroutes);
-app.use("/api/v1/therepist", therapistRoutes);
+app.use("/api/v1/therapist", therapistRoutes);
 app.use("/api/v1/user", userRoutes);
 
 export default app;

@@ -21,10 +21,13 @@ const createCourse = AysncHandler(async (req, res) => {
       therapist_id,
       specialization_id,
       session_count,
+      cost,
     });
-
+    console.log("checkk", existingCourse);
     if (existingCourse) {
-      throw new ApiError(409, "Course already exists");
+      res
+        .status(403)
+        .json(new ApiError(403, "", "course specifications already exist!!"));
     }
     const newCourse = new Course({
       therapist_id,
@@ -74,7 +77,7 @@ const updateCourse = AysncHandler(async (req, res) => {
       .json(new ApiResponse(200, updatedCourse, "Course updated successfully"));
   } catch (error) {
     console.error("Error updating course:", error);
-    throw new ApiError(501, "Something went wrong while updating the course");
+    throw new ApiError(501, "Something went wrong while updating the course",error);
   }
 });
 const deleteCourse = AysncHandler(async (req, res) => {

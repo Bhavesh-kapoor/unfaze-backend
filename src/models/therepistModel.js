@@ -1,209 +1,97 @@
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-const EductionSchema = {
-  highSchool: {
-    type: String,
-  },
-  intermediate: {
-    type: String,
-  },
-  graduation: {
-    type: String,
-  },
-  postgraduation: {
-    type: String,
-  },
-  additional: {
-    type: String,
-  },
-};
+// Education Schema
+const EducationSchema = new mongoose.Schema({
+  highSchool: String,
+  intermediate: String,
+  graduation: String,
+  postgraduation: String,
+  additional: String,
+}, { _id: false });
 
-const AddressSchema = {
-  state: {
-    trim: true,
-    type: String,
-  },
+// Address Schema
+const AddressSchema = new mongoose.Schema({
+  state: { type: String, trim: true },
+  city: { type: String, trim: true },
+  pincode: { type: String, trim: true },
+  completeAddress: { type: String, trim: true },
+}, { _id: false });
 
-  city: {
-    type: String,
-    trim: true,
-  },
-  pincode: {
-    type: String,
-    trim: true,
-  },
-  completeAddress: {
-    type: String,
-    trim: true,
-  },
-};
+// Social Schema
+const SocialSchema = new mongoose.Schema({
+  linkedin: { type: String, trim: true },
+  instagram: { type: String, trim: true },
+  facebook: { type: String, trim: true },
+}, { _id: false });
 
-const socialSchema = {
-  linkedin: {
-    type: String,
-    trim: true,
-  },
-  instagram: {
-    type: String,
-    trim: true,
-  },
-  facebook: {
-    type: String,
-    trim: true,
-  },
-};
+// Bank Details Schema
+const BankSchema = new mongoose.Schema({
+  adharcard: String,
+  pancard: String,
+  bankName: String,
+  ifsccode: String,
+  accountHolder: String,
+  accountNumber: String,
+}, { _id: false });
 
-const bankSchema = {
-  adharcard: {
-    type: String,
+// Therapist Schema
+const TherapistSchema = new mongoose.Schema({
+  googleId: String,
+  facebookId: String,
+  firstName: { type: String, required: true, trim: true },
+  lastName: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  mobile: { type: String, trim: true },
+  gender: { type: String, trim: true, enum: ['male', 'female', 'non-binary', 'other'] },
+  password: String,
+  refreshToken: String,
+  education: EducationSchema,
+  licence: { type: String, trim: true },
+  specialization: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Specialization', required: true }],
+  experience: { type: String, trim: true },
+  passport: String,
+  bio: { type: String, trim: true },
+  address: AddressSchema,
+  language: [{ type: String, trim: true }],
+  social: SocialSchema,
+  bankdetail: BankSchema,
+  is_active: { type: Boolean, default: false },
+  availability: {
+    start_hour: { type: Number, min: 0, max: 23 },
+    end_hour: { type: Number, min: 0, max: 23 },
   },
-  pancard: {
-    type: String,
-  },
-  bankName: {
-    type: String,
-  },
-  ifsccode: {
-    type: String,
-  },
-  accountHolder: {
-    type: String,
-  },
-  accoundNumber: {
-    type: String,
-  },
-};
+}, { timestamps: true });
 
-const TherepistSchema = new mongoose.Schema(
-  {
-    googleId: {
-      type: String,
-    },
-    facebookId: {
-      type: String,
-    },
-    firstName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    lastName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    mobile: {
-      type: String,
-      trim: true,
-    },
-    gender: {
-      type: String,
-      trim: true,
-      enum: ["male", "female", "non-binary", "other"],
-    },
-    password: {
-      type: String,
-    },
-    refreshToken: {
-      type: String,
-    },
-    education: EductionSchema,
-    licence: {
-      type: String,
-      trim: true,
-    },
-    specialization: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Specialization",
-        required: true,
-      },
-    ],
-    experience: {
-      type: String,
-      trim: true,
-    },
-    passport: {
-      type: String,
-    },
-    bio: {
-      type: String,
-      trim: true,
-    },
-    address: AddressSchema,
-    language: {
-      type: [String],
-      trim: true,
-    },
-    social: socialSchema,
-    bankdetail: bankSchema,
-    is_active: {
-      type: Boolean,
-      default: false,
-    },
-    availability:{
-      start_hour: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 23,
-      },
-      end_hour: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 23,
-      },
-    }
-  },
-
-  { timestamps: true }
-);
-
-TherepistSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+// Middleware to hash password before saving
+TherapistSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-TherepistSchema.methods.isPasswordCorrect = async function (password) {
+// Method to compare password
+TherapistSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-TherepistSchema.methods.generateAccessToken = function () {
+// Method to generate access token
+TherapistSchema.methods.generateAccessToken = function () {
   return jwt.sign(
-    {
-      _id: this._id,
-      email: this.email,
-      name: this.name,
-      role: this.role,
-    },
+    { _id: this._id, email: this.email, name: `${this.firstName} ${this.lastName}` },
     process.env.ACCESS_TOKEN_KEY,
-    {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
-    }
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
   );
 };
 
-TherepistSchema.methods.generateRefreshToken = function () {
+// Method to generate refresh token
+TherapistSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
-    {
-      _id: this._id,
-    },
+    { _id: this._id },
     process.env.REFRESH_TOKEN_KEY,
-    {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-    }
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
   );
 };
 
-export const Therapist = mongoose.model("Therapist", TherepistSchema);
+export const Therapist = mongoose.model('Therapist', TherapistSchema);

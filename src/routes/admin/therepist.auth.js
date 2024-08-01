@@ -7,6 +7,7 @@ import {
   login,
   logout,
   getCurrentUser,
+  updateTherapist,
 } from "../../controllers/admin/TherepistController.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 import upload from "../../middleware/admin/multer.middleware.js";
@@ -22,6 +23,8 @@ therapistAuth.post("/register", multipleImages, validateRegister, register);
 therapistAuth.post("/login", validateRegister, login);
 therapistAuth.post("/logout", verifyJwtToken, logout);
 therapistAuth.get("/current-user", verifyJwtToken, getCurrentUser);
+therapistAuth.put("/update-profile",verifyJwtToken, multipleImages, updateTherapist);
+
 
 therapistAuth.post(
   "/activate-or-deactive/:_id",

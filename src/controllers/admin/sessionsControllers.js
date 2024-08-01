@@ -67,19 +67,27 @@ const availableSlots = async (req, res) => {
 };
 
 const bookaSession = asyncHandler(async (req, res) => {
-  const { enrolledCourseId, date, startTime } = req.body;
-  const { user_id } = req.user?._id;
+  const { enrolledCourseId, date, startTime, user_id } = req.body;
+  // const { user_id } = req.user?._id;
 
   const enrolledCourse = await EnrolledCourse.findOne({
     _id: enrolledCourseId,
+    user_id: user_id,
   }).populate({
     path: "course_id",
     select: "therapist_id",
   });
   if (!enrolledCourse) {
-    return res.status(404).json(new ApiError(404, "No Enrolled course found"));
+    return res
+      .status(404)
+      .json(new ApiError(404, "", "No Enrolled course found"));
   }
   console.log("enrolledCourse", enrolledCourse);
+  if (enrolledCourse.active === false) {
+    return res
+      .status(404)
+      .json(new ApiError(404, "", "you already booked all your sessions!"));
+  }
   const therapistId = enrolledCourse.course_id.therapist_id;
   const startDateTime = parseISO(`${date}T${startTime}`);
   const endDateTime = addMinutes(startDateTime, SESSION_DURATION_MINUTES);
@@ -111,6 +119,11 @@ const bookaSession = asyncHandler(async (req, res) => {
 
   try {
     await session.save();
+    enrolledCourse.remaining_sessions -= 1;
+    if (enrolledCourse.remaining_sessions === 0) {
+      enrolledCourse.active = false;
+    }
+    await enrolledCourse.save();
     res.status(201).send({
       session,
       message: "Session booked successfully",
