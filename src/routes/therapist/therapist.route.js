@@ -7,4 +7,4 @@ const therapistRouter = Router();
 therapistRouter.use("/course", courseRouter);
 therapistRouter.use("/auth",therepistAuth)
 
-export default therapistRouter; 
+export default therapistRouter;
