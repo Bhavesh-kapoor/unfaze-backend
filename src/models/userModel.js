@@ -27,9 +27,11 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+    is_email_verified:{type:Boolean,default:false},
     mobile: {
       type: Number,
     },
+    is_mobile_verified:{type:Boolean,default:false},
     gender: {
       type: String,
       trim: true,

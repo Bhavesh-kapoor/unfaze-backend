@@ -18,6 +18,7 @@ import {
 } from "../../middleware/admin/phonePayConfig.js";
 
 import sessionRouter from "./session.routes.js";
+import { userEmailVerify } from "../../controllers/otpController.js";
 
 const userRoutes = Router();
 userRoutes.post("/register", validateRegister, register);
@@ -35,6 +36,7 @@ userRoutes.get(
   validatePayment,
   handlePaymentSuccess
 );
+userRoutes.post("/email-verify",userEmailVerify)
 
 
 userRoutes.use("/sessions",sessionRouter)
