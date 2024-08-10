@@ -1,14 +1,17 @@
 import mongoose from "mongoose";
 
-const SpecializationSchema = new mongoose.Schema({
+const SpecializationSchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
-        required: true,
-        trim: true
-    }
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+  { timestamps: true }
+);
 
-}, { timestamps: true });
-
-
-
-export const Specialization = mongoose.model("Specialization", SpecializationSchema);
+export const Specialization = mongoose.model(
+  "Specialization",
+  SpecializationSchema
+);

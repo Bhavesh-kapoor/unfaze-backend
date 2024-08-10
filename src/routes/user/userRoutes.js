@@ -1,10 +1,12 @@
 import { Router } from "express";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
+import upload from "../../middleware/admin/multer.middleware.js";
 import {
   register,
   refreshToken,
   userlogin,
   validateRegister,
+  updateAvatar
 } from "../../controllers/admin/user.controller.js";
 import speclizationRoute from "../admin/specilization.route.js";
 import feedbackRoute from "../feeback.route.js";
@@ -21,9 +23,10 @@ import sessionRouter from "./session.routes.js";
 import { userEmailVerify } from "../../controllers/otpController.js";
 
 const userRoutes = Router();
-userRoutes.post("/register", validateRegister, register);
+userRoutes.post("/register",upload.single('profileImage'),validateRegister,  register);
 userRoutes.post("/login", userlogin);
 userRoutes.post("/refreshToken", verifyJwtToken, refreshToken);
+userRoutes.patch("/update-avatar", verifyJwtToken, upload.single('profileImage'),updateAvatar);
 userRoutes.use("/specialization", verifyJwtToken, speclizationRoute);
 userRoutes.use("/feedback", feedbackRoute);
 

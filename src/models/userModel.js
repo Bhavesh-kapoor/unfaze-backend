@@ -20,6 +20,10 @@ const userSchema = new Schema(
       required: true,
       trim: true,
     },
+    profileImage: {
+      type: String,
+      default: "",
+    },
     email: {
       type: String,
       required: true,
@@ -27,11 +31,11 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    is_email_verified:{type:Boolean,default:false},
+    is_email_verified: { type: Boolean, default: false },
     mobile: {
       type: Number,
     },
-    is_mobile_verified:{type:Boolean,default:false},
+    is_mobile_verified: { type: Boolean, default: false },
     gender: {
       type: String,
       trim: true,

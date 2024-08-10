@@ -1,9 +1,10 @@
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
-import AysncHandler from "../../utils/asyncHandler.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 import { User } from "../../models/userModel.js";
 import jwt from "jsonwebtoken";
 import { check, validationResult } from "express-validator";
+import { process } from "uniqid";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
@@ -23,7 +24,7 @@ const validateRegister = [
   check("password", "password is required").notEmpty(),
 ];
 
-const adminlogin = AysncHandler(async (req, res) => {
+const adminlogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email && !password) {
@@ -66,7 +67,7 @@ const adminlogin = AysncHandler(async (req, res) => {
     );
 });
 
-const userlogin = AysncHandler(async (req, res) => {
+const userlogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email && !password) {
@@ -108,7 +109,8 @@ const userlogin = AysncHandler(async (req, res) => {
       })
     );
 });
-const register = AysncHandler(async (req, res) => {
+const register = asyncHandler(async (req, res) => {
+  const { email, firstName, lastName, password, mobile, gender } = req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res
@@ -116,13 +118,17 @@ const register = AysncHandler(async (req, res) => {
       .json(new ApiError(400, "Validation Error", errors.array()));
   }
 
-  const { email, firstName, lastName, password, mobile, gender } = req.body;
+  let profileImage = req.file ? req.file.path : "";
+  console.log("image", profileImage);
   const exist = await User.findOne({ email });
   if (exist) {
     return res
-      .staus(409)
-      .json(new ApiError(409, "User with username or email is already exsist"));
+      .status(409)
+      .json(
+        new ApiError(409, "", "User with username or email is already exsist")
+      );
   }
+
   const createUser = await User.create({
     email,
     firstName,
@@ -130,13 +136,61 @@ const register = AysncHandler(async (req, res) => {
     password,
     mobile,
     gender,
+    profileImage,
   });
   return res
     .status(200)
     .json(new ApiResponse(200, createUser, "User created successfully"));
 });
+const updateProfile = asyncHandler(async (req, res) => {
+  const { email, firstName, lastName, password, mobile, gender } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "Validation Error", errors.array()));
+  }
 
-const refreshToken = AysncHandler(async (req, res) => {
+  let profileImage = req.file ? req.file.path : "";
+  console.log("image", profileImage);
+  const exist = await User.findOne({ email });
+  if (exist) {
+    return res
+      .status(409)
+      .json(
+        new ApiError(409, "", "User with username or email is already exsist")
+      );
+  }
+
+  const createUser = await User.create({
+    email,
+    firstName,
+    lastName,
+    password,
+    mobile,
+    gender,
+    profileImage,
+  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, createUser, "User created successfully"));
+});
+const updateAvatar =asyncHandler(async(req,res)=>{
+  const user_id = req.user?._id;
+  if(!req.file){
+  return  res.status(404).json(new ApiError(404),"", " please select an image!")
+  }
+const currentUser = await User.findOne({_id:user_id})
+if(!currentUser){
+  return res.status(404).send(new ApiError(404,"","Invalid User!"))
+}
+  let profileImage = req.file ? req.file.path : "";
+  currentUser.profileImage=profileImage
+  await currentUser.save();
+  res.status(200).json(new ApiResponse(200,"", "profile image uploaded successfully!"))
+})
+
+const refreshToken = asyncHandler(async (req, res) => {
   const incommingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
   if (!incommingRefreshToken)
@@ -176,4 +230,4 @@ const refreshToken = AysncHandler(async (req, res) => {
     );
 });
 
-export { adminlogin,userlogin, register, refreshToken, validateRegister };
+export { adminlogin, userlogin, register, refreshToken, validateRegister,updateAvatar };

@@ -30,7 +30,7 @@ const register = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiError(400, "Validation Error", errors.array()));
   }
-
+ console.log("chekk", )
   const {
     firstName,
     lastName,
@@ -56,12 +56,13 @@ const register = asyncHandler(async (req, res) => {
     instagram,
     bankName,
     ifsccode,
-    accoundNumber,
+    accountNumber,
     accountHolder,
     password,
     start_hour,
     end_hour,
   } = req.body;
+  
 
   const therapistData = {
     firstName,
@@ -71,18 +72,10 @@ const register = asyncHandler(async (req, res) => {
     gender,
     experience,
     password,
-  };
-  console.log(
-    "checkk",
-    firstName,
-    lastName,
-    email,
-    mobile,
-    gender,
-    password,
     start_hour,
-    end_hour
-  );
+    end_hour,
+
+  };
   therapistData.address = {};
   therapistData.social = {};
   therapistData.education = {};
@@ -108,7 +101,7 @@ const register = asyncHandler(async (req, res) => {
   if (bankName) therapistData.bankdetail.bankName = bankName;
   if (ifsccode) therapistData.bankdetail.ifsccode = ifsccode;
   if (accountHolder) therapistData.bankdetail.accountHolder = accountHolder;
-  if (accoundNumber) therapistData.bankdetail.accoundNumber = accoundNumber;
+  if (accountNumber) therapistData.bankdetail.accountNumber = accountNumber;
   if (bio) therapistData.bio = bio;
 
   if (specialization) {
@@ -144,12 +137,15 @@ const register = asyncHandler(async (req, res) => {
     if (req.files?.pancard) {
       therapistData.bankdetail.pancard = req.files.pancard[0]?.path;
     }
+    if (req.files?.profileImage) {
+      therapistData.profileImage = req.files.profileImage[0].path;
+    }
 
     let createTherepist = new Therapist(therapistData);
     await createTherepist.save();
     res
       .status(200)
-      .json(new ApiResponse(200, "", "Therepist created Successfully"));
+      .json(new ApiResponse(200,createTherepist , "Therepist created Successfully"));
   } catch (err) {
     res.status(500).json(new ApiError(500, "", err.message));
   }
@@ -166,7 +162,6 @@ const login = asyncHandler(async (req, res) => {
   let existUser = await Therapist.findOne({ $or: [{ email }, { mobile }] });
   if (!existUser)
     return res.status(404).json(new ApiError(400, "", "user not found"));
-
   // now check password is correct  or not
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
   console.log("isPasswordCorrect", isPasswordCorrect);
@@ -388,6 +383,20 @@ const updateTherapist = asyncHandler(async (req, res) => {
     res.status(500).send(new ApiError(500, "", err.message));
   }
 });
+const updateAvatar =asyncHandler(async(req,res)=>{
+  const user_id = req.user?._id;
+  if(!req.file){
+  return  res.status(404).json(new ApiError(404),"", " please select an image!")
+  }
+const currentUser = await Therapist.findOne({_id:user_id})
+if(!currentUser){
+  return res.status(404).send(new ApiError(404,"","Invalid User!"))
+}
+  let profileImage = req.file ? req.file.path : "";
+  currentUser.profileImage=profileImage
+  await currentUser.save();
+  res.status(200).json(new ApiResponse(200,"", "profile image uploaded successfully!"))
+})
 
 export {
   register,
@@ -398,4 +407,5 @@ export {
   logout,
   getCurrentUser,
   updateTherapist,
+  updateAvatar
 };

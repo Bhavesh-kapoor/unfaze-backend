@@ -1,5 +1,7 @@
+
 import multer from "multer";
 import path from 'path';
+import ApiError from "../../utils/ApiError.js"
 
 
 const storage = multer.diskStorage({
@@ -13,6 +15,8 @@ const storage = multer.diskStorage({
             folder = 'temp/uploads/pancards';
         }else if (file.fieldname =='blogImage'){
             folder = 'temp/uploads/blogs'
+        }else if (file.fieldname =='profileImage'){
+            folder = 'temp/uploads/profileImage'
         }
         cb(null, folder)
     },

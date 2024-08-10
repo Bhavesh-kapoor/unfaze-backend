@@ -8,6 +8,7 @@ import {
   logout,
   getCurrentUser,
   updateTherapist,
+  updateAvatar
 } from "../../controllers/admin/TherepistController.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 import upload from "../../middleware/admin/multer.middleware.js";
@@ -17,13 +18,15 @@ const multipleImages = upload.fields([
   { name: "passport", maxCount: 1 },
   { name: "adharcard", maxCount: 1 },
   { name: "pancard", maxCount: 1 },
+  { name: "profileImage", maxCount: 1 },
 ]);
 
 therapistAuth.post("/register", multipleImages, validateRegister, register);
 therapistAuth.post("/login", validateRegister, login);
 therapistAuth.post("/logout", verifyJwtToken, logout);
 therapistAuth.get("/current-user", verifyJwtToken, getCurrentUser);
-therapistAuth.put("/update-profile",verifyJwtToken, multipleImages, updateTherapist);
+therapistAuth.patch("/update-profile",verifyJwtToken, multipleImages, updateTherapist);
+therapistAuth.patch("/update-avatar",verifyJwtToken, upload.single('profileImage'),updateAvatar);
 
 
 therapistAuth.post(
