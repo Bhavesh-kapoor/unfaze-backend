@@ -80,7 +80,6 @@ export async function processPayment(req, res) {
 
 export const validatePayment = async (req, res, next) => {
   const { merchantTransactionId, course_id } = req.params;
-  console.log("checkk", merchantTransactionId, course_id);
   if (merchantTransactionId) {
     let statusUrl =
       `${process.env.HOST_URL}/pg/v1/status/${process.env.MERCHANT_ID}/` +

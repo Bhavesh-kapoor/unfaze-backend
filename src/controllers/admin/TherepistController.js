@@ -4,6 +4,7 @@ import { check, validationResult } from "express-validator";
 import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import mongoose from "mongoose";
+import { sendNotification } from "../notificationController.js";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -237,7 +238,25 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
 
   therapist.is_active = !therapist.is_active;
   await therapist.save();
-
+  let activeStatus = ""
+  if(therapist.is_active){
+    activeStatus="active"
+  }else{
+    activeStatus="deactive"
+  }
+  const receiverId = _id
+  const receiverType = "Therapist";
+  const message =
+    `your profile marked ${activeStatus}`;
+  const payload = {
+  };
+ sendNotification(receiverId, receiverType, message, payload)
+  .then(notification => {
+      console.log('Notification sent:', notification);
+  })
+  .catch(err => {
+      console.error('Error sending notification:', err);
+  });
   return res
     .status(200)
     .json(
