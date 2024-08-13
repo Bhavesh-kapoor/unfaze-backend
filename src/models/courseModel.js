@@ -3,7 +3,7 @@ const courseSchema = new Schema(
   {
     therapist_id: {
       type: Schema.Types.ObjectId,
-      ref: "Therepist",
+      ref: "Therapist",
       required: true,
     },
     session_count: {

@@ -4,7 +4,7 @@ import otpGenerator from "otp-generator";
 import { OTP } from "../models/otpModel.js";
 import { Resend } from "resend";
 import { User } from "../models/userModel.js";
-import { Therapist } from "../models/therepistModel.js";
+import { Therapist } from "../models/therapistModel.js";
 import dotenv from "dotenv";
 import { response } from "express";
 dotenv.config();
@@ -71,7 +71,11 @@ const sendOtp = async (req, res) => {
     res
       .status(201)
       .json(
-        new ApiResponse(201,null, "Otp sent successfully! please check your email.")
+        new ApiResponse(
+          201,
+          null,
+          "Otp sent successfully! please check your email."
+        )
       );
   } catch (error) {
     res.status(400).json(new ApiError(500, "", "something went wrong"));
@@ -93,9 +97,11 @@ const userEmailVerify = async (req, res) => {
     }
     user.is_email_verified = true;
     await user.save();
-    res.status(200).json(new ApiResponse(200,null,"Email verification success!"));
+    res
+      .status(200)
+      .json(new ApiResponse(200, null, "Email verification success!"));
   } else {
-    res.status(400).json(new ApiError(400,null,"invalid otp"));
+    res.status(400).json(new ApiError(400, null, "invalid otp"));
   }
 };
 
@@ -103,18 +109,22 @@ const userEmailVerify = async (req, res) => {
 const therapistEmailVerify = async (req, res) => {
   const { email, otp } = req.body;
 
- if (!email || !otp){
-    return res.status(500).json(new ApiError(500,"", "email and otp are required!"))
- }
+  if (!email || !otp) {
+    return res
+      .status(500)
+      .json(new ApiError(500, "", "email and otp are required!"));
+  }
   const isValid = await verifyOTP(email, otp);
 
   if (isValid) {
     const user = await Therapist.findOne({ email: email });
     user.is_email_verified = true;
     await user.save();
-    res.status(200).json(new ApiResponse(200,null,"Email verification success!"));
+    res
+      .status(200)
+      .json(new ApiResponse(200, null, "Email verification success!"));
   } else {
-    res.status(400).json(new ApiError(400,null,"invalid otp"));
+    res.status(400).json(new ApiError(400, null, "invalid otp"));
   }
 };
 export { sendOtp, userEmailVerify, therapistEmailVerify };

@@ -1,7 +1,7 @@
 import { parseISO, addMinutes, format } from "date-fns";
 import { Session } from "../../models/sessionsModel.js";
 import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
-import { Therapist } from "../../models/therepistModel.js";
+import { Therapist } from "../../models/therapistModel.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";

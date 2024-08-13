@@ -3,7 +3,7 @@ import express from "express";
 import passport from "../../config/passportTherapist.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import ApiError from "../../utils/ApiError.js";
-import { Therapist } from "../../models/therepistModel.js";
+import { Therapist } from "../../models/therapistModel.js";
 
 const router = express.Router();
 

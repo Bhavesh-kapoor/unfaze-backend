@@ -1,5 +1,5 @@
 import ApiError from "../../utils/ApiError.js";
-import { Therapist } from "../../models/therepistModel.js";
+import { Therapist } from "../../models/therapistModel.js";
 import { check, validationResult } from "express-validator";
 import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
@@ -31,7 +31,7 @@ const register = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiError(400, "Validation Error", errors.array()));
   }
- console.log("chekk", )
+  console.log("chekk");
   const {
     firstName,
     lastName,
@@ -63,7 +63,6 @@ const register = asyncHandler(async (req, res) => {
     start_hour,
     end_hour,
   } = req.body;
-  
 
   const therapistData = {
     firstName,
@@ -75,7 +74,6 @@ const register = asyncHandler(async (req, res) => {
     password,
     start_hour,
     end_hour,
-
   };
   therapistData.address = {};
   therapistData.social = {};
@@ -146,7 +144,9 @@ const register = asyncHandler(async (req, res) => {
     await createTherepist.save();
     res
       .status(200)
-      .json(new ApiResponse(200,createTherepist , "Therepist created Successfully"));
+      .json(
+        new ApiResponse(200, createTherepist, "Therepist created Successfully")
+      );
   } catch (err) {
     res.status(500).json(new ApiError(500, "", err.message));
   }
@@ -154,6 +154,7 @@ const register = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
   const { email, mobile, password } = req.body;
+  console.log("check---------------", email, password);
   if (!email && !mobile) {
     return res
       .status(409)
@@ -161,9 +162,10 @@ const login = asyncHandler(async (req, res) => {
   }
 
   let existUser = await Therapist.findOne({ $or: [{ email }, { mobile }] });
+  console.log("existUser-------", existUser);
   if (!existUser)
     return res.status(404).json(new ApiError(400, "", "user not found"));
-  // now check password is correct  or not
+
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
   console.log("isPasswordCorrect", isPasswordCorrect);
   if (!isPasswordCorrect)
@@ -238,25 +240,23 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
 
   therapist.is_active = !therapist.is_active;
   await therapist.save();
-  let activeStatus = ""
-  if(therapist.is_active){
-    activeStatus="active"
-  }else{
-    activeStatus="deactive"
+  let activeStatus = "";
+  if (therapist.is_active) {
+    activeStatus = "active";
+  } else {
+    activeStatus = "deactive";
   }
-  const receiverId = _id
+  const receiverId = _id;
   const receiverType = "Therapist";
-  const message =
-    `your profile marked ${activeStatus}`;
-  const payload = {
-  };
- sendNotification(receiverId, receiverType, message, payload)
-  .then(notification => {
-      console.log('Notification sent:', notification);
-  })
-  .catch(err => {
-      console.error('Error sending notification:', err);
-  });
+  const message = `your profile marked ${activeStatus}`;
+  const payload = {};
+  sendNotification(receiverId, receiverType, message, payload)
+    .then((notification) => {
+      console.log("Notification sent:", notification);
+    })
+    .catch((err) => {
+      console.error("Error sending notification:", err);
+    });
   return res
     .status(200)
     .json(
@@ -402,20 +402,24 @@ const updateTherapist = asyncHandler(async (req, res) => {
     res.status(500).send(new ApiError(500, "", err.message));
   }
 });
-const updateAvatar =asyncHandler(async(req,res)=>{
+const updateAvatar = asyncHandler(async (req, res) => {
   const user_id = req.user?._id;
-  if(!req.file){
-  return  res.status(404).json(new ApiError(404),"", " please select an image!")
+  if (!req.file) {
+    return res
+      .status(404)
+      .json(new ApiError(404), "", " please select an image!");
   }
-const currentUser = await Therapist.findOne({_id:user_id})
-if(!currentUser){
-  return res.status(404).send(new ApiError(404,"","Invalid User!"))
-}
+  const currentUser = await Therapist.findOne({ _id: user_id });
+  if (!currentUser) {
+    return res.status(404).send(new ApiError(404, "", "Invalid User!"));
+  }
   let profileImage = req.file ? req.file.path : "";
-  currentUser.profileImage=profileImage
+  currentUser.profileImage = profileImage;
   await currentUser.save();
-  res.status(200).json(new ApiResponse(200,"", "profile image uploaded successfully!"))
-})
+  res
+    .status(200)
+    .json(new ApiResponse(200, "", "profile image uploaded successfully!"));
+});
 
 export {
   register,
@@ -426,5 +430,5 @@ export {
   logout,
   getCurrentUser,
   updateTherapist,
-  updateAvatar
+  updateAvatar,
 };

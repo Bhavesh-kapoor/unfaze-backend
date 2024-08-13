@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose, { model, Schema, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken"
 
 // Education Schema
 const EducationSchema = new mongoose.Schema({
@@ -79,6 +79,8 @@ TherapistSchema.pre('save', async function (next) {
 
 // Method to compare password
 TherapistSchema.methods.isPasswordCorrect = async function (password) {
+  console.log("Plain Text Password:", password);
+    console.log("Hashed Password:", this.password);
   return await bcrypt.compare(password, this.password);
 };
 
@@ -100,4 +102,4 @@ TherapistSchema.methods.generateRefreshToken = function () {
   );
 };
 
-export const Therapist = mongoose.model('Therapist', TherapistSchema);
+export const Therapist = mongoose.model("Therapist",TherapistSchema)

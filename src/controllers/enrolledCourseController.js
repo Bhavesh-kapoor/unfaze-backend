@@ -5,7 +5,8 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../models/userModel.js";
 import { Course } from "../models/courseModel.js";
 import { sendNotification } from "./notificationController.js";
-
+import transporter from "../config/nodeMailer.js";
+import { Therapist } from "../models/therapistModel.js";
 
 const getEnrolledCourseList = asyncHandler(async (req, res) => {
   const user_id = req.user?._id;
@@ -20,9 +21,10 @@ const getEnrolledCourseList = asyncHandler(async (req, res) => {
 
 const handlePaymentSuccess = asyncHandler(async (req, res) => {
   const { paymentDetails, course_id } = req;
-  const user = await  User.findById(req.user?._id)
-  console.log("user-------",user)
-  const course = await Course.findOne({ _id: course_id });
+  const user = await User.findById(req.user?._id);
+  const course = await Course.findOne({ _id: course_id }).populate(
+    "therapist_id"
+  );
   if (paymentDetails.code === "PAYMENT_SUCCESS") {
     const newEnrollment = new EnrolledCourse({
       course_id: course_id,
@@ -41,24 +43,39 @@ const handlePaymentSuccess = asyncHandler(async (req, res) => {
       active: true,
     });
     await newEnrollment.save();
-
-    const receiverId = course.therapist_id
+    // send in app notification
+    const receiverId = course.therapist_id;
     const receiverType = "Therapist";
-    const message =
-      `${user.firstName } ${user.lastName} is successfully enrolled in the course`;
+    const message = `${user.firstName} ${user.lastName} is successfully enrolled in the course`;
     const payload = {
       courseId: course_id,
-      user_id:user._id,
-      email:user.email,
-      mobile:user.mobile
+      user_id: user._id,
+      email: user.email,
+      mobile: user.mobile,
     };
-   sendNotification(receiverId, receiverType, message, payload)
-    .then(notification => {
-        console.log('Notification sent:', notification);
-    })
-    .catch(err => {
-        console.error('Error sending notification:', err);
+    sendNotification(receiverId, receiverType, message, payload)
+      .then((notification) => {
+        console.log("Notification sent:", notification);
+      })
+      .catch((err) => {
+        console.error("Error sending notification:", err);
+      });
+
+    // send mail notifications
+    const mailOptions = {
+      from: `Unfaze "<${process.env.GMAIL}>"`,
+      to: course.therapist_id.email,
+      subject: "Course Enrollment Confirmation",
+      // text: 'You have successfully enrolled in the course: Introduction to Psychology', // Plain text body
+      html: `<p>${user.firstName} ${user.lastName} is successfully enrolled in the course</p>`, // HTML body
+    };
+    await transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return console.log("Error while sending email:", error);
+      }
+      console.log("Email sent successfully:", info.response);
     });
+
     res
       .status(200)
       .json(
