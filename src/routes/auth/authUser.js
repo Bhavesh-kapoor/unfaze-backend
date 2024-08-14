@@ -21,11 +21,9 @@ router.get(
 );
 router.get(
   "/user/google/callback",
-  passport.authenticate("google-user", {
-    successRedirect: "http://localhost:3001/profile",
-    failureRedirect: "http://localhost:3001/login",
-  }),
-  async (req, res) => {
+  passport.authenticate("google-user",
+    { failureRedirect: '/login' }),
+  async (req, res,next) => {
     try {
       const { user } = req;
       const { accessToken, refreshToken } = await createAccessOrRefreshToken(

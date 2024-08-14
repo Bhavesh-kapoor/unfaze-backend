@@ -119,7 +119,6 @@ const register = asyncHandler(async (req, res) => {
   }
 
   let profileImage = req.file ? req.file.path : "";
-  console.log("image", profileImage);
   const exist = await User.findOne({ email });
   if (exist) {
     return res

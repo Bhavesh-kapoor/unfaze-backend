@@ -23,12 +23,15 @@ passport.use(
         let user = await User.findOne({ googleId: profile.id });
         if (!user) {
           user = new User({
+            profileImage:profile.photos[0].value,
             googleId: profile.id,
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value,
+            is_email_verified:true
           });
-
+          const  refreshToken = user.generateRefreshToken()
+          user.refreshToken =refreshToken;
           await user.save();
         }
 
