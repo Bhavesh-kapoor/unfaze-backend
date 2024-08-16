@@ -34,8 +34,8 @@ passport.use(
           user.refreshToken =refreshToken;
           await user.save();
         }
-
-        return done(null, user);
+        const accessToken = user.generateAccessToken()
+        return done(null, {user,accessToken});
       } catch (error) {
         return done(error, null);
       }
@@ -71,8 +71,8 @@ passport.use(
           });
           await user.save();
         }
-
-        return done(null, user);
+        const accessToken = user.generateAccessToken()
+        return done(null, {user,accessToken});
       } catch (error) {
         return done(error, null);
       }
