@@ -12,6 +12,7 @@ import {
 } from "../../controllers/admin/TherepistController.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 import upload from "../../middleware/admin/multer.middleware.js";
+import { getTherepistById } from "../../controllers/admin/TherepistController.js";
 
 const therapistAuth = Router();
 const multipleImages = upload.fields([
@@ -29,11 +30,13 @@ therapistAuth.patch("/update-profile",verifyJwtToken, multipleImages, updateTher
 therapistAuth.patch("/update-avatar",verifyJwtToken, upload.single('profileImage'),updateAvatar);
 
 
+
 therapistAuth.post(
   "/activate-or-deactive/:_id",
   verifyJwtToken,
   activateOrDeactivate
 );
 therapistAuth.get("/all", verifyJwtToken, getAllTherepist);
+therapistAuth.get("/get-therapist/:_id", verifyJwtToken,getTherepistById);
 
 export default therapistAuth;

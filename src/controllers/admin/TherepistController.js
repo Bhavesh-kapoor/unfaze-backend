@@ -270,7 +270,13 @@ const getAllTherepist = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, allTherepist, "Therepist found Successfully!"));
 });
-
+const getTherepistById = asyncHandler(async (req, res) => {
+  const {_id} = req.params
+  let Therepist = await Therapist.findOne({_id})
+  res
+    .status(200)
+    .json(new ApiResponse(200, Therepist, "Therepist found Successfully!"));
+});
 // fetch current user
 const getCurrentUser = asyncHandler(async (req, res) => {
   console.log("user....------", req.user);
@@ -431,4 +437,5 @@ export {
   getCurrentUser,
   updateTherapist,
   updateAvatar,
+  getTherepistById
 };

@@ -21,6 +21,7 @@ import {
 
 import sessionRouter from "./session.routes.js";
 import { userEmailVerify } from "../../controllers/otpController.js";
+import { getTherepistById } from "../../controllers/admin/TherepistController.js";
 
 const userRoutes = Router();
 userRoutes.post("/register",upload.single('profileImage'),validateRegister,  register);
@@ -29,6 +30,7 @@ userRoutes.post("/refreshToken", verifyJwtToken, refreshToken);
 userRoutes.patch("/update-avatar", verifyJwtToken, upload.single('profileImage'),updateAvatar);
 userRoutes.use("/specialization", verifyJwtToken, speclizationRoute);
 userRoutes.use("/feedback", feedbackRoute);
+userRoutes.get("/get-therapist/:_id",getTherepistById)
 
 //courese enrollment route
 userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);

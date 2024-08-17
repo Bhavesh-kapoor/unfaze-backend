@@ -13,10 +13,9 @@ import categoryRouter from "./blogCategory.route.js";
 
 const authroutes = Router();
 authroutes.post("/login", adminlogin);
-authroutes.post("/register", verifyJwtToken, register);
 authroutes.post("/refreshToken", verifyJwtToken, refreshToken);
 authroutes.use("/specialization", verifyJwtToken, speclizationRoute);
-authroutes.use("/therapist", verifyJwtToken, therepistRouter);
+authroutes.use("/therapist", therepistRouter);
 authroutes.use("/feedback", feedbackRoute);
 authroutes.use("/blogs", verifyJwtToken, blogsrouter);
 authroutes.use("/category", verifyJwtToken, categoryRouter);
