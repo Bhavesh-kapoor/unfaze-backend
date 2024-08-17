@@ -128,7 +128,7 @@ const register = asyncHandler(async (req, res) => {
       );
   }
 
-  const createUser = await User.create({
+  const newUser = await User.create({
     email,
     firstName,
     lastName,
@@ -137,9 +137,23 @@ const register = asyncHandler(async (req, res) => {
     gender,
     profileImage,
   });
+
+  newUser.password = undefined;
+  newUser.refreshToken = undefined;
+  let { accessToken, refreshToken } = await createAccessOrRefreshToken(
+    newUser._id
+  );
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
   return res
     .status(200)
-    .json(new ApiResponse(200, createUser, "User created successfully"));
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(new ApiResponse(200,{ accessToken: accessToken,
+      refreshToken: refreshToken,user:newUser}, "User created successfully"));
 });
 const updateProfile = asyncHandler(async (req, res) => {
   const { email, firstName, lastName, password, mobile, gender } = req.body;
@@ -174,20 +188,24 @@ const updateProfile = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, createUser, "User created successfully"));
 });
-const updateAvatar =asyncHandler(async(req,res)=>{
+const updateAvatar = asyncHandler(async (req, res) => {
   const user_id = req.user?._id;
-  if(!req.file){
-  return  res.status(404).json(new ApiError(404),"", " please select an image!")
+  if (!req.file) {
+    return res
+      .status(404)
+      .json(new ApiError(404), "", " please select an image!");
   }
-const currentUser = await User.findOne({_id:user_id})
-if(!currentUser){
-  return res.status(404).send(new ApiError(404,"","Invalid User!"))
-}
+  const currentUser = await User.findOne({ _id: user_id });
+  if (!currentUser) {
+    return res.status(404).send(new ApiError(404, "", "Invalid User!"));
+  }
   let profileImage = req.file ? req.file.path : "";
-  currentUser.profileImage=profileImage
+  currentUser.profileImage = profileImage;
   await currentUser.save();
-  res.status(200).json(new ApiResponse(200,"", "profile image uploaded successfully!"))
-})
+  res
+    .status(200)
+    .json(new ApiResponse(200, "", "profile image uploaded successfully!"));
+});
 
 const refreshToken = asyncHandler(async (req, res) => {
   const incommingRefreshToken =
@@ -229,4 +247,11 @@ const refreshToken = asyncHandler(async (req, res) => {
     );
 });
 
-export { adminlogin, userlogin, register, refreshToken, validateRegister,updateAvatar };
+export {
+  adminlogin,
+  userlogin,
+  register,
+  refreshToken,
+  validateRegister,
+  updateAvatar,
+};
