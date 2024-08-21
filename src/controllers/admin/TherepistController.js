@@ -31,7 +31,6 @@ const register = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiError(400, "Validation Error", errors.array()));
   }
-  console.log("chekk");
   const {
     firstName,
     lastName,

@@ -11,10 +11,17 @@ const validateBlogs = [
     check('categoryId', "CategoryId  is required!").notEmpty(),
 ]
 
-
 const getAllBlogs = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, sort = 'createdAt', order = 'desc', title, category } = req.query;
+    const matchConditions = {};
+    if (title) {
+        matchConditions.title = { $regex: title, $options: 'i' }; 
+    }
 
     const aggregatePipeline = [
+        {
+            $match: matchConditions 
+        },
         {
             $lookup: {
                 from: 'categories',
@@ -24,19 +31,58 @@ const getAllBlogs = asyncHandler(async (req, res) => {
             }
         },
         {
+            $unwind: { path: "$category", preserveNullAndEmptyArrays: true }
+        },
+        {
+            $addFields: {
+              category: "$category.categoryname",
+            },
+        },
+        {
             $project: {
                 title: 1,
                 description: 1,
                 blogImage: 1,
-                createdAt  : 1,
-                "category.categoryname": 1
+                createdAt: 1,
+                category: 1
             }
+        },
+        {
+            $sort: { [sort]: order === 'desc' ? -1 : 1 }
+        },
+        {
+            $skip: (page - 1) * limit
+        },
+        {
+            $limit: parseInt(limit)
         }
-    ]
-    const getall = await Blog.aggregate(aggregatePipeline);
-    res.status(200).json(new ApiResponse(200, getall, "Blog Data Fetch Successfully!"));
+    ];
 
+    // Apply category filtering if the category is provided
+    if (category) {
+        aggregatePipeline.splice(4, 0, {
+            $match: { "category": { $regex: category, $options: 'i' } }
+        });
+    }
+
+    try {
+        const getall = await Blog.aggregate(aggregatePipeline);
+        const totalBlogs = await Blog.countDocuments(matchConditions); // Count total blogs that match the conditions
+        const pagination = {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalBlogs / limit),
+            totalBlogs,
+            itemsPerPage: parseInt(limit),
+        };
+
+        res.status(200).json(new ApiResponse(200, { blogs: getall, pagination }, "Blog Data Fetch Successfully!"));
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
+
+
+
 
 const createBlog = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -45,10 +91,8 @@ const createBlog = asyncHandler(async (req, res) => {
     } else {
         const { title, description, categoryId } = req.body;
         const BlogData = { title, description, categoryId };
-        BlogData.userId = req.user._id;
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json(new ApiError(400, "", "Invalid User id"));
-        } else if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+       
+        if (!mongoose.Types.ObjectId.isValid(categoryId)) {
             return res.status(400).json(new ApiError(400, "", "Invalid Category id"));
         } else {
             if (req.file && req.file.path) {

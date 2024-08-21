@@ -10,6 +10,7 @@ import therepistRouter from "./therepist.auth.js";
 import feedbackRoute from "../feeback.route.js";
 import blogsrouter from "./blogs.route.js";
 import categoryRouter from "./blogCategory.route.js";
+import seoRouter from "./seo.route.js"
 
 const authroutes = Router();
 authroutes.post("/login", adminlogin);
@@ -19,5 +20,7 @@ authroutes.use("/therapist", therepistRouter);
 authroutes.use("/feedback", feedbackRoute);
 authroutes.use("/blogs", verifyJwtToken, blogsrouter);
 authroutes.use("/category", verifyJwtToken, categoryRouter);
+authroutes.use("/seo", verifyJwtToken, seoRouter);
+
 
 export default authroutes;

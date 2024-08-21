@@ -156,38 +156,32 @@ const register = asyncHandler(async (req, res) => {
       refreshToken: refreshToken,user:newUser}, "User created successfully"));
 });
 const updateProfile = asyncHandler(async (req, res) => {
-  const { email, firstName, lastName, password, mobile, gender } = req.body;
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
+  const { firstName, lastName, mobile, gender } = req.body;
+  const userId = req.user?._id;
+
+  const user = await User.findById(userId);
+  if (!user) {
     return res
-      .status(400)
-      .json(new ApiError(400, "Validation Error", errors.array()));
+      .status(404)
+      .json(new ApiError(404,"", "User not found"));
   }
 
-  let profileImage = req.file ? req.file.path : "";
-  console.log("image", profileImage);
-  const exist = await User.findOne({ email });
-  if (exist) {
-    return res
-      .status(409)
-      .json(
-        new ApiError(409, "", "User with username or email is already exsist")
-      );
+  user.firstName = firstName || user.firstName;
+  user.lastName = lastName || user.lastName;
+  user.mobile = mobile || user.mobile;
+  user.gender = gender || user.gender;
+
+  if (req.file) {
+    user.profileImage = req.file.path;
   }
 
-  const createUser = await User.create({
-    email,
-    firstName,
-    lastName,
-    password,
-    mobile,
-    gender,
-    profileImage,
-  });
+  const updatedUser = await user.save();
+  
   return res
     .status(200)
-    .json(new ApiResponse(200, createUser, "User created successfully"));
+    .json(new ApiResponse(200, updatedUser, "User updated successfully"));
 });
+
 const updateAvatar = asyncHandler(async (req, res) => {
   const user_id = req.user?._id;
   if (!req.file) {

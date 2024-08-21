@@ -1,33 +1,49 @@
-import mongoose, { Schema, Types } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import slugify from "slugify";
 
 const BlogSchema = new mongoose.Schema(
-    {
+  {
     title: {
-        type: String,
-        required: true,
-        trim: true
+      type: String,
+      required: true,
+      trim: true,
     },
-    userId: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
+    slug: {
+      type: String,
+      trim: true,
+      unique: true,
     },
     description: {
-        type: String,
-        required: true,
-        trim: true
+      type: String,
+      required: true,
+      trim: true,
     },
     blogImage: {
-        type: String,
-        required: true,
-        trim: true
-    }
-    ,
+      type: String,
+      trim: true,
+    },
     categoryId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Category'
-    }
-}, { timestamps: true });
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+    },
+    is_active: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
 
- const   Blog =  mongoose.model('blog',BlogSchema);
 
- export  default Blog;
+BlogSchema.pre('save', function (next) {
+  
+  if (this.isNew) {
+   
+    this.slug = slugify(this.title, { lower: true, strict: true });
+  }
+  next();
+});
+
+const Blog = mongoose.model("Blog", BlogSchema);
+
+export default Blog;
