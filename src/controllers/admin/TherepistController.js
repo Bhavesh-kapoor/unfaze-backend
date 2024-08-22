@@ -267,11 +267,11 @@ const therapistList = asyncHandler(async (req, res) => {
   const { 
     page = 1, 
     limit = 10, 
-    date, 
     sortBy = 'createdAt', 
     order = 'desc', 
     email, 
-    mobile 
+    mobile,
+    specialization // Query parameter for specialization name
   } = req.query;
 
   // Pagination
@@ -279,40 +279,97 @@ const therapistList = asyncHandler(async (req, res) => {
   const limitNumber = parseInt(limit);
   const skip = (pageNumber - 1) * limitNumber;
 
-  let filter = {};
+  // Build aggregation pipeline
+  let pipeline = [
+    {
+      $lookup: {
+        from: 'specializations', // Name of the collection to join
+        localField: 'specialization',
+        foreignField: '_id',
+        as: 'specializationDetails'
+      }
+    },
+    {
+      $match: {
+        // Initial empty match
+      }
+    },
+    {
+      $project: {
+        password: 0,
+        refreshToken: 0
+      }
+    },
+    {
+      $sort: {
+        [sortBy]: order === 'desc' ? -1 : 1
+      }
+    },
+    {
+      $skip: skip
+    },
+    {
+      $limit: limitNumber
+    }
+  ];
+
+  // Add filters to the match stage
   if (email) {
-    filter.email = { $regex: email, $options: 'i' };
+    pipeline[1].$match.email = { $regex: email, $options: 'i' };
   }
 
   if (mobile) {
-    filter.mobile = mobile;
+    pipeline[1].$match.mobile = mobile;
+  }
+console.log()
+  if (specialization) {
+    pipeline[1].$match['specializationDetails.name'] = { $regex: specialization, $options: 'i' };
   }
 
-  if (date) {
-    filter.createdAt = {
-      $gte: new Date(date),
-      $lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
-    };
+  const therapistListData = await Therapist.aggregate(pipeline);
+
+
+  const countPipeline = [
+    {
+      $lookup: {
+        from: 'specializations',
+        localField: 'specialization',
+        foreignField: '_id',
+        as: 'specializationDetails'
+      }
+    },
+    {
+      $match: {}
+    },
+    {
+      $project: {
+        password: 0,
+        refreshToken: 0
+      }
+    },
+    {
+      $match: pipeline[1].$match 
+    },
+    {
+      $count: 'totalCount'
+    }
+  ];
+
+  const countResult = await Therapist.aggregate(countPipeline);
+  const totalTherapists = countResult.length > 0 ? countResult[0].totalCount : 0;
+
+  if (!therapistListData.length) {
+    return res.status(404).json(new ApiError(404, "", "No therapists found!"));
   }
-
-  const therapistListData = await Therapist.find(filter).select("-password -refreshToken")
-    .sort({ [sortBy]: order })
-    .skip(skip)
-    .limit(limitNumber);
-
-  if (!therapistListData) {
-    return res.status(400).json(new ApiError(404, "", "Therapist list fetching failed!"));
-  }
-
-  const totalTherapists = await Therapist.countDocuments(filter);
 
   return res.status(200).json(new ApiResponse(200, {
     totalTherapists,
     totalPages: Math.ceil(totalTherapists / limitNumber),
     currentPage: pageNumber,
     therapists: therapistListData
-  }, "User list fetched successfully"));
+  }, "Therapist list fetched successfully"));
 });
+
 const getTherepistById = asyncHandler(async (req, res) => {
   const {_id} = req.params
   let Therepist = await Therapist.findOne({_id})
@@ -322,7 +379,7 @@ const getTherepistById = asyncHandler(async (req, res) => {
 });
 // fetch current user
 const getCurrentUser = asyncHandler(async (req, res) => {
-  console.log("user....------", req.user);
+
   return res
     .status(200)
     .json(new ApiResponse(200, req.user, "User fetched successfully"));

@@ -10,7 +10,7 @@ import authTherapist from "./routes/auth/authTherapist.js";
 import authUser from "./routes/auth/authUser.js";
 import userRoutes from "./routes/user/userRoutes.js";
 import emailRoutes from "./routes/emailOtpRoute.js"
-
+import blogsrouter from "./routes/admin/blogs.route.js";
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -40,5 +40,6 @@ app.use("/auth", authUser);
 app.use("/api/v1/admin", authroutes);
 app.use("/api/v1/therapist", therapistRoutes);
 app.use("/api/v1/user", userRoutes);
-app.use("/api/v1/email",emailRoutes)
+app.use("/api/v1/email",emailRoutes);
+app.use("/api/v1/blogs",blogsrouter);
 export default app;

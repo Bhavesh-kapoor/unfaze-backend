@@ -1,12 +1,14 @@
 import mongoose from "mongoose";
 
 const CategorySchema = new mongoose.Schema({
-    categoryname: {
+    name: {
         type: String,
         trim: true,
-        required: true
+        required: true,
+        maxlength: 15, 
+        minlength: 2   
     }
-},);
+},{timestamps:true});
 
 const Category = mongoose.model('Category', CategorySchema);
 

@@ -1,10 +1,10 @@
-import { Therapist } from "../../models/therapistModel.js";
+
 import { User } from "../../models/userModel.js";
 import ApiError from "../../utils/ApiError.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 
-const verifyJwtToken = asyncHandler(async (req, res, next) => {
+const isAdmin = asyncHandler(async (req, res, next) => {
   try {
     let token =
       req.cookies?.accesstoken ||
@@ -18,22 +18,13 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
     if (!verified) {
       return res.status(409).json(new ApiError(409, "", "Invalid Token"));
     }
-    // Find user by id
+ 
     let user = await User.findById(verified._id).select(
       "-password -refreshToken"
     );
-    if (!user) {
-      // If user not found, check for therapist
-      user = await Therapist.findById(verified._id).select(
-        "-password -refreshToken"
-      );
-      if (!user) {
-        return res
-          .status(422)
-          .json(new ApiError(422, "", "User or Therapist does not exist!"));
-      }
+    if(user.role !== "admin"){
+        return res.status(501).json(new ApiError(501,"","user is not an admin!"))
     }
-
     req.user = user;
     next();
   } catch (error) {
@@ -41,4 +32,4 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
   }
 });
 
-export default verifyJwtToken;
+export default isAdmin;

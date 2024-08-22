@@ -66,6 +66,11 @@ const adminlogin = asyncHandler(async (req, res) => {
       })
     );
 });
+const getCurrentUser=asyncHandler(async(req,res)=>{
+  return res
+  .status(200)
+  .json(new ApiResponse(200, req.user, "User fetched successfully"));
+})
 
 const userlogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -300,5 +305,6 @@ export {
   refreshToken,
   validateRegister,
   updateAvatar,
-  allUser
+  allUser,
+  getCurrentUser
 };
