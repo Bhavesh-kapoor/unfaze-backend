@@ -25,6 +25,7 @@ const handlePaymentSuccess = asyncHandler(async (req, res) => {
   const course = await Course.findOne({ _id: course_id }).populate(
     "therapist_id"
   );
+  console.log("course_____________", course)
   if (paymentDetails.code === "PAYMENT_SUCCESS") {
     const newEnrollment = new EnrolledCourse({
       course_id: course_id,

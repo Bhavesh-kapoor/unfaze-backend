@@ -264,122 +264,123 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
 });
 
 const therapistList = asyncHandler(async (req, res) => {
-  const { 
-    page = 1, 
-    limit = 10, 
-    sortBy = 'createdAt', 
-    order = 'desc', 
-    email, 
+  const {
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    order = "desc",
+    email,
     mobile,
-    specialization // Query parameter for specialization name
+    specialization,
   } = req.query;
 
-  // Pagination
+  /*---------------------------- Pagination ------------------------------*/
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
   const skip = (pageNumber - 1) * limitNumber;
+  const matchConditions = [];
+  let specializationQuery = {}
+  let matchQuery = {}
+  if (specialization) {
+    matchQuery.specializationDetails = { $gt: { $size: 0 } };
+    matchConditions.push({
+      $addFields: {
+        specializationDetails: {
+          $filter: {
+            input: "$specializationDetails",
+            as: "detail",
+            cond: {
+              $regexMatch: {
+                input: "$$detail.name",
+                regex: specialization,
+                options: "i",
+              },
+            },
+          },
+        },
+      },
+    })
+    specializationQuery = {
+      name: {
+        $regex: specialization,
+        $options: "i",
+      }
+    };
+  }
 
+  // Add filters to the match stage
+  if (email) matchQuery.email = { $regex: email, $options: "i" };
+  if (mobile) matchQuery.mobile = mobile;
+
+  matchConditions.push({ $match: { ...matchQuery } })
   // Build aggregation pipeline
   let pipeline = [
     {
       $lookup: {
-        from: 'specializations', // Name of the collection to join
-        localField: 'specialization',
-        foreignField: '_id',
-        as: 'specializationDetails'
-      }
+        from: "specializations",
+        localField: "specialization",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $match: { ...specializationQuery },
+          },
+        ],
+        as: "specializationDetails",
+      },
     },
-    {
-      $match: {
-        // Initial empty match
-      }
-    },
-    {
-      $project: {
-        password: 0,
-        refreshToken: 0
-      }
-    },
-    {
-      $sort: {
-        [sortBy]: order === 'desc' ? -1 : 1
-      }
-    },
-    {
-      $skip: skip
-    },
-    {
-      $limit: limitNumber
-    }
   ];
 
-  // Add filters to the match stage
-  if (email) {
-    pipeline[1].$match.email = { $regex: email, $options: 'i' };
-  }
-
-  if (mobile) {
-    pipeline[1].$match.mobile = mobile;
-  }
-console.log()
-  if (specialization) {
-    pipeline[1].$match['specializationDetails.name'] = { $regex: specialization, $options: 'i' };
-  }
-
-  const therapistListData = await Therapist.aggregate(pipeline);
-
-
-  const countPipeline = [
-    {
-      $lookup: {
-        from: 'specializations',
-        localField: 'specialization',
-        foreignField: '_id',
-        as: 'specializationDetails'
-      }
+  const therapistListData = await Therapist.aggregate([...pipeline, {
+    $sort: {
+      [sortBy]: order === "desc" ? -1 : 1,
     },
-    {
-      $match: {}
+  },
+  {
+    $skip: skip,
+  },
+  {
+    $limit: limitNumber,
+  },
+  {
+    $project: {
+      password: 0,
+      refreshToken: 0,
     },
-    {
-      $project: {
-        password: 0,
-        refreshToken: 0
-      }
-    },
-    {
-      $match: pipeline[1].$match 
-    },
-    {
-      $count: 'totalCount'
-    }
-  ];
-
-  const countResult = await Therapist.aggregate(countPipeline);
-  const totalTherapists = countResult.length > 0 ? countResult[0].totalCount : 0;
+  }]);
+  pipeline.push({
+    $count: "totalCount",
+  });
+  const countResult = await Therapist.aggregate(pipeline);
+  const totalTherapists =
+    countResult.length > 0 ? countResult[0].totalCount : 0;
 
   if (!therapistListData.length) {
     return res.status(404).json(new ApiError(404, "", "No therapists found!"));
   }
 
-  return res.status(200).json(new ApiResponse(200, {
-    totalTherapists,
-    totalPages: Math.ceil(totalTherapists / limitNumber),
-    currentPage: pageNumber,
-    therapists: therapistListData
-  }, "Therapist list fetched successfully"));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        totalTherapists,
+        totalPages: Math.ceil(totalTherapists / limitNumber),
+        currentPage: pageNumber,
+        therapists: therapistListData,
+      },
+      "Therapist list fetched successfully"
+    )
+  );
 });
 
 const getTherepistById = asyncHandler(async (req, res) => {
-  const {_id} = req.params
-  let Therepist = await Therapist.findOne({_id})
+  const { _id } = req.params;
+  let Therepist = await Therapist.findOne({ _id });
   res
     .status(200)
     .json(new ApiResponse(200, Therepist, "Therepist found Successfully!"));
 });
 // fetch current user
 const getCurrentUser = asyncHandler(async (req, res) => {
-
   return res
     .status(200)
     .json(new ApiResponse(200, req.user, "User fetched successfully"));
@@ -537,5 +538,5 @@ export {
   getCurrentUser,
   updateTherapist,
   updateAvatar,
-  getTherepistById
+  getTherepistById,
 };
