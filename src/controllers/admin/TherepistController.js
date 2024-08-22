@@ -263,11 +263,55 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
     );
 });
 
-const getAllTherepist = asyncHandler(async (req, res) => {
-  let allTherepist = await Therapist.find().sort({ _id: -1 }).lean();
-  res
-    .status(200)
-    .json(new ApiResponse(200, allTherepist, "Therepist found Successfully!"));
+const therapistList = asyncHandler(async (req, res) => {
+  const { 
+    page = 1, 
+    limit = 10, 
+    date, 
+    sortBy = 'createdAt', 
+    order = 'desc', 
+    email, 
+    mobile 
+  } = req.query;
+
+  // Pagination
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  let filter = {};
+  if (email) {
+    filter.email = { $regex: email, $options: 'i' };
+  }
+
+  if (mobile) {
+    filter.mobile = mobile;
+  }
+
+  if (date) {
+    filter.createdAt = {
+      $gte: new Date(date),
+      $lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
+    };
+  }
+
+  const therapistListData = await Therapist.find(filter).select("-password -refreshToken")
+    .sort({ [sortBy]: order })
+    .skip(skip)
+    .limit(limitNumber);
+
+  if (!therapistListData) {
+    return res.status(400).json(new ApiError(404, "", "Therapist list fetching failed!"));
+  }
+
+  const totalTherapists = await Therapist.countDocuments(filter);
+
+  return res.status(200).json(new ApiResponse(200, {
+    totalTherapists,
+    totalPages: Math.ceil(totalTherapists / limitNumber),
+    currentPage: pageNumber,
+    therapists: therapistListData
+  }, "User list fetched successfully"));
 });
 const getTherepistById = asyncHandler(async (req, res) => {
   const {_id} = req.params
@@ -431,7 +475,7 @@ export {
   login,
   validateRegister,
   activateOrDeactivate,
-  getAllTherepist,
+  therapistList,
   logout,
   getCurrentUser,
   updateTherapist,

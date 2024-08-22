@@ -241,6 +241,58 @@ const refreshToken = asyncHandler(async (req, res) => {
     );
 });
 
+const allUser = asyncHandler(async (req, res) => {
+  const { 
+    page = 1, 
+    limit = 10, 
+    date, 
+    sortBy = 'createdAt', 
+    order = 'desc', 
+    email, 
+    mobile 
+  } = req.query;
+
+  // Pagination
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  let filter = {};
+  if (email) {
+    filter.email = { $regex: email, $options: 'i' };
+  }
+
+  if (mobile) {
+    filter.mobile = mobile;
+  }
+
+  if (date) {
+    filter.createdAt = {
+      $gte: new Date(date),
+      $lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
+    };
+  }
+
+  const userList = await User.find(filter).select("-password -refreshToken")
+    .sort({ [sortBy]: order })
+    .skip(skip)
+    .limit(limitNumber);
+
+  if (!userList) {
+    return res.status(400).json(new ApiError(404, "", "User list fetching failed!"));
+  }
+
+  const totalUsers = await User.countDocuments(filter);
+
+  return res.status(200).json(new ApiResponse(200, {
+    totalUsers,
+    totalPages: Math.ceil(totalUsers / limitNumber),
+    currentPage: pageNumber,
+    users: userList
+  }, "User list fetched successfully"));
+});
+
+
 export {
   adminlogin,
   userlogin,
@@ -248,4 +300,5 @@ export {
   refreshToken,
   validateRegister,
   updateAvatar,
+  allUser
 };

@@ -28,36 +28,6 @@ router.get(
     (req, res) => {
       res.redirect(`http://localhost:3000?token=${req.user.accessToken}`);
     
-    // try {
-    //   const { user } = req;
-    //   const { accessToken, refreshToken } = await createAccessOrRefreshToken(
-    //     user._id
-    //   );
-    //   const options = {
-    //     httpOnly: true,
-    //     secure: true,
-    //   };
-    //   const loggedInUser = await User.findById(user._id).select(
-    //     "-password -refreshToken"
-    //   );
-
-    //   res
-    //     .status(200)
-    //     .cookie("accessToken", accessToken, options)
-    //     .cookie("refreshToken", refreshToken, options)
-    //     .json(
-    //       new ApiResponse(200, {
-    //         accessToken: accessToken,
-    //         refreshToken: refreshToken,
-    //         user: loggedInUser,
-    //       })
-    //     );
-    // } catch (error) {
-    //   throw new ApiError(
-    //     501,
-    //     "Something went wrong while authenticating via google"
-    //   );
-    // }
   }
 );
 
@@ -75,37 +45,7 @@ router.get(
     (req, res) => {
       res.redirect(`http://localhost:3000?token=${req.user.accessToken}`);
     
-    // try {
-    //   const { user } = req;
-    //   console.log("req----", req);
-    //   let { accessToken, refreshToken } = await createAccessOrRefreshToken(
-    //     user._id
-    //   );
-    //   const options = {
-    //     httpOnly: true,
-    //     secure: true,
-    //   };
-    //   const loggedInUser = await User.findById(user._id).select(
-    //     "-password -refreshToken"
-    //   );
-
-    //   res
-    //     .status(200)
-    //     .cookie("accessToken", accessToken, options)
-    //     .cookie("refreshToken", refreshToken, options)
-    //     .json(
-    //       new ApiResponse(200, {
-    //         accessToken: accessToken,
-    //         refreshToken: refreshToken,
-    //         user: loggedInUser,
-    //       })
-    //     );
-    // } catch (error) {
-    //   throw new ApiError(
-    //     501,
-    //     "Something went wrong while authenticating via facebook"
-    //   );
-    // }
+   
   }
 );
 export default router;

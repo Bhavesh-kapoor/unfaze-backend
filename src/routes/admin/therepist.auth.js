@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   activateOrDeactivate,
-  getAllTherepist,
+  therapistList,
   register,
   validateRegister,
   login,
@@ -36,7 +36,7 @@ therapistAuth.post(
   verifyJwtToken,
   activateOrDeactivate
 );
-therapistAuth.get("/all", verifyJwtToken, getAllTherepist);
+therapistAuth.get("/therapists-list", therapistList);
 therapistAuth.get("/get-therapist/:_id", verifyJwtToken,getTherepistById);
 
 export default therapistAuth;

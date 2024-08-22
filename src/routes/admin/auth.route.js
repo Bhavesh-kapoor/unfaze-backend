@@ -11,12 +11,14 @@ import feedbackRoute from "../feeback.route.js";
 import blogsrouter from "./blogs.route.js";
 import categoryRouter from "./blogCategory.route.js";
 import seoRouter from "./seo.route.js"
+import userRoutes from "../admin/user.route.js";
 
 const authroutes = Router();
 authroutes.post("/login", adminlogin);
 authroutes.post("/refreshToken", verifyJwtToken, refreshToken);
 authroutes.use("/specialization", verifyJwtToken, speclizationRoute);
 authroutes.use("/therapist", therepistRouter);
+authroutes.use("/user", userRoutes);
 authroutes.use("/feedback", feedbackRoute);
 authroutes.use("/blogs", verifyJwtToken, blogsrouter);
 authroutes.use("/category", verifyJwtToken, categoryRouter);
