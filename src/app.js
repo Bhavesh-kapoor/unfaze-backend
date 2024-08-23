@@ -42,4 +42,6 @@ app.use("/api/v1/therapist", therapistRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/email",emailRoutes);
 app.use("/api/v1/blogs",blogsrouter);
+
+
 export default app;
