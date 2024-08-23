@@ -5,8 +5,9 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../models/userModel.js";
 import { Course } from "../models/courseModel.js";
 import { sendNotification } from "./notificationController.js";
-import transporter from "../config/nodeMailer.js";
-import { Therapist } from "../models/therapistModel.js";
+import {transporter} from "../config/nodeMailer.js";
+import { otpContent } from "../static/emailcontent.js";
+
 
 const getEnrolledCourseList = asyncHandler(async (req, res) => {
   const user_id = req.user?._id;

@@ -40,16 +40,16 @@ const BankSchema = new mongoose.Schema({
 const TherapistSchema = new mongoose.Schema({
   googleId: String,
   facebookId: String,
-  profileImage:{
-    type:String,
-    default:""
+  profileImage: {
+    type: String,
+    default: ""
   },
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  is_email_verified:{type:Boolean,default:false},
+  is_email_verified: { type: Boolean, default: false },
   mobile: { type: String, trim: true },
-  is_mobile_verified:{type:Boolean,default:false},
+  is_mobile_verified: { type: Boolean, default: false },
   gender: { type: String, trim: true, enum: ['male', 'female', 'non-binary', 'other'] },
   password: String,
   refreshToken: String,
@@ -70,7 +70,7 @@ const TherapistSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// Middleware to hash password before saving
+
 TherapistSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);
@@ -79,8 +79,6 @@ TherapistSchema.pre('save', async function (next) {
 
 // Method to compare password
 TherapistSchema.methods.isPasswordCorrect = async function (password) {
-  console.log("Plain Text Password:", password);
-    console.log("Hashed Password:", this.password);
   return await bcrypt.compare(password, this.password);
 };
 
@@ -102,4 +100,4 @@ TherapistSchema.methods.generateRefreshToken = function () {
   );
 };
 
-export const Therapist = mongoose.model("Therapist",TherapistSchema)
+export const Therapist = mongoose.model("Therapist", TherapistSchema)

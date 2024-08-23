@@ -1,18 +1,19 @@
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import asyncHandler from "../utils/asyncHandler.js";
 import otpGenerator from "otp-generator";
 import { OTP } from "../models/otpModel.js";
-import { Resend } from "resend";
 import { User } from "../models/userModel.js";
 import { Therapist } from "../models/therapistModel.js";
 import dotenv from "dotenv";
-import { response } from "express";
+import {transporter,mailOptions} from "../config/nodeMailer.js";
+import { otpContent } from "../static/emailcontent.js";
 dotenv.config();
+
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 // resend config
-const resend = new Resend(RESEND_API_KEY);
 
 async function verifyOTP(email, otp) {
   const otpDoc = await OTP.findOne({ email, otp });
@@ -43,85 +44,22 @@ const createAndStoreOTP = async (email) => {
 const sendOtp = async (req, res) => {
   const { email } = req.body;
   const otp = await createAndStoreOTP(email);
-  const htmlContent = `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-              <h2 style="color: #333;">Hello,</h2>
-              <p>Thank you for using Unfaze. Your OTP code is:</p>
-              <h1 style="color: #007bff;">${otp}</h1>
-              <p>This OTP code is valid for 5 minutes. Please do not share this code with anyone.</p>
-              <p>If you did not request this OTP, please ignore this email.</p>
-              <br>
-              <p>Best regards,</p>
-              <p>The Unfaze Team</p>
-          </div>
-      `;
-
+  const htmlContent = otpContent(otp)
+  const options = mailOptions(email, "Email verification code - Unfaze", htmlContent)
   try {
-    const data = await resend.emails.send({
-      from: "Unfaze <onboarding@resend.dev>",
-      to: email,
-      subject: " Email verification code - Unfaze",
-      html: htmlContent,
-    });
-    if (!data) {
-      return res
-        .status(500)
-        .json(new ApiError(500, "", "something went wrong in sending otp"));
-    }
-    res
-      .status(201)
-      .json(
-        new ApiResponse(
-          201,
-          null,
-          "Otp sent successfully! please check your email."
-        )
-      );
+    transporter.sendMail(options, (error, info) => {
+      if (error) {
+          console.log(error);
+      }
+      console.log('Otp sent: %s', info.messageId);
+      
+      return res.status(200).json(new ApiResponse(200,info.messageId,"otp has been send successfully please check your Email!"))
+  })
   } catch (error) {
-    res.status(400).json(new ApiError(500, "", "something went wrong"));
+    return res.status(500).json(new ApiError(500,"","something went wrong while sending the otp!"))
   }
+  
 };
-const sendMail = async (req, res) => {
-  const {name, email,message } = req.body;
-  const htmlContent = `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-              <h2 style="color: #333;">Hello, admin</h2>
-              <h1 style="color: #007bff;">${name}</h1>
-              <p>Email of the user is ${email}</p>
-              <p>message:</p>
-              <p>${message}</p>
-              <br>
-              <p>Best regards,</p>
-              <p>The Unfaze Team</p>
-          </div>
-      `;
-
-  try {
-    const data = await resend.emails.send({
-      from: "Unfaze <onboarding@resend.dev>",
-      to: process.env.ADMIN_EMAIL,
-      subject: "Mail from Unfaze Contact us",
-      html: htmlContent,
-    });
-    if (!data) {
-      return res
-        .status(500)
-        .json(new ApiError(500, "", "something went wrong in sending mail"));
-    }
-    res
-      .status(201)
-      .json(
-        new ApiResponse(
-          201,
-          null,
-          "we got your mail, we will reach you shortly!"
-        )
-      );
-  } catch (error) {
-    res.status(400).json(new ApiError(500, "", "something went wrong"));
-  }
-};
-
 // user email verify
 const userEmailVerify = async (req, res) => {
   const { email, otp } = req.body;
@@ -167,4 +105,27 @@ const therapistEmailVerify = async (req, res) => {
     res.status(400).json(new ApiError(400, null, "invalid otp"));
   }
 };
-export { sendOtp, userEmailVerify, therapistEmailVerify,sendMail };
+
+const gmailSend = asyncHandler(async(req,res)=>{
+  
+  const {name, email,message } = req.body;
+  const htmlContent =contactUsContent(name, email,message) ;
+      const options =mailOptions(email,"Query raised from unfazed",htmlContent)
+      // const sendMail=async()=>{
+      //   const mail = await transporter.sendMail(mailOptions)
+      //   console.log("mailsend",mail)
+      //   res.status(200).json(new ApiResponse(200,mail,"mail send success"))
+      // }
+      // sendMail().catch(console.error)
+      transporter.sendMail(options, (error, info) => {
+        if (error) {
+          console.log(error);
+            return res.status(500).json(new ApiError(500,"","Failed to send email!"))
+        }
+        console.log('Message sent: %s', info);
+        res.status(200).json(new ApiResponse(200,info,"message sent successfully!"))
+    })
+
+
+})
+export { sendOtp, userEmailVerify, therapistEmailVerify};

@@ -82,7 +82,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(
           200,
-          { blogs: getall, pagination },
+          { result: getall, pagination },
           "Blog Data Fetch Successfully!"
         )
       );
@@ -123,7 +123,6 @@ const updateBlog = asyncHandler(async (req, res) => {
   }
   const blogId = req.params._id;
   const { title, description, categoryId } = req.body;
-console.log(req.body)
   if (!mongoose.Types.ObjectId.isValid(categoryId)) {
     return res.status(400).json(new ApiError(400, "", "Invalid Category id"));
   }

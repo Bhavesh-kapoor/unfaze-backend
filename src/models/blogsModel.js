@@ -36,9 +36,9 @@ const BlogSchema = new mongoose.Schema(
 
 
 BlogSchema.pre('save', function (next) {
-  
+
   if (this.isNew) {
-   
+
     this.slug = slugify(this.title, { lower: true, strict: true });
   }
   next();

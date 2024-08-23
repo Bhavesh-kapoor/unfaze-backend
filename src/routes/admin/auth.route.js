@@ -28,4 +28,5 @@ authroutes.use("/blog-category", verifyJwtToken, categoryRouter);
 authroutes.use("/seo", verifyJwtToken, seoRouter);
 
 
+
 export default authroutes;

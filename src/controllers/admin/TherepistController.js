@@ -153,7 +153,6 @@ const register = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
   const { email, mobile, password } = req.body;
-  console.log("check---------------", email, password);
   if (!email && !mobile) {
     return res
       .status(409)
@@ -161,12 +160,10 @@ const login = asyncHandler(async (req, res) => {
   }
 
   let existUser = await Therapist.findOne({ $or: [{ email }, { mobile }] });
-  console.log("existUser-------", existUser);
   if (!existUser)
     return res.status(404).json(new ApiError(400, "", "user not found"));
 
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
-  console.log("isPasswordCorrect", isPasswordCorrect);
   if (!isPasswordCorrect)
     return res.status(401).json(new ApiError(401, "", "Invalid Credentials!"));
 

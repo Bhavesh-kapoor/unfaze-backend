@@ -87,7 +87,7 @@ const listSeoData = asyncHandler(async (req, res) => {
       itemsPerPage: parseInt(limit),
     };
   
-    return res.status(200).json(new ApiResponse(200, { seoData, pagination }, "Seo data listed successfully!"));
+    return res.status(200).json(new ApiResponse(200, { result:seoData, pagination }, "Seo data listed successfully!"));
   });
   
   //get Seodata by id 
