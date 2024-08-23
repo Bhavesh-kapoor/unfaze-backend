@@ -13,6 +13,7 @@ import blogsrouter from "./blogs.route.js";
 import categoryRouter from "./blogCategory.route.js";
 import seoRouter from "./seo.route.js"
 import userRoutes from "../admin/user.route.js";
+import faqrouter from "./faq.route.js";
 
 const authroutes = Router();
 authroutes.post("/login", adminlogin);
@@ -26,6 +27,10 @@ authroutes.use("/feedback", feedbackRoute);
 authroutes.use("/blogs", verifyJwtToken, blogsrouter);
 authroutes.use("/blog-category", verifyJwtToken, categoryRouter);
 authroutes.use("/seo", verifyJwtToken, seoRouter);
+authroutes.use('/faq', verifyJwtToken , faqrouter);
+
+// faq routes
+
 
 
 
