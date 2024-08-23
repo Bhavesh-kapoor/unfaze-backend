@@ -3,9 +3,9 @@ import { createSeoData,updateSeoData,deleteSeoData,listSeoData,getSeoDataById,va
 const router = Router()
 
 router.post("/create",validateSeoData,createSeoData)
-router.patch("/update",updateSeoData)
-router.delete("/delete",deleteSeoData)
+router.put("/update/:_id",updateSeoData)
+router.delete("/delete/:_id",deleteSeoData)
 router.get("/list-seo-data",listSeoData)
-router.get("/list-seo-data",getSeoDataById)
+router.get("/seo-data/:_id",getSeoDataById)
 
 export default router

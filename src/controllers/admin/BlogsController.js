@@ -35,6 +35,11 @@ const getAllBlogs = asyncHandler(async (req, res) => {
         as: "category",
         localField: "categoryId",
         foreignField: "_id",
+        pipeline: [
+          {
+            $project: { name: 1 } 
+          }
+        ]
       },
     },
     {
@@ -42,16 +47,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        category: "$category.categoryname",
-      },
-    },
-    {
-      $project: {
-        title: 1,
-        description: 1,
-        blogImage: 1,
-        createdAt: 1,
-        category: 1,
+        category: "$category.name",
       },
     },
     {

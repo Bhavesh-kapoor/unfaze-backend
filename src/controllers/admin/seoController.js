@@ -38,15 +38,9 @@ res.status(200).json(new ApiResponse(200,savedSeo,"Seo Data has been created!...
 // update seo data
 
 const updateSeoData = asyncHandler(async(req,res)=>{
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res
-        .status(400)
-        .json(new ApiError(400, "Validation Error", errors.array()));
-    }
   const {title,keyword,descriptions,noIndex} = req.body
     const {_id} = req.params
-    const data = await Seo.find({_id});
+    const data = await Seo.findById(_id);
     if(!data){
         return res.status(404).json(new ApiError(404,"","Seo data not found!"))
     }
@@ -62,7 +56,8 @@ const updateSeoData = asyncHandler(async(req,res)=>{
 // delete Seo Data
 const deleteSeoData = asyncHandler(async(req,res)=>{
     const {_id} = req.params
-    const deletedData = await Seo.findByIdAndDelete({_id});
+    const seodata = await Seo.findById(_id);
+    const deletedData = await Seo.findByIdAndDelete(_id);
     if(!deletedData){
         return res.status(404).json(new ApiError(404,"","Seo data not found!"))
     }   

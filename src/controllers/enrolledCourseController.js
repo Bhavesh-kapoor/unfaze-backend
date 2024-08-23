@@ -10,14 +10,38 @@ import { Therapist } from "../models/therapistModel.js";
 
 const getEnrolledCourseList = asyncHandler(async (req, res) => {
   const user_id = req.user?._id;
-  const enrolledList = await EnrolledCourse.find({ user_id });
-  if (!enrolledList) {
-    throw new ApiError(404, "You'r not enrolled in any course!");
+
+  // Pagination parameters with default values
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const enrolledList = await EnrolledCourse.find({ user_id })
+    .skip(skip)
+    .limit(limit)
+    .populate({
+      path: 'course_id',
+      populate: {
+        path: 'therapist_id',
+        model: 'Therapist',
+        select: "firstName lastName email mobile"
+      }
+    });
+
+  if (!enrolledList || enrolledList.length === 0) {
+    throw new ApiError(404, "You're not enrolled in any course!");
   }
-  return res
-    .status(201)
-    .json(new ApiResponse(200, enrolledList, "list fetched successfully"));
+
+  const totalDocuments = await EnrolledCourse.countDocuments({ user_id });
+
+  return res.status(200).json(new ApiResponse(200, {
+    enrolledList,
+    totalPages: Math.ceil(totalDocuments / limit),
+    currentPage: page,
+    totalDocuments
+  }, "List fetched successfully"));
 });
+
 
 const handlePaymentSuccess = asyncHandler(async (req, res) => {
   const { paymentDetails, course_id } = req;
@@ -70,7 +94,7 @@ const handlePaymentSuccess = asyncHandler(async (req, res) => {
       // text: 'You have successfully enrolled in the course: Introduction to Psychology', // Plain text body
       html: `<p>${user.firstName} ${user.lastName} is successfully enrolled in the course</p>`, // HTML body
     };
-    await transporter.sendMail(mailOptions, (error, info) => {
+     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         return console.log("Error while sending email:", error);
       }
