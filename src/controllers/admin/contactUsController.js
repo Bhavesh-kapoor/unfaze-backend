@@ -28,11 +28,12 @@ const raiseQuery = asyncHandler(async (req, res) => {
 })
 
 const changeQueryStatus = asyncHandler(async (req, res) => {
-    const { _id } = req.params
+    const { _id } = req.params;
+    const {status}=req.body;
     if (!isValidObjectId(_id)) {
         return res.status(500).json(new ApiError(500, "", "invalid object id!"))
     }
-    const query = await ContactUS.findByIdAndUpdate({ _id }, req.body, { new: true });
+    const query = await ContactUS.findByIdAndUpdate({ _id },{status}, { new: true });
     if (!query) { return res.status(404).json(new ApiError(404, "", "invalid query request!")) }
     return res.status(200).json(new ApiResponse(200, { result: query }, "Query status changed successfully!"))
 })

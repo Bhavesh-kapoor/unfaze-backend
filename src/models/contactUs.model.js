@@ -23,6 +23,5 @@ const ContactUsSchema = new mongoose.Schema({
      enum:["resolved","pending","rejected"],
      default: "pending"
     }
-
-})
+},{timestamps:true})
 export const ContactUS = mongoose.model("ContactUS", ContactUsSchema)

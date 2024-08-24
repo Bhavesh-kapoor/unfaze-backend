@@ -36,8 +36,33 @@ const store = AysncHandler(async (req, res) => {
 });
 
 const read = AysncHandler(async (req, res) => {
-    const allFaq = await Faq.find();
-    res.status(200).json(new ApiResponse(200, allFaq, 'Faq Data Successfully!'));
+    const {
+        page = 1,
+        limit = 10,
+        sort = "createdAt",
+        order = "desc",
+    } = req.query;
+    const pageNumber = parseInt(page, 10)
+    const limitNumber = parseInt(limit, 10)
+    const allFaq = await Faq.find()
+        .sort({ [sort]: order === "desc" ? -1 : 1 })
+        .limit(limitNumber)
+        .skip((pageNumber - 1) * limitNumber)
+        .exec();
+    const totalCount = await Faq.countDocuments();
+    const pagination = {
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        itemsPerPage: limitNumber,
+    };
+    if (pagination.currentPage > pagination.totalPages) {
+        return res.status(404).json(new ApiError(404, "", "No data found for this page!"))
+    }
+    if (!allFaq.length) {
+        return res.status(404).json(new ApiError(404, "", "Failed to retrive query list!"))
+    }
+    return res.status(200).json(new ApiResponse(200, { result: allFaq, pagination }, 'Fatched FAQ Data Successfully!'));
 
 });
 
@@ -51,64 +76,28 @@ const deleteFaq = AysncHandler(async (req, res) => {
         } else {
             const deleteit = await Faq.findByIdAndDelete(_id);
             if (deleteit) {
-                return res.status(400).json(new ApiResponse(200, "", "Faq Deleted Successfully!"));
+                return res.status(200).json(new ApiResponse(200, "", "Faq Deleted Successfully!"));
 
             } else {
                 res.status(500).json(new ApiError(500, "", 'Something Went Wrong while deleting the faq!'));
-
             }
         }
     }
-
-
 });
 
-
-const activeOrDeactivate = AysncHandler(async (req, res) => {
+const getById = AysncHandler(async (req, res) => {
     const { _id } = req.params;
     if (!_id) {
         res.status(401).json(new ApiError(401, "", "Please pass id"));
     } else {
         if (!mongoose.Types.ObjectId.isValid(_id)) {
-            return res.status(400).json(new ApiError(401, "", "Invalid Object id"));
-        } else {
-            const findBy = await Faq.findById({ _id });
-            console.log(findBy);
-            let activate = 1;
-            let message = "Faq Activated Successfully!";
-
-            if (findBy.is_active == 1) {
-                activate = 0;
-                message = "Faq Deactivated Successfully!";
-            }
-            const update = await Faq.findByIdAndUpdate(_id, { is_active: activate }, { new: true });
-
-            if (update) {
-                return res.status(400).json(new ApiResponse(200, update, message));
-
-            } else {
-                res.status(500).json(new ApiError(500, "", 'Something Went Wrong while deleting the faq!'));
-
-            }
-        }
-    }
-
-
-});
-
-const edit = AysncHandler(async (req, res) => {
-    const { _id } = req.params;
-    if (!_id) {
-        res.status(401).json(new ApiError(401, "", "Please pass id"));
-    } else {
-        if (!mongoose.Types.ObjectId.isValid(_id)) {
-            return res.status(400).json(new ApiError(401, "", "Invalid Object id"));
+            return res.status(400).json(new ApiError(401, "", "Invalid Object id!"));
         } else {
             const getdata = await Faq.findById({ _id });
 
 
             if (getdata) {
-                return res.status(400).json(new ApiResponse(200, getdata, "Fetched Particular api"));
+                return res.status(400).json(new ApiResponse(200, getdata, "Faq fached successfully!"));
 
             } else {
                 res.status(500).json(new ApiError(500, "", 'Something Went Wrong while deleting the faq!'));
@@ -116,8 +105,6 @@ const edit = AysncHandler(async (req, res) => {
             }
         }
     }
-
-
 });
 
 
@@ -129,14 +116,14 @@ const update = AysncHandler(async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(_id)) {
             return res.status(400).json(new ApiError(401, "", "Invalid Object id"));
         } else {
-            const { question, answer, url } = req.body;
-            const getdata = await Faq.findById({ _id });
+            const { question, answer, url, is_active } = req.body;
+            const getdata = await Faq.findById(_id);
             getdata.question = question;
             getdata.answer = answer;
             getdata.url = url;
-            getdata.save();
+            getdata.is_active = is_active;
 
-
+            await getdata.save();
             if (getdata) {
                 return res.status(200).json(new ApiResponse(200, getdata, "FAQ updated successfully"));
 
@@ -149,4 +136,4 @@ const update = AysncHandler(async (req, res) => {
 
 
 });
-export { store, validateFaq, read, deleteFaq, activeOrDeactivate, edit  , update};
+export { store, validateFaq, read, deleteFaq, getById, update };

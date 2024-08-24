@@ -19,10 +19,9 @@ const FaqSchema = new mongoose.Schema({
     }
     ,
     is_active : {
-        type : Number,
-        enum : [0,1], // here  0 is not active and 1 is active 
+        type : Boolean,
         required :  true ,
-        default : 0
+        default : true
     }
 
 }, { timestamps: true });
