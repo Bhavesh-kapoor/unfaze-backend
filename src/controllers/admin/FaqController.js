@@ -16,7 +16,6 @@ const store = AysncHandler(async (req, res) => {
     if (!errors.isEmpty()) {
         res.status(400).json(new ApiError(400, "", errors.array()));
     } else {
-        // now store the data in the faq mode
         const { question, answer, url } = req.body;
         const saveFaq = await Faq.create({
             question,
@@ -41,30 +40,43 @@ const read = AysncHandler(async (req, res) => {
         limit = 10,
         sort = "createdAt",
         order = "desc",
+        url,
     } = req.query;
-    const pageNumber = parseInt(page, 10)
-    const limitNumber = parseInt(limit, 10)
-    const allFaq = await Faq.find()
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    let query = {};
+    if (url) {
+        query.url = { $regex: url, $options: 'i' };
+    }
+
+    const allFaq = await Faq.find(query)
         .sort({ [sort]: order === "desc" ? -1 : 1 })
         .limit(limitNumber)
         .skip((pageNumber - 1) * limitNumber)
         .exec();
-    const totalCount = await Faq.countDocuments();
+
+    const totalCount = await Faq.countDocuments(query);
+
     const pagination = {
         currentPage: pageNumber,
-        totalPages: Math.ceil(totalCount / limit),
+        totalPages: Math.ceil(totalCount / limitNumber),
         totalCount,
         itemsPerPage: limitNumber,
     };
-    if (pagination.currentPage > pagination.totalPages) {
-        return res.status(404).json(new ApiError(404, "", "No data found for this page!"))
-    }
-    if (!allFaq.length) {
-        return res.status(404).json(new ApiError(404, "", "Failed to retrive query list!"))
-    }
-    return res.status(200).json(new ApiResponse(200, { result: allFaq, pagination }, 'Fatched FAQ Data Successfully!'));
 
+    if (pagination.currentPage > pagination.totalPages) {
+        return res.status(404).json(new ApiError(404, "", "No data found for this page!"));
+    }
+
+    if (!allFaq.length) {
+        return res.status(404).json(new ApiError(404, "", "Failed to retrieve query list!"));
+    }
+
+    return res.status(200).json(new ApiResponse(200, { result: allFaq, pagination }, 'Fetched FAQ Data Successfully!'));
 });
+
 
 const deleteFaq = AysncHandler(async (req, res) => {
     const { _id } = req.params;
