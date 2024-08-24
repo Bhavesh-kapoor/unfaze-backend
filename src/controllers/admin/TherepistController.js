@@ -321,6 +321,12 @@ const therapistList = asyncHandler(async (req, res) => {
           {
             $match: { ...specializationQuery },
           },
+          {
+            $project: {
+              _id: 1,
+              name: 1
+            }
+          }
         ],
         as: "specializationDetails",
       },
@@ -339,9 +345,21 @@ const therapistList = asyncHandler(async (req, res) => {
     $limit: limitNumber,
   },
   {
+    $addFields: { name: { $concat: ["$firstName", " ", "$lastName"] } }
+  },
+  {
     $project: {
       password: 0,
       refreshToken: 0,
+      firstName: 0,
+      lastName: 0,
+      mobile: 0,
+      is_mobile_verified: 0,
+      specialization: 0,
+      availability: 0,
+      updatedAt: 0,
+      language: 0,
+      __v: 0
     },
   }]);
   pipeline.push({
@@ -359,10 +377,14 @@ const therapistList = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-        totalTherapists,
-        totalPages: Math.ceil(totalTherapists / limitNumber),
-        currentPage: pageNumber,
-        therapists: therapistListData,
+       
+        pagination: {
+         totalCount: totalTherapists,
+          totalPages: Math.ceil(totalTherapists / limitNumber),
+          currentPage: pageNumber
+        },
+        result: therapistListData,
+
       },
       "Therapist list fetched successfully"
     )
