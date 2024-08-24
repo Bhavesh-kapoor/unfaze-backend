@@ -56,7 +56,7 @@ const getQueryList = asyncHandler(async (req, res) => {
     const pagination = {
         currentPage: pageNumber,
         totalPages: Math.ceil(totalCount / limit),
-        totalCount,
+        totalItems: totalCount,
         itemsPerPage: limitNumber,
     };
     if (pagination.currentPage > pagination.totalPages) {

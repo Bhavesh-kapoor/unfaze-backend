@@ -66,10 +66,10 @@ const adminlogin = asyncHandler(async (req, res) => {
       })
     );
 });
-const getCurrentUser=asyncHandler(async(req,res)=>{
+const getCurrentUser = asyncHandler(async (req, res) => {
   return res
-  .status(200)
-  .json(new ApiResponse(200, req.user, "User fetched successfully"));
+    .status(200)
+    .json(new ApiResponse(200, req.user, "User fetched successfully"));
 })
 
 const userlogin = asyncHandler(async (req, res) => {
@@ -157,8 +157,10 @@ const register = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(200,{ accessToken: accessToken,
-      refreshToken: refreshToken,user:newUser}, "User created successfully"));
+    .json(new ApiResponse(200, {
+      accessToken: accessToken,
+      refreshToken: refreshToken, user: newUser
+    }, "User created successfully"));
 });
 const updateProfile = asyncHandler(async (req, res) => {
   const { firstName, lastName, mobile, gender } = req.body;
@@ -168,7 +170,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   if (!user) {
     return res
       .status(404)
-      .json(new ApiError(404,"", "User not found"));
+      .json(new ApiError(404, "", "User not found"));
   }
 
   user.firstName = firstName || user.firstName;
@@ -181,7 +183,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   }
 
   const updatedUser = await user.save();
-  
+
   return res
     .status(200)
     .json(new ApiResponse(200, updatedUser, "User updated successfully"));
@@ -247,14 +249,14 @@ const refreshToken = asyncHandler(async (req, res) => {
 });
 
 const allUser = asyncHandler(async (req, res) => {
-  const { 
-    page = 1, 
-    limit = 10, 
-    date, 
-    sortBy = 'createdAt', 
-    order = 'desc', 
-    email, 
-    mobile 
+  const {
+    page = 1,
+    limit = 10,
+    date,
+    sortBy = 'createdAt',
+    order = 'desc',
+    email,
+    mobile
   } = req.query;
 
   // Pagination
@@ -290,13 +292,12 @@ const allUser = asyncHandler(async (req, res) => {
   const totalUsers = await User.countDocuments(filter);
 
   return res.status(200).json(new ApiResponse(200, {
-    totalUsers,
+    totalItems: totalUsers,
     totalPages: Math.ceil(totalUsers / limitNumber),
     currentPage: pageNumber,
     users: userList
   }, "User list fetched successfully"));
 });
-
 
 export {
   adminlogin,

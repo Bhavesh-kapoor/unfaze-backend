@@ -39,7 +39,8 @@ const getEnrolledCourseList = asyncHandler(async (req, res) => {
     enrolledList,
     totalPages: Math.ceil(totalDocuments / limit),
     currentPage: page,
-    totalDocuments
+    totalItems : totalDocuments,
+    itemsPerPage:parseInt(limit)
   }, "List fetched successfully"));
 });
 

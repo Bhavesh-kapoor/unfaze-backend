@@ -264,13 +264,13 @@ const therapistList = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
-    sortBy = "createdAt",
-    order = "desc",
+    sortBy = "createdAt", // add optioal sort key
+    order = "desc", 
     email,
     mobile,
     specialization,
   } = req.query;
-
+ //add is active filter 
   /*---------------------------- Pagination ------------------------------*/
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
@@ -377,9 +377,9 @@ const therapistList = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-       
+
         pagination: {
-         totalCount: totalTherapists,
+          totalItems: totalTherapists,
           totalPages: Math.ceil(totalTherapists / limitNumber),
           currentPage: pageNumber
         },

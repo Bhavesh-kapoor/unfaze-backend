@@ -62,7 +62,7 @@ const read = AysncHandler(async (req, res) => {
     const pagination = {
         currentPage: pageNumber,
         totalPages: Math.ceil(totalCount / limitNumber),
-        totalCount,
+        totalItems: totalCount,
         itemsPerPage: limitNumber,
     };
 

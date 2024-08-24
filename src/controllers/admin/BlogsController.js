@@ -73,7 +73,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
     const pagination = {
       currentPage: parseInt(page),
       totalPages: Math.ceil(totalBlogs / limit),
-      totalBlogs,
+     totalItems:totalBlogs,
       itemsPerPage: parseInt(limit),
     };
 
