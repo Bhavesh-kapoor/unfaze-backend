@@ -264,79 +264,34 @@ const therapistList = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
-    sortBy = "createdAt", // add optioal sort key
-    order = "desc", 
-    email,
-    mobile,
-    specialization,
+    sortkey = "createdAt",
+    sortdir = "desc",
+    search
   } = req.query;
- //add is active filter 
+  // email,mobile,specialization,
+  //add is active filter 
   /*---------------------------- Pagination ------------------------------*/
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
   const skip = (pageNumber - 1) * limitNumber;
-  const matchConditions = [];
-  let specializationQuery = {}
-  let matchQuery = {}
-  if (specialization) {
-    matchQuery.specializationDetails = { $gt: { $size: 0 } };
-    matchConditions.push({
-      $addFields: {
-        specializationDetails: {
-          $filter: {
-            input: "$specializationDetails",
-            as: "detail",
-            cond: {
-              $regexMatch: {
-                input: "$$detail.name",
-                regex: specialization,
-                options: "i",
-              },
-            },
-          },
-        },
-      },
-    })
-    specializationQuery = {
-      name: {
-        $regex: specialization,
-        $options: "i",
-      }
-    };
-  }
 
-  // Add filters to the match stage
-  if (email) matchQuery.email = { $regex: email, $options: "i" };
-  if (mobile) matchQuery.mobile = mobile;
-
-  matchConditions.push({ $match: { ...matchQuery } })
-  // Build aggregation pipeline
-  let pipeline = [
-    {
-      $lookup: {
-        from: "specializations",
-        localField: "specialization",
-        foreignField: "_id",
-        pipeline: [
-          {
-            $match: { ...specializationQuery },
-          },
-          {
-            $project: {
-              _id: 1,
-              name: 1
-            }
-          }
-        ],
-        as: "specializationDetails",
-      },
+  const pipeline = [{
+    $lookup: {
+      from: "specializations",
+      localField: "specialization",
+      foreignField: "_id",
+      as: "specializationDetails",
     },
-  ];
+  },
+  {
+    $match: {
+      $or: [{ email: { $regex: search, $options: "i" } }, { mobile: { $regex: search, $options: "i" } }, { "specializationDetails.name": { $regex: search, $options: "i" } }]
+    }
+  }
+  ]
 
   const therapistListData = await Therapist.aggregate([...pipeline, {
-    $sort: {
-      [sortBy]: order === "desc" ? -1 : 1,
-    },
+    $sort: { [sortkey]: sortdir === "desc" ? -1 : 1 },
   },
   {
     $skip: skip,
@@ -345,23 +300,28 @@ const therapistList = asyncHandler(async (req, res) => {
     $limit: limitNumber,
   },
   {
-    $addFields: { name: { $concat: ["$firstName", " ", "$lastName"] } }
-  },
-  {
     $project: {
-      password: 0,
-      refreshToken: 0,
-      firstName: 0,
-      lastName: 0,
-      mobile: 0,
-      is_mobile_verified: 0,
-      specialization: 0,
-      availability: 0,
-      updatedAt: 0,
-      language: 0,
-      __v: 0
-    },
-  }]);
+      _id: 1,
+      profileImage: 1,
+      name: { $concat: ["$firstName", " ", "$lastName"] },
+      email: 1,
+      is_email_verified: 1,
+      is_active: 1,
+      createdAt: 1,
+      specializationDetails: {
+        $map: {
+          input: "$specializationDetails",
+          as: "specialization",
+          in: {
+            _id: "$$specialization._id",
+            name: "$$specialization.name",
+          },
+        },
+      },
+    }
+  }
+  ]);
+  console.log('therapistListData', therapistListData)
   pipeline.push({
     $count: "totalCount",
   });

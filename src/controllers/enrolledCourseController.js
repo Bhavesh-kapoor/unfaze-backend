@@ -5,7 +5,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../models/userModel.js";
 import { Course } from "../models/courseModel.js";
 import { sendNotification } from "./notificationController.js";
-import {transporter} from "../config/nodeMailer.js";
+import { transporter } from "../config/nodeMailer.js";
 import { otpContent } from "../static/emailcontent.js";
 
 
@@ -39,26 +39,28 @@ const getEnrolledCourseList = asyncHandler(async (req, res) => {
     enrolledList,
     totalPages: Math.ceil(totalDocuments / limit),
     currentPage: page,
-    totalItems : totalDocuments,
-    itemsPerPage:parseInt(limit)
+    totalItems: totalDocuments,
+    itemsPerPage: parseInt(limit)
   }, "List fetched successfully"));
 });
 
 
 const handlePaymentSuccess = asyncHandler(async (req, res) => {
   const { paymentDetails, course_id } = req;
-  const user = await User.findById(req.user?._id);
+  const user = req.user;
   const course = await Course.findOne({ _id: course_id }).populate(
     "therapist_id"
   );
-  console.log("course_____________", course)
+  const transaction = await EnrolledCourse.findOne({ transaction_id: paymentDetails.data.transactionId });
+  if (transaction) {
+    return res.status(200).json(new ApiResponse(200, transaction, "payment verified success..."))
+  }
   if (paymentDetails.code === "PAYMENT_SUCCESS") {
     const newEnrollment = new EnrolledCourse({
       course_id: course_id,
       user_id: req.user?._id,
       payment_status: paymentDetails.code,
-      transaction_id: paymentDetails.transactionId,
-      amount: paymentDetails.amount,
+      amount: paymentDetails.data.amount ,
       remaining_sessions: course.session_count,
       merchantTransactionId: paymentDetails.data.merchantTransactionId,
       transaction_id: paymentDetails.data.transactionId,
@@ -70,6 +72,7 @@ const handlePaymentSuccess = asyncHandler(async (req, res) => {
       active: true,
     });
     await newEnrollment.save();
+
     // send in app notification
     const receiverId = course.therapist_id;
     const receiverType = "Therapist";
@@ -89,14 +92,15 @@ const handlePaymentSuccess = asyncHandler(async (req, res) => {
       });
 
     // send mail notifications
+
     const mailOptions = {
       from: `Unfaze "<${process.env.GMAIL}>"`,
       to: course.therapist_id.email,
       subject: "Course Enrollment Confirmation",
-      // text: 'You have successfully enrolled in the course: Introduction to Psychology', // Plain text body
-      html: `<p>${user.firstName} ${user.lastName} is successfully enrolled in the course</p>`, // HTML body
+      // text: 'You have successfully enrolled in the course: Introduction to Psychology', 
+      html: `<p>${user.firstName} ${user.lastName} is successfully enrolled in the course</p>`,
     };
-     transporter.sendMail(mailOptions, (error, info) => {
+    transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         return console.log("Error while sending email:", error);
       }

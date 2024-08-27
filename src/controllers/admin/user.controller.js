@@ -253,8 +253,8 @@ const allUser = asyncHandler(async (req, res) => {
     page = 1,
     limit = 10,
     date,
-    sortBy = 'createdAt',
-    order = 'desc',
+    sortkey = 'createdAt',
+    sortdir = 'desc',
     email,
     mobile
   } = req.query;
@@ -281,10 +281,9 @@ const allUser = asyncHandler(async (req, res) => {
   }
 
   const userList = await User.find(filter).select("-password -refreshToken")
-    .sort({ [sortBy]: order })
+    .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
     .skip(skip)
     .limit(limitNumber);
-
   if (!userList) {
     return res.status(400).json(new ApiError(404, "", "User list fetching failed!"));
   }
@@ -292,11 +291,13 @@ const allUser = asyncHandler(async (req, res) => {
   const totalUsers = await User.countDocuments(filter);
 
   return res.status(200).json(new ApiResponse(200, {
-    totalItems: totalUsers,
-    totalPages: Math.ceil(totalUsers / limitNumber),
-    currentPage: pageNumber,
-    users: userList
-  }, "User list fetched successfully"));
+    pagination: {
+      totalItems: totalUsers,
+      totalPages: Math.ceil(totalUsers / limitNumber),
+      currentPage: pageNumber
+    },
+    result: userList,
+  }, "User list fetched successfully"))
 });
 
 export {

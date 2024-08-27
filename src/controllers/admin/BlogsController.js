@@ -15,8 +15,8 @@ const getAllBlogs = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
-    sort = "createdAt",
-    order = "desc",
+    sortkey = "createdAt",
+    sortdir = "desc",
     title,
     category,
   } = req.query;
@@ -51,7 +51,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
       },
     },
     {
-      $sort: { [sort]: order === "desc" ? -1 : 1 },
+      $sort: { [sortkey]: sortdir === "desc" ? -1 : 1 },
     },
     {
       $skip: (page - 1) * limit,
