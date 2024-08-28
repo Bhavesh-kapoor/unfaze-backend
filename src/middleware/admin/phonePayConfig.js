@@ -5,8 +5,7 @@ import mongoose from "mongoose";
 import ApiError from "../../utils/ApiError.js";
 import { Course } from "../../models/courseModel.js";
 import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
-const APP_BE_URL = "http://localhost:8080";
-
+const APP_BE_URL = process.env.APP_BASE_URL
 export async function processPayment(req, res) {
   try {
     const { amount, mobile } = req.body;
@@ -104,7 +103,6 @@ export const validatePayment = async (req, res, next) => {
       .then((res) => {
         req.course_id = course_id;
         req.paymentDetails = res.data;
-        console.log("response", res);
         next();
       })
       .catch((error) => {

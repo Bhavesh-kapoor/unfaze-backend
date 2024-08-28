@@ -45,8 +45,9 @@ const getEnrolledCourseList = asyncHandler(async (req, res) => {
 });
 
 
-const handlePaymentSuccess = asyncHandler(async (req, res) => {
+const handlePhonepayPayment = asyncHandler(async (req, res) => {
   const { paymentDetails, course_id } = req;
+  console.log("paymentDetails-------------------------------", paymentDetails)
   const user = req.user;
   const course = await Course.findOne({ _id: course_id }).populate(
     "therapist_id"
@@ -55,65 +56,155 @@ const handlePaymentSuccess = asyncHandler(async (req, res) => {
   if (transaction) {
     return res.status(200).json(new ApiResponse(200, transaction, "payment verified success..."))
   }
-  if (paymentDetails.code === "PAYMENT_SUCCESS") {
-    const newEnrollment = new EnrolledCourse({
-      course_id: course_id,
-      user_id: req.user?._id,
-      payment_status: paymentDetails.code,
-      amount: paymentDetails.data.amount ,
-      remaining_sessions: course.session_count,
-      merchantTransactionId: paymentDetails.data.merchantTransactionId,
-      transaction_id: paymentDetails.data.transactionId,
-      amount: paymentDetails.data.amount,
-      remaining_sessions: course.session_count,
-      status: paymentDetails.data.state,
-      statusCode: paymentDetails.data.responseCode,
-      paymentMode: paymentDetails.data.paymentInstrument.type,
-      active: true,
-    });
-    await newEnrollment.save();
-
-    // send in app notification
-    const receiverId = course.therapist_id;
-    const receiverType = "Therapist";
-    const message = `${user.firstName} ${user.lastName} is successfully enrolled in the course`;
-    const payload = {
-      courseId: course_id,
-      user_id: user._id,
-      email: user.email,
-      mobile: user.mobile,
-    };
-    sendNotification(receiverId, receiverType, message, payload)
-      .then((notification) => {
-        console.log("Notification sent:", notification);
-      })
-      .catch((err) => {
-        console.error("Error sending notification:", err);
-      });
-
-    // send mail notifications
-
-    const mailOptions = {
-      from: `Unfaze "<${process.env.GMAIL}>"`,
-      to: course.therapist_id.email,
-      subject: "Course Enrollment Confirmation",
-      // text: 'You have successfully enrolled in the course: Introduction to Psychology', 
-      html: `<p>${user.firstName} ${user.lastName} is successfully enrolled in the course</p>`,
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return console.log("Error while sending email:", error);
-      }
-      console.log("Email sent successfully:", info.response);
-    });
-
-    res
-      .status(200)
-      .json(
-        new ApiResponse(200, newEnrollment, "Enrolled  in course successfully")
-      );
-  } else {
-    res.status(400).json(new ApiError(400, "Something went wrong!!!"));
+  let order_status
+  switch (paymentDetails.data.responseCode) {
+    case 'PENDING':
+      order_status = 'pending';
+      break;
+    case 'SUCCESS':
+      order_status = 'successful';
+      break;
+    case 'FAILED':
+      order_status = 'failed';
+      break;
+    case 'REFUNDED':
+      order_status = 'refunded';
+      break;
+    default:
+      order_status = 'pending';  // Default for unknown status
   }
+  const newEnrollment = new EnrolledCourse({
+    course_id: course_id,
+    user_id: req.user?._id,
+    amount: paymentDetails.data.amount,
+    payment_details: paymentDetails.data,
+    payment_status: order_status,
+    transaction_id: paymentDetails.data.transactionId,
+    remaining_sessions: course.session_count,
+    is_active: true
+  })
+  await newEnrollment.save();
+  // send in app notification
+  const receiverId = course.therapist_id;
+  const receiverType = "Therapist";
+  const message = `${user.firstName} ${user.lastName} is successfully enrolled in the course`;
+  const payload = {
+    courseId: course_id,
+    user_id: user._id,
+    email: user.email,
+    mobile: user.mobile,
+  };
+  sendNotification(receiverId, receiverType, message, payload)
+    .then((notification) => {
+      console.log("Notification sent:", notification);
+    })
+    .catch((err) => {
+      console.error("Error sending notification:", err);
+    });
+
+  // send mail notifications
+
+  const mailOptions = {
+    from: `Unfaze "<${process.env.GMAIL}>"`,
+    to: course.therapist_id.email,
+    subject: "Course Enrollment Confirmation",
+    // text: 'You have successfully enrolled in the course: Introduction to Psychology', 
+    html: `<p>${user.firstName} ${user.lastName} is successfully enrolled in the course</p>`,
+  };
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.log("Error while sending email:", error);
+    }
+    console.log("Email sent successfully:", info.response);
+  });
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, newEnrollment, "Enrolled  in course successfully")
+    );
 });
-export { getEnrolledCourseList, handlePaymentSuccess };
+const handleCashfreePayment = asyncHandler(async (req, res) => {
+  const { paymentDetails, course_id } = req;
+  const user = req.user;
+  const course = await Course.findOne({ _id: course_id }).populate(
+    "therapist_id"
+  );
+  const transaction = await EnrolledCourse.findOne({ transaction_id: paymentDetails.order_id });
+  if (transaction) {
+    return res.status(200).json(new ApiResponse(200, transaction, "payment verified success..."))
+  }
+  let order_status
+  switch (paymentDetails.order_status) {
+    case 'ACTIVE':
+      order_status = 'pending';
+      break;
+    case 'PAID':
+      order_status = 'successful';
+      break;
+    case 'EXPIRED':
+      order_status = 'expired';
+      break;
+    case 'FAILED':
+      order_status = 'failed';
+      break;
+    case 'CANCELLED':
+      order_status = 'cancelled';
+      break;
+    default:
+      order_status = 'pending';
+  }
+  const newEnrollment = new EnrolledCourse({
+    course_id: course_id,
+    user_id: req.user?._id,
+    amount: paymentDetails.order_amount,
+    payment_details: paymentDetails,
+    payment_status: order_status,
+    transaction_id: paymentDetails.order_id,
+    remaining_sessions: course.session_count,
+    is_active: true
+  })
+  console.log("newEnrollment", newEnrollment)
+  await newEnrollment.save();
+  console.log("newEnrollment", newEnrollment)
+  // send in app notification
+  const receiverId = course.therapist_id;
+  const receiverType = "Therapist";
+  const message = `${user.firstName} ${user.lastName} is successfully enrolled in the course`;
+  const payload = {
+    courseId: course_id,
+    user_id: user._id,
+    email: user.email,
+    mobile: user.mobile,
+  };
+  sendNotification(receiverId, receiverType, message, payload)
+    .then((notification) => {
+      console.log("Notification sent:", notification);
+    })
+    .catch((err) => {
+      console.error("Error sending notification:", err);
+    });
+
+  // send mail notifications
+
+  const mailOptions = {
+    from: `Unfaze "<${process.env.GMAIL}>"`,
+    to: course.therapist_id.email,
+    subject: "Course Enrollment Confirmation",
+    // text: 'You have successfully enrolled in the course: Introduction to Psychology', 
+    html: `<p>${user.firstName} ${user.lastName} is successfully enrolled in the course</p>`,
+  };
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.log("Error while sending email:", error);
+    }
+    console.log("Email sent successfully:", info.response);
+  });
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, newEnrollment, "Enrolled  in course successfully")
+    );
+});
+export { getEnrolledCourseList, handlePhonepayPayment, handleCashfreePayment };

@@ -5,6 +5,7 @@ import { User } from "../../models/userModel.js";
 import jwt from "jsonwebtoken";
 import { check, validationResult } from "express-validator";
 import { process } from "uniqid";
+import { parseISO, addDays, startOfDay, endOfDay } from "date-fns"
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
@@ -252,11 +253,11 @@ const allUser = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
-    date,
+    search,
+    startDate,
+    endDate,
     sortkey = 'createdAt',
     sortdir = 'desc',
-    email,
-    mobile
   } = req.query;
 
   // Pagination
@@ -264,26 +265,37 @@ const allUser = asyncHandler(async (req, res) => {
   const limitNumber = parseInt(limit);
   const skip = (pageNumber - 1) * limitNumber;
 
-  let filter = {};
-  if (email) {
-    filter.email = { $regex: email, $options: 'i' };
+  // Search and Date Filter
+  let filter = { role: "user" };
+
+  if (search) {
+    filter.$or = [
+      { email: { $regex: search, $options: 'i' } },
+      { mobile: search },
+    ];
   }
 
-  if (mobile) {
-    filter.mobile = mobile;
-  }
-
-  if (date) {
+  if (startDate && endDate) {
     filter.createdAt = {
-      $gte: new Date(date),
-      $lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
+      $gte: startOfDay(parseISO(startDate)),
+      $lt: endOfDay(addDays(parseISO(endDate), 1))
+    };
+  } else if (startDate) {
+    filter.createdAt = {
+      $gte: startOfDay(parseISO(startDate)),
+    };
+  } else if (endDate) {
+    filter.createdAt = {
+      $lt: endOfDay(addDays(parseISO(endDate), 1)),
     };
   }
 
+  // Fetching Users
   const userList = await User.find(filter).select("-password -refreshToken")
     .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
     .skip(skip)
     .limit(limitNumber);
+
   if (!userList) {
     return res.status(400).json(new ApiError(404, "", "User list fetching failed!"));
   }
@@ -294,11 +306,13 @@ const allUser = asyncHandler(async (req, res) => {
     pagination: {
       totalItems: totalUsers,
       totalPages: Math.ceil(totalUsers / limitNumber),
-      currentPage: pageNumber
+      currentPage: pageNumber,
+      itemsPerPage: limitNumber,
     },
     result: userList,
-  }, "User list fetched successfully"))
+  }, "User list fetched successfully"));
 });
+
 
 export {
   adminlogin,
@@ -307,6 +321,7 @@ export {
   refreshToken,
   validateRegister,
   updateAvatar,
+  updateProfile,
   allUser,
   getCurrentUser
 };

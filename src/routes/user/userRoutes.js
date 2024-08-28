@@ -12,7 +12,8 @@ import speclizationRoute from "../admin/specilization.route.js";
 import feedbackRoute from "../feeback.route.js";
 import {
   getEnrolledCourseList,
-  handlePaymentSuccess,
+  handlePhonepayPayment,
+  handleCashfreePayment
 } from "../../controllers/enrolledCourseController.js";
 import {
   processPayment,
@@ -22,7 +23,7 @@ import {
 import sessionRouter from "./session.routes.js";
 import { userEmailVerify } from "../../controllers/otpController.js";
 import { getTherepistById } from "../../controllers/admin/TherepistController.js";
-
+import { createOrder,verifyPayment } from "../../controllers/payment/cashfree.controller.js";
 const userRoutes = Router();
 userRoutes.post("/register",upload.single('profileImage'),validateRegister,  register);
 userRoutes.post("/login", userlogin);
@@ -35,11 +36,14 @@ userRoutes.get("/get-therapist/:_id",getTherepistById)
 //courese enrollment route
 userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
 userRoutes.post("/pay/:course_id", verifyJwtToken, processPayment);
+userRoutes.post("/create-order", createOrder);
+userRoutes.post("/verify",  verifyJwtToken, verifyPayment,handleCashfreePayment);
+
 userRoutes.get(
   "/validate/:merchantTransactionId/:course_id",
   verifyJwtToken,
   validatePayment,
-  handlePaymentSuccess
+  handlePhonepayPayment
 );
 userRoutes.post("/email-verify",userEmailVerify)
 

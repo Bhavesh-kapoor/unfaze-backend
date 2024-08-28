@@ -16,19 +16,6 @@ const enrolledCourse = new Schema(
       type: String,
       required: true,
     },
-    merchantTransactionId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    currency: {
-      type: String,
-      default: "INR",
-    },
-    transaction_id: {
-      type: String,
-      required: true,
-    },
     amount: {
       type: Number,
       default: 0,
@@ -38,22 +25,14 @@ const enrolledCourse = new Schema(
       type: Number,
       required: true,
     },
-    status: {
-      type: String,
-      required: true,
+    payment_details: {
+      type: Object,
+      default: {}
     },
-    statusCode: {
-      type: String,
-      required: true,
-    },
-    paymentMode: {
-      type: String,
-      required: true,
-    },
-    active: {
+    is_active: {
       type: Boolean,
       default: false,
-    },
+    }
   },
   {
     timestamps: true,

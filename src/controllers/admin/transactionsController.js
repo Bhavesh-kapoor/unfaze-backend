@@ -2,47 +2,49 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import ApiError from "../../utils/ApiError.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
+import { Therapist } from "../../models/therapistModel.js";
+import { User } from "../../models/userModel.js";
 
-import {
-  startOfDay, endOfDay,
-  subDays, subMonths, subYears
-} from 'date-fns';
+import { startOfDay, endOfDay, subDays, subMonths, subYears } from "date-fns";
 
 const calculateTotalSales = asyncHandler(async (req, res) => {
-  const { duration = 'week' } = req.query;
+  const { duration = "week" } = req.query;
   let startDate, endDate;
   const now = new Date();
   switch (duration) {
-    case 'today':
+    case "today":
       startDate = startOfDay(now);
       endDate = endOfDay(now);
       break;
 
-    case 'week':
+    case "week":
       startDate = subDays(now, 7);
       endDate = endOfDay(now);
       break;
-    case 'month':
+    case "month":
       startDate = subMonths(now, 1);
       endDate = endOfDay(now);
       break;
-    case 'year':
+    case "year":
       startDate = subYears(now, 1);
       endDate = endOfDay(now);
       break;
-    case 'all time':
+    case "all time":
       startDate = new Date(0);
       endDate = endOfDay(now);
       break;
 
     default:
-      return res.status(400).json({ error: 'Invalid duration flag' });
+      return res.status(400).json({ error: "Invalid duration flag" });
   }
   const totalSales = await EnrolledCourse.aggregate([
     {
       $match: {
-        $and: [{ createdAt: { $gte: startDate } }, { createdAt: { $lte: endDate } }]
-      }
+        $and: [
+          { createdAt: { $gte: startDate } },
+          { createdAt: { $lte: endDate } },
+        ],
+      },
     },
     {
       $group: {
@@ -53,12 +55,29 @@ const calculateTotalSales = asyncHandler(async (req, res) => {
     },
   ]);
   if (!totalSales) {
-    return res.status(404).json(new ApiError(404, error, "No.records found!"))
+    return res.status(404).json(new ApiError(404, error, "No.records found!"));
   }
   const totalRecords = totalSales[0]?.count || 0;
   const totalAmount = totalSales[0]?.totalSales || 0;
+  const totalActiveTherapist = await Therapist.countDocuments({
+    is_active: true,
+  });
+  const totalActiveUser = await User.countDocuments({
+    // is_active: true,
+    role: "user",
+  });
+
   // Ammount in rupees----------------------------------------
-  return res.status(200).json(new ApiResponse(200, { totalSales: totalAmount / 100, totalCounts: totalRecords }));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, {
+        totalSales: totalAmount / 100,
+        totalCounts: totalRecords,
+        totalActiveTherapist,
+        totalActiveUser,
+      })
+    );
 });
 const TotalSalesList = asyncHandler(async (req, res) => {
   try {
@@ -76,10 +95,20 @@ const TotalSalesList = asyncHandler(async (req, res) => {
     const end = new Date(endDate);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return res.status(400).json(new ApiError(400, "", "Invalid date format!"));
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Invalid date format!"));
     }
     if (start > end) {
-      return res.status(400).json(new ApiError(400, "", "Start date should not be greater than end date!"));
+      return res
+        .status(400)
+        .json(
+          new ApiError(
+            400,
+            "",
+            "Start date should not be greater than end date!"
+          )
+        );
     }
     const totalSales = await EnrolledCourse.aggregate([
       {
@@ -97,10 +126,9 @@ const TotalSalesList = asyncHandler(async (req, res) => {
     ]);
 
     console.log("totalSales", totalSales);
- if(totalSales.length===0){
-   return res.status(404).json(new ApiError(404, "", "No.records found!"))
-   
- }
+    if (totalSales.length === 0) {
+      return res.status(404).json(new ApiError(404, "", "No.records found!"));
+    }
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
 
@@ -124,18 +152,23 @@ const TotalSalesList = asyncHandler(async (req, res) => {
       itemsPerPage: limitNumber,
     };
 
-    return res.status(200).json(new ApiResponse(200, {
-      startDate,
-      endDate,
-      pagination,
-      totalAmount,
-      result: paginatedSales,
-    }, "Transaction fetched successfully!"));
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          startDate,
+          endDate,
+          pagination,
+          totalAmount,
+          result: paginatedSales,
+        },
+        "Transaction fetched successfully!"
+      )
+    );
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 export { calculateTotalSales, TotalSalesList };
