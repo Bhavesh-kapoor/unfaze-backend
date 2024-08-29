@@ -22,6 +22,7 @@ const validateRegister = [
   check("mobile", "Mobile is required").notEmpty(),
   check("specialization", "Specialization is required").notEmpty(),
   check("gender", "Gender is required").notEmpty(),
+  check("password", "password is required").notEmpty(),
 ];
 
 const register = asyncHandler(async (req, res) => {
@@ -34,6 +35,8 @@ const register = asyncHandler(async (req, res) => {
   const {
     firstName,
     lastName,
+    addressLine1,
+    addressLine2,
     email,
     mobile,
     gender,
@@ -44,7 +47,6 @@ const register = asyncHandler(async (req, res) => {
     state,
     city,
     pincode,
-    completeAddress,
     linkedin,
     facebook,
     highSchool,
@@ -63,7 +65,7 @@ const register = asyncHandler(async (req, res) => {
     start_hour,
     end_hour,
   } = req.body;
-
+ console.log(req.body);
   const therapistData = {
     firstName,
     lastName,
@@ -76,6 +78,35 @@ const register = asyncHandler(async (req, res) => {
     start_hour,
     end_hour,
   };
+  console.log(firstName,
+    lastName,
+    addressLine1,
+    addressLine2,
+    email,
+    mobile,
+    gender,
+    dob,
+    licence,
+    specialization,
+    bio,
+    state,
+    city,
+    pincode,
+    linkedin,
+    facebook,
+    highSchool,
+    intermediate,
+    graduation,
+    postgraduation,
+    additional,
+    language,
+    experience,
+    instagram,
+    bankName,
+    ifsccode,
+    accountNumber,
+    accountHolder,
+    password,)
   therapistData.address = {};
   therapistData.social = {};
   therapistData.education = {};
@@ -94,7 +125,8 @@ const register = asyncHandler(async (req, res) => {
   if (state) therapistData.address.state = state;
   if (city) therapistData.address.city = city;
   if (pincode) therapistData.address.pincode = pincode;
-  if (completeAddress) therapistData.address.completeAddress = completeAddress;
+  if (addressLine1) therapistData.address.addressLine1 = addressLine1;
+  if (addressLine2) therapistData.address.addressLine2 = addressLine2;
   if (linkedin) therapistData.social.linkedin = linkedin;
   if (instagram) therapistData.social.instagram = instagram;
   if (facebook) therapistData.social.facebook = facebook;
@@ -149,7 +181,7 @@ const register = asyncHandler(async (req, res) => {
         new ApiResponse(200, createTherepist, "Therepist created Successfully")
       );
   } catch (err) {
-    res.status(500).json(new ApiError(500, "", err.message));
+    res.status(500).json(new ApiError(500, "", err));
   }
 });
 

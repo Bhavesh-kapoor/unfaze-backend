@@ -16,7 +16,8 @@ const AddressSchema = new mongoose.Schema({
   state: { type: String, trim: true },
   city: { type: String, trim: true },
   pincode: { type: String, trim: true },
-  completeAddress: { type: String, trim: true },
+  addressLine1: { type: String, trim: true },
+  addressLine2: { type: String, trim: true },
 }, { _id: false });
 
 // Social Schema
@@ -48,20 +49,20 @@ const TherapistSchema = new mongoose.Schema({
   mobile: { type: String, trim: true },
   is_mobile_verified: { type: Boolean, default: false },
   gender: { type: String, trim: true, enum: ['male', 'female', 'non-binary', 'other'] },
-  
+
   role: {
     type: String,
     default: "therapist",
     trim: true,
   },
-  password: String,
+  password: { type: String, trim: true },
   refreshToken: String,
   education: EducationSchema,
   licence: { type: String, trim: true },
   specialization: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Specialization', required: true }],
   experience: { type: String, trim: true },
   passport: String,
-  dob:{
+  dob: {
     type: Date,
     required: true,
   },
