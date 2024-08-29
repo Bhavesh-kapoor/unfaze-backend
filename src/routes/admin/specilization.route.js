@@ -3,14 +3,14 @@ import {
   createSpecialization,
   getAllSpecialization,
   updateSpecialization,
-  deleteSpeclization,
+  deleteSpecialization,
 } from "../../controllers/admin/SpecilizationController.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
-let speclizationRoute = Router();
+let specializationRoute = Router();
 
-speclizationRoute.get("/all", verifyJwtToken, getAllSpecialization);
-speclizationRoute.post("/create", verifyJwtToken, createSpecialization);
-speclizationRoute.put("/update/:_id", verifyJwtToken, updateSpecialization);
-speclizationRoute.delete("/delete/:_id", verifyJwtToken, deleteSpeclization);
+specializationRoute.get("/all", getAllSpecialization);
+specializationRoute.post("/create", verifyJwtToken, createSpecialization);
+specializationRoute.put("/update/:_id", verifyJwtToken, updateSpecialization);
+specializationRoute.delete("/delete/:_id", verifyJwtToken, deleteSpecialization);
 
-export default speclizationRoute;
+export default specializationRoute;

@@ -22,5 +22,5 @@ const sessionSchema = new Schema({
   },
   start_time: { type: Date, required: true },
   end_time: { type: Date },
-});
+},{timestamps:true});
 export const Session = mongoose.model("Session", sessionSchema);

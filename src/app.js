@@ -12,6 +12,7 @@ import userRoutes from "./routes/user/userRoutes.js";
 import emailRoutes from "./routes/emailOtpRoute.js"
 import blogsrouter from "./routes/admin/blogs.route.js";
 import contactusRoutes from "./routes/contactUs.router.js"
+import specializationRoute from "./routes/admin/specilization.route.js";
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -44,5 +45,6 @@ app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/email",emailRoutes);
 app.use("/api/v1/blogs",blogsrouter);
 app.use("/api/v1/contact-us",contactusRoutes)
+app.use("/api/v1/specialization",specializationRoute)
 
 export default app;

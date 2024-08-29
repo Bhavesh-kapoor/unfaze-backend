@@ -37,7 +37,8 @@ const register = asyncHandler(async (req, res) => {
     email,
     mobile,
     gender,
-    licenese,
+    dob,
+    licence,
     specialization,
     bio,
     state,
@@ -69,6 +70,7 @@ const register = asyncHandler(async (req, res) => {
     email,
     mobile,
     gender,
+    dob,
     experience,
     password,
     start_hour,
@@ -87,7 +89,7 @@ const register = asyncHandler(async (req, res) => {
   if (graduation) therapistData.education.graduation = graduation;
   if (postgraduation) therapistData.education.postgraduation = postgraduation;
   if (additional) therapistData.education.additional = additional;
-  if (licenese) therapistData.licenese = licenese;
+  if (licence) therapistData.licence = licence;
   if (experience) therapistData.experience = experience;
   if (state) therapistData.address.state = state;
   if (city) therapistData.address.city = city;

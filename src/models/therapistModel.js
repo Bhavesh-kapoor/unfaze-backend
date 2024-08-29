@@ -35,11 +35,8 @@ const BankSchema = new mongoose.Schema({
   accountHolder: String,
   accountNumber: String,
 }, { _id: false });
-
 // Therapist Schema
 const TherapistSchema = new mongoose.Schema({
-  googleId: String,
-  facebookId: String,
   profileImage: {
     type: String,
     default: ""
@@ -51,6 +48,12 @@ const TherapistSchema = new mongoose.Schema({
   mobile: { type: String, trim: true },
   is_mobile_verified: { type: Boolean, default: false },
   gender: { type: String, trim: true, enum: ['male', 'female', 'non-binary', 'other'] },
+  
+  role: {
+    type: String,
+    default: "therapist",
+    trim: true,
+  },
   password: String,
   refreshToken: String,
   education: EducationSchema,
@@ -58,6 +61,10 @@ const TherapistSchema = new mongoose.Schema({
   specialization: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Specialization', required: true }],
   experience: { type: String, trim: true },
   passport: String,
+  dob:{
+    type: Date,
+    required: true,
+  },
   bio: { type: String, trim: true },
   address: AddressSchema,
   language: [{ type: String, trim: true }],

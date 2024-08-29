@@ -170,5 +170,8 @@ const TotalSalesList = asyncHandler(async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+const ListByCategory=asyncHandler(async(req,res)=>{
 
-export { calculateTotalSales, TotalSalesList };
+})
+
+export { calculateTotalSales, TotalSalesList,ListByCategory };

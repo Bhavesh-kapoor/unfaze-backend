@@ -12,6 +12,10 @@ const enrolledCourse = new Schema(
       ref: "User",
       required: true,
     },
+    transaction_id: {
+      type: String,
+      required: true,
+    },
     payment_status: {
       type: String,
       required: true,

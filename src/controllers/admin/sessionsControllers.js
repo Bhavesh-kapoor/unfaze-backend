@@ -7,7 +7,7 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { Course } from "../../models/courseModel.js";
 
-const SESSION_DURATION_MINUTES = 60;
+const SESSION_DURATION_MINUTES = 30;
 const GAP_BETWEEN_SESSIONS_MINUTES = 15;
 const START_HOUR = 9;
 const END_HOUR = 17;

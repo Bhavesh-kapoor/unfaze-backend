@@ -63,7 +63,7 @@ const updateSpecialization = AsyncHandler(async (req, res) => {
 });
 
 
-const deleteSpeclization = AsyncHandler(async (req, res) => {
+const deleteSpecialization = AsyncHandler(async (req, res) => {
   const { _id } = req.params;
   if (!_id)
     return res.status(400).json(new ApiError(400, "Please pass object id "));
@@ -84,5 +84,5 @@ export {
   getAllSpecialization,
   createSpecialization,
   updateSpecialization,
-  deleteSpeclization,
+  deleteSpecialization,
 };
