@@ -15,6 +15,7 @@ const createAccessOrRefreshToken = async (user_id) => {
   await user.save({ validateBeforeSave: false });
   return { accessToken, refreshToken };
 };
+
 router.get(
   "/user/google",
   passport.authenticate("google-user", { scope: ["profile", "email"] })
@@ -22,12 +23,15 @@ router.get(
 router.get(
   "/user/google/callback",
   passport.authenticate("google-user", {
-    failureRedirect: "http://localhost:3000/login",
+    failureRedirect: `${process.env.FRONTEND_URL}/login`,
   }),
-   
-    (req, res) => {
-      res.redirect(`http://localhost:3000?token=${req.user.accessToken}`);
-    
+
+  (req, res) => {
+    res.redirect(
+      `${process.env.FRONTEND_URL}?token=${req.user.accessToken}&user=${
+        req.user?.user?.firstName + " " + req.user?.user?.lastName
+      }`
+    );
   }
 );
 
@@ -39,13 +43,15 @@ router.get(
 router.get(
   "/user/facebook/callback",
   passport.authenticate("facebook-user", {
-    failureRedirect: "http://localhost:3001/login",
+    failureRedirect: `${process.env.FRONTEND_URL}/login`,
   }),
- 
-    (req, res) => {
-      res.redirect(`http://localhost:3000?token=${req.user.accessToken}`);
-    
-   
+
+  (req, res) => {
+    res.redirect(
+      `${process.env.FRONTEND_URL}?token=${req.user.accessToken}&user=${
+        req.user?.user?.firstName + " " + req.user?.user?.lastName
+      }`
+    );
   }
 );
 export default router;
