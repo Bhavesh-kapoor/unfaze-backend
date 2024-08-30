@@ -13,8 +13,6 @@ dotenv.config();
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
-// resend config
-
 async function verifyOTP(email, otp) {
   const otpDoc = await OTP.findOne({ email, otp });
   if (otpDoc) {
@@ -129,4 +127,4 @@ const gmailSend = asyncHandler(async (req, res) => {
 
 
 })
-export { sendOtp, userEmailVerify, therapistEmailVerify };
+export { sendOtp, userEmailVerify, therapistEmailVerify,verifyOTP };

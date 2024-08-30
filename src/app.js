@@ -8,7 +8,6 @@ import session from "express-session";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportTherapist.js";
 import routes from "./routes/index.js"; // Grouped routes
-
 import authUser from "./routes/auth/authUser.js";
 import authTherapist from "./routes/auth/authTherapist.js";
 
@@ -105,7 +104,7 @@ app.use((req, res, next) => {
 
 // Social auth routes
 app.use("/auth", authUser);
-app.use("/auth", authTherapist);
+// app.use("/auth", authTherapist);
 
 // Use grouped routes
 app.use("/api/v1", routes);
