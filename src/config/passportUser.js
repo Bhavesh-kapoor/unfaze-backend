@@ -18,24 +18,23 @@ passport.use(
       scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
-      console.log("profile___________________", profile);
       try {
         let user = await User.findOne({ googleId: profile.id });
         if (!user) {
           user = new User({
-            profileImage:profile.photos[0].value,
+            profileImage: profile.photos[0].value,
             googleId: profile.id,
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value,
-            is_email_verified:true
+            is_email_verified: true,
           });
-          const  refreshToken = user.generateRefreshToken()
-          user.refreshToken =refreshToken;
+          const refreshToken = user.generateRefreshToken();
+          user.refreshToken = refreshToken;
           await user.save();
         }
-        const accessToken = user.generateAccessToken()
-        return done(null, {user,accessToken});
+        const accessToken = user.generateAccessToken();
+        return done(null, { user, accessToken });
       } catch (error) {
         return done(error, null);
       }
@@ -66,13 +65,12 @@ passport.use(
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value,
-            is_email_verified:true
-
+            is_email_verified: true,
           });
           await user.save();
         }
-        const accessToken = user.generateAccessToken()
-        return done(null, {user,accessToken});
+        const accessToken = user.generateAccessToken();
+        return done(null, { user, accessToken });
       } catch (error) {
         return done(error, null);
       }
