@@ -1,37 +1,64 @@
-// import passport from "passport";
-
 import cors from "cors";
 import chalk from "chalk";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import express from "express";
+import winston from "winston";
 import session from "express-session";
+import rateLimit from "express-rate-limit";
 import passport from "./config/passportTherapist.js";
-import authroutes from "./routes/admin/auth.route.js";
-import authUser from "./routes/auth/authUser.js";
-import emailRoutes from "./routes/emailOtpRoute.js";
-import userRoutes from "./routes/user/userRoutes.js";
-import blogsrouter from "./routes/admin/blogs.route.js";
-import contactusRoutes from "./routes/contactUs.router.js";
-import authTherapist from "./routes/auth/authTherapist.js";
-import therapistRoutes from "./routes/therapist/therapist.route.js";
-import specializationRoute from "./routes/admin/specilization.route.js";
+import routes from "./routes/index.js"; // Grouped routes
 
+// Load environment variables
 dotenv.config();
+
+// Set up Winston logger
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    winston.format.printf(({ timestamp, level, message }) => {
+      return `${timestamp} ${level}: ${message}`;
+    })
+  ),
+  transports: [new winston.transports.Console()],
+});
+
+// Initialize the app
 const app = express();
+
+// Security middleware
+app.use(helmet());
 app.use(cors());
 
+// Rate limiting middleware
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 250, // Limit each IP to 100 requests per `window` (15 minutes)
+  message: "Too many requests from this IP, please try again later.",
+});
+app.use(limiter);
+
+// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// sesssion
+// Session configuration
 app.use(
   session({
     secret: process.env.SESSION_SECRET_KEY,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      httpOnly: true, // Mitigate XSS
+      secure: process.env.NODE_ENV === "production", // Set to true in production
+      maxAge: 60 * 60 * 1000, // 1 hour
+    },
   })
 );
 
+// Initialize Passport.js
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -43,6 +70,8 @@ app.use((req, res, next) => {
     // Calculate response time
     const diff = process.hrtime(startTime);
     const responseTime = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2); // In milliseconds
+
+    // Status code color logic
     const statusColor =
       res.statusCode >= 500
         ? chalk.red
@@ -53,13 +82,16 @@ app.use((req, res, next) => {
         : res.statusCode >= 200
         ? chalk.green
         : chalk.white;
+
     const formattedDate = new Date().toISOString();
-    console.log(
-      `${chalk.gray("[INFO]")} ${chalk.gray(formattedDate)} - ${chalk.blue(
-        "Method:"
-      )} ${chalk.yellow(req.method)}, ${chalk.blue("URL:")} ${chalk.yellow(
-        req.originalUrl
-      )}, ${chalk.blue("Status:")} ${statusColor(res.statusCode)}, ${chalk.blue(
+
+    // Logging the request
+    logger.info(
+      `${chalk.blue("METHOD:")} ${chalk.yellow(req.method)} - ${chalk.blue(
+        "URL:"
+      )} ${chalk.yellow(req.originalUrl)} - ${chalk.blue(
+        "STATUS:"
+      )} ${statusColor(res.statusCode)} - ${chalk.blue(
         "Response Time:"
       )} ${chalk.magenta(`${responseTime} ms`)}`
     );
@@ -68,19 +100,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// social auth routes
-app.use("/auth", authTherapist);
-app.use("/auth", authUser);
+// Use grouped routes
+app.use("/api/v1", routes);
 
-// ###### ADMIN ROUTES  #####################
-
-// routes for admin
-app.use("/api/v1/admin", authroutes);
-app.use("/api/v1/therapist", therapistRoutes);
-app.use("/api/v1/user", userRoutes);
-app.use("/api/v1/email", emailRoutes);
-app.use("/api/v1/blogs", blogsrouter);
-app.use("/api/v1/contact-us", contactusRoutes);
-app.use("/api/v1/specialization", specializationRoute);
+// Error handling middleware
+app.use((err, req, res, next) => {
+  logger.error(`Error: ${err.message}`);
+  res.status(500).json({ message: "An unexpected error occurred." });
+});
 
 export default app;
