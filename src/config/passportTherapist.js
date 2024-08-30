@@ -18,7 +18,6 @@ passport.use(
       scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
-      console.log("profile___________________", profile);
       try {
         let user = await Therapist.findOne({ googleId: profile.id });
         if (!user) {
