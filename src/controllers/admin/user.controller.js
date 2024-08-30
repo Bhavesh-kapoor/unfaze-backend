@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import { check, validationResult } from "express-validator";
 import { process } from "uniqid";
 import { parseISO, addDays, startOfDay, endOfDay } from "date-fns"
-
+import {verifyOTP} from "../../otpVerify/verifyEmailOtp.js"
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
   const accessToken = await user.generateAccessToken();
@@ -36,7 +36,7 @@ const adminlogin = asyncHandler(async (req, res) => {
 
   let existUser = await User.findOne({ $and: [{ email }, { role: "admin" }] });
   if (!existUser)
-    return res.status(400).json(new ApiError(400, "", "Email Not Found!"));
+    return res.status(404).json(new ApiError(404, "", "Email Not Found!"));
 
   // now check password is correct  or not
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
@@ -116,12 +116,15 @@ const userlogin = asyncHandler(async (req, res) => {
     );
 });
 const register = asyncHandler(async (req, res) => {
-  const { email, firstName, lastName, password, mobile, gender } = req.body;
+  const { email, firstName, lastName, password, mobile, gender,otp } = req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res
       .status(400)
       .json(new ApiError(400, "Validation Error", errors.array()));
+  }
+  if(!verifyOTP(email, otp)){
+    return res.status(201).json(new ApiError(201, "", "Invalid OTP"));
   }
 
   let profileImage = req.file ? req.file.path : "";
@@ -313,7 +316,23 @@ const allUser = asyncHandler(async (req, res) => {
   }, "User list fetched successfully"));
 });
 
+const changeCurrentPassword = asyncHandler(async(req, res) => {
+  const {oldPassword, newPassword} = req.body
 
+  const user = await User.findById(req.user?._id)
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+  if (!isPasswordCorrect) {
+      throw new ApiError(400, "Invalid old password")
+  }
+
+  user.password = newPassword
+  await user.save({validateBeforeSave: false})
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200, {}, "Password changed successfully"))
+})
 export {
   adminlogin,
   userlogin,
@@ -323,5 +342,6 @@ export {
   updateAvatar,
   updateProfile,
   allUser,
-  getCurrentUser
+  getCurrentUser,
+  changeCurrentPassword
 };

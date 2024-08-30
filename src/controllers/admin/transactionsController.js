@@ -170,8 +170,65 @@ const TotalSalesList = asyncHandler(async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
-const ListByCategory=asyncHandler(async(req,res)=>{
+const ListByCategory = asyncHandler(async (req, res) => {
+  let pipeline = [
+    {
+      $lookup: {
+        from: "courses",
+        localField: "course_id",
+        foreignField: "_id",
+        as: "course",
+      },
+    },
+    { $unwind: "$course" }, // Unwind to deconstruct the 'course' array
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "course.specialization_id",
+        foreignField: "_id",
+        as: "category",
+      },
+    },
+    { $unwind: "$category" }, // Unwind the 'category' array
+    {
+      $project: {
+        _id: 1,
+        course: 1,
+        category: 1,
+        createdAt: 1, // Include the 'createdAt' field for sorting
+        // Include other fields you want to project from the 'EnrolledCourse' document
+      },
+    },
+    {
+      $group: {
+        _id: "$category.name", // Group by category name
+        courses: {
+          $push: {
+            enrolledCourse: "$$ROOT", // Push the entire document into the array
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        category_name: "$_id",
+        courses: {
+          $slice: [
+            {
+              $sortArray: { input: "$courses", sortBy: { "enrolledCourse.createdAt": -1 } }, // Sort courses by 'createdAt' within each group
+            },
+            3, // Limit to top 3
+          ],
+        },
+      },
+    },
+  ];
 
-})
+  const data = await EnrolledCourse.aggregate(pipeline);
+  console.log(data);
+  return res.status(200).json({ data });
+});
 
-export { calculateTotalSales, TotalSalesList,ListByCategory };
+
+export { calculateTotalSales, TotalSalesList, ListByCategory };
