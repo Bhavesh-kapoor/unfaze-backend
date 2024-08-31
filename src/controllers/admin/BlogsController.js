@@ -82,7 +82,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(
           200,
-          { result: getall, pagination },
+          { pagination,result: getall},
           "Blog Data Fetch Successfully!"
         )
       );

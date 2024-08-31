@@ -48,8 +48,8 @@ const getEnrolledCourseList = asyncHandler(async (req, res) => {
 const handlePhonepayPayment = asyncHandler(async (req, res) => {
   try {
     const { paymentDetails, course_id } = req;
-    console.log("----------", paymentDetails)
     const user = req.user;
+    
     const course = await Course.findOne({ _id: course_id }).populate("therapist_id");
     if (!course) {
       return res.status(404).json(new ApiResponse(404, null, "Course not found."));

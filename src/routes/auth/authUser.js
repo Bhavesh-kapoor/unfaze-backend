@@ -7,15 +7,6 @@ import { User } from "../../models/userModel.js";
 
 const router = express.Router();
 
-const createAccessOrRefreshToken = async (user_id) => {
-  const user = await Therapist.findById(user_id);
-  const accessToken = await user.generateAccessToken();
-  const refreshToken = await user.generateRefreshToken();
-  user.refreshToken = refreshToken;
-  await user.save({ validateBeforeSave: false });
-  return { accessToken, refreshToken };
-};
-
 router.get(
   "/user/google",
   passport.authenticate("google-user", { scope: ["profile", "email"] })

@@ -67,7 +67,8 @@ const availableSlots = async (req, res) => {
 };
 
 const bookaSession = asyncHandler(async (req, res) => {
-  const { enrolledCourseId, date, startTime, user_id } = req.body;
+  const { enrolledCourseId, date, startTime} = req.body;
+  const user_id = req.user?._id
   // const { user_id } = req.user?._id;
 
   const enrolledCourse = await EnrolledCourse.findOne({
@@ -109,15 +110,20 @@ const bookaSession = asyncHandler(async (req, res) => {
   }
 
   // Create and save the new session
-  const session = new Session({
-    enrolled_course_id: enrolledCourseId,
-    user_id: user_id,
-    therapist_id: therapistId,
-    start_time: startDateTime,
-    end_time: endDateTime,
-  });
+
 
   try {
+    const session = new Session({
+      enrolled_course_id: enrolledCourseId,
+      user_id: user_id,
+      therapist_id: therapistId,
+      start_time: startDateTime,
+      end_time: endDateTime,
+    });
+    const uid = Math.floor(100000 + Math.random() * 900000);
+    const channelName = `session_${session._id}_${uid}`;
+    session.uid = uid;
+    session.channelName = channelName;
     await session.save();
     enrolledCourse.remaining_sessions -= 1;
     if (enrolledCourse.remaining_sessions === 0) {

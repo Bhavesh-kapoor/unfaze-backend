@@ -20,7 +20,15 @@ const sessionSchema = new Schema({
     enum: ["upcomming", "completed", "cancelled"],
     default: "upcomming",
   },
+  uid:{
+    type:Number,
+  },
+  channelName:{
+    type:String,
+  },
   start_time: { type: Date, required: true },
   end_time: { type: Date },
 },{timestamps:true});
+
+
 export const Session = mongoose.model("Session", sessionSchema);

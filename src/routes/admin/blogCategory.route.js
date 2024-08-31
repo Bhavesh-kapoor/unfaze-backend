@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createBlogCategory,allBlogCategory,updateBlogCategory,deleteBlogCategory } from "../../controllers/admin/CategoryController.js";
+import { createBlogCategory,allBlogCategory,updateBlogCategory,deleteBlogCategory } from "../../controllers/admin/blogCategoryController.js";
 const categoryRouter = Router();
 
 
