@@ -189,19 +189,18 @@ const ListByCategory = asyncHandler(async (req, res) => {
         as: "category",
       },
     },
-    { $unwind: "$category" }, // Unwind the 'category' array
+    { $unwind: "$category" },
     {
       $project: {
         _id: 1,
         course: 1,
         category: 1,
-        createdAt: 1, // Include the 'createdAt' field for sorting
-        // Include other fields you want to project from the 'EnrolledCourse' document
+        createdAt: 1,
       },
     },
     {
       $group: {
-        _id: "$category.name", // Group by category name
+        _id: "$category.name",
         courses: {
           $push: {
             enrolledCourse: "$$ROOT", // Push the entire document into the array

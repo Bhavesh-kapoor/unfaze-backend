@@ -2,6 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
+import  Blog  from "../../models/blogsModel.js"
 
 const therapistList = asyncHandler(async (req, res) => {
   const {
@@ -132,7 +133,9 @@ const therapistListByGroup = asyncHandler(async (req, res) => {
           },
         },
       },
+
     },
+
     {
       $sort: { [sortkey]: sortdir === "desc" ? -1 : 1 },
     },
@@ -201,4 +204,15 @@ const therapistListByGroup = asyncHandler(async (req, res) => {
   );
 });
 
-export { therapistList,therapistListByGroup }
+const findBolgbySlug = asyncHandler(async (req, res) => {
+  const { slug } = req.query;
+  if (!slug) {
+    throw new ApiError(400, "", "slug is required!")
+  }
+  const blog = await Blog.findOne({ slug })
+  if (!blog) {
+    throw new ApiError(404, "", "Blog not found!")
+  }
+  return res.status(200).json(new ApiResponse(200, blog, "Blog fetched succsessfully!"))
+})
+export { therapistList, therapistListByGroup, findBolgbySlug }

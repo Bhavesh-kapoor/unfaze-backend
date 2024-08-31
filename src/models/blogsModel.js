@@ -21,6 +21,7 @@ const BlogSchema = new mongoose.Schema(
     imageUrl: {
       type: String,
       trim: true,
+      default: "",
     },
     categoryId: {
       type: Schema.Types.ObjectId,
