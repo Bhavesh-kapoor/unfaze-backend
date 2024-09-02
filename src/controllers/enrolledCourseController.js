@@ -30,7 +30,7 @@ const getEnrolledCourseList = asyncHandler(async (req, res) => {
     });
 
   if (!enrolledList || enrolledList.length === 0) {
-    return res.status(403).json(new ApiError(404, "", "You're not enrolled in any course!"))
+    return res.status(200).json(new ApiResponse(200, "", "You're not enrolled in any course!"))
   }
 
   const totalDocuments = await EnrolledCourse.countDocuments({ user_id });
