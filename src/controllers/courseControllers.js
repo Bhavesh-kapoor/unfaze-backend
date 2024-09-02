@@ -1,7 +1,7 @@
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { Course } from "../models/courseModel.js";
-import AysncHandler from "../utils/asyncHandler.js";
+import asyncHandler from "../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
 
 const validateInput = [
@@ -9,7 +9,7 @@ const validateInput = [
   check("cost", "cost Name is required").notEmpty(),
   check("specialization_id", "specialization is required").notEmpty(),
 ];
-const createCourse = AysncHandler(async (req, res) => {
+const createCourse = asyncHandler(async (req, res) => {
   const therapist_id = req.user?._id;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -45,42 +45,34 @@ const createCourse = AysncHandler(async (req, res) => {
   }
 });
 
-const updateCourse = AysncHandler(async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    console.log("Validation errors:", errors.array());
-    return res
-      .status(400)
-      .json(new ApiResponse(400, errors.array(), "Validation error"));
-  }
-  const therapist_id = req.user?._id;
+const updateCourse = asyncHandler(async (req, res) => {
+  const therapistId = req.user?._id;
   const { _id } = req.params;
-  const { session_count, cost, specialization } = req.body;
-
   try {
-    const course = await Course.findOne({ _id, therapist_id });
-    if (!course.therapist_id.equals(therapist_id)) {
-      throw new ApiError(501, "Unauthorized user request!");
-    }
-    const updatedCourse = await Course.findByIdAndUpdate(
-      _id,
-      { therapist_id, session_count, cost, specialization },
-      { new: true }
-    );
+    const course = await Course.findOne({ _id });
 
-    if (!updatedCourse) {
-      throw new ApiError(404, "Course not found");
+    if (!course.therapist_id.equals(therapistId)) {
+      return res.status(401).json(new ApiError(501,"", "Unauthorized user request!")) 
     }
+const updatedCourse = await Course.findByIdAndUpdate(
+  _id,
+  req.body,
+  { new: true }
+);
 
-    res
-      .status(200)
-      .json(new ApiResponse(200, updatedCourse, "Course updated successfully"));
+if (!updatedCourse) {
+  throw new ApiError(404, "Course not found");
+}
+
+res
+  .status(200)
+  .json(new ApiResponse(200, updatedCourse, "Course updated successfully"));
   } catch (error) {
-    console.error("Error updating course:", error);
-    throw new ApiError(501, "Something went wrong while updating the course", error);
-  }
+  console.error("Error updating course:", error);
+  throw new ApiError(501, "Something went wrong while updating the course", error);
+}
 });
-const deleteCourse = AysncHandler(async (req, res) => {
+const deleteCourse = asyncHandler(async (req, res) => {
   const { _id } = req.params;
   const therapist_id = req.user?._id;
 
@@ -101,7 +93,7 @@ const deleteCourse = AysncHandler(async (req, res) => {
     throw new ApiError(501, "Something went wrong while deleting the course");
   }
 });
-const findList = AysncHandler(async (req, res) => {
+const findList = asyncHandler(async (req, res) => {
   try {
     const pipeline = [
       { $match: { therapist_id: req.user?._id } },
@@ -141,5 +133,6 @@ const findList = AysncHandler(async (req, res) => {
     throw new ApiError(501, "Something went wrong while fetching the course");
   }
 });
+
 
 export { validateInput, createCourse, updateCourse, deleteCourse, findList };

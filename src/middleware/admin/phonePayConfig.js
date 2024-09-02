@@ -8,9 +8,8 @@ import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 const APP_BE_URL = process.env.APP_BASE_URL
 export async function processPayment(req, res) {
   try {
-    const { amount, mobile } = req.body;
-    const { course_id } = req.params;
-    const user_id = req.user?._id;
+    const { course_id } = req.body;
+    const user= req.user;
     if (!mongoose.Types.ObjectId.isValid(course_id)) {
       return res.status(400).json(new ApiError(404, "", "Invalid course id!!!"));
     }
@@ -18,12 +17,9 @@ export async function processPayment(req, res) {
     if (!course) {
       return res.status(404).json(new ApiError(404, "", "Invalid course !!!"));
     }
-    if (amount !== course.cost) {
-      return res.status(403).json(new ApiError(403, "", "invalid amount!!!"));
-    }
     const alreadyEnrolled = await EnrolledCourse.findOne({
       course_id: course_id,
-      user_id: user_id,
+      user_id: user._id,
     });
     if (alreadyEnrolled) {
       return res.status(403).json(new ApiError(403, "", "already enrolled"));
@@ -33,10 +29,10 @@ export async function processPayment(req, res) {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
       merchantUserId: user_id,
-      amount: amount * 100,
+      amount: course.cost * 100,
       redirectUrl: `${APP_BE_URL}/api/v1/user/validate/${transactionId}/${course_id}`,
       redirectMode: "REDIRECT",
-      mobileNumber: mobile,
+      mobileNumber: user.mobile,
       paymentInstrument: {
         type: "PAY_PAGE",
       },

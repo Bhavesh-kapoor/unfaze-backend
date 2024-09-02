@@ -9,7 +9,7 @@ import {
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 const courseRouter = Router();
 courseRouter.post("/create", verifyJwtToken, validateInput, createCourse);
-courseRouter.put("/update/:_id", verifyJwtToken, validateInput, updateCourse);
+courseRouter.put("/update/:_id", verifyJwtToken, updateCourse);
 courseRouter.delete("/delete/:_id", verifyJwtToken, deleteCourse);
 courseRouter.get("/course_list", verifyJwtToken, findList);
 

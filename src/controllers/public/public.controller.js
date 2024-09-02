@@ -253,7 +253,6 @@ const therapistDetails = asyncHandler(async (req, res) => {
     {
       $project: {
         _id: 1,
-        therapist_id: 1,
         session_count: 1,
         category: 1,
         cost: 1,

@@ -19,6 +19,10 @@ const courseSchema = new Schema(
       ref: "Specialization",
       required: true,
     },
+    is_active:{
+      type: Boolean,
+      default: true,
+    }
   },
   { timestamps: true }
 );

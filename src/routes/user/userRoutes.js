@@ -35,8 +35,8 @@ userRoutes.get("/get-therapist/:_id",getTherepistById)
 
 //courese enrollment route
 userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
-userRoutes.post("/pay/:course_id", verifyJwtToken, processPayment);
-userRoutes.post("/create-order", createOrder);
+userRoutes.post("/pay", verifyJwtToken, processPayment);
+userRoutes.post("/create-order",verifyJwtToken, createOrder);
 userRoutes.post("/verify",  verifyJwtToken, verifyPayment,handleCashfreePayment);
 
 userRoutes.get(
