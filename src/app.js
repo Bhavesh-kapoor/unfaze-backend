@@ -101,7 +101,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/admin", authroutes);
+
 
 // Social auth routes
 app.use("/auth", authUser);

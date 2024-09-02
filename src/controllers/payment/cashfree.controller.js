@@ -1,7 +1,6 @@
 import ApiError from '../../utils/ApiError.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import ApiResponse from '../../utils/ApiResponse.js';
-import axios from 'axios';
 import uniqid from "uniqid";
 import Cashfree from "../../config/cashfree.config.js";
 
@@ -14,8 +13,8 @@ const createOrder = asyncHandler(async (req, res) => {
         "order_currency": `${order_currency}`,
         "order_id": `${order_id}`,
         "customer_details": {
-            "customer_id": "12334",
-            "customer_phone": "9999999999"
+            "customer_id": `${user._id}`,
+            "customer_phone": `${mobile}`
         },
         "order_meta": {
             "return_url": `https://www.cashfree.com/devstudio/preview/pg/web/checkout?order_id=${order_id}`
