@@ -2,7 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
-import  Blog  from "../../models/blogsModel.js"
+import Blog from "../../models/blogsModel.js"
 
 const therapistList = asyncHandler(async (req, res) => {
   const {
@@ -215,4 +215,18 @@ const findBolgbySlug = asyncHandler(async (req, res) => {
   }
   return res.status(200).json(new ApiResponse(200, blog, "Blog fetched succsessfully!"))
 })
-export { therapistList, therapistListByGroup, findBolgbySlug }
+
+
+const therapistDetails = asyncHandler(async (req, res) => {
+  const { slug } = req.params
+  console.log(slug)
+  if (!slug) {
+    throw new ApiError(400, "", "slug is required!")
+  }
+  const therapist = await Therapist.findOne({ email: { $regex: slug, $options: 'i' } }).select("-password -refreshToken")
+  if (!therapist) {
+    return res.status(404).json(new ApiError(404, "", "failed to get therapist"))
+  }
+  return res.status(200).json(new ApiResponse(200, therapist, "therapist fetched successfully!"))
+})
+export { therapistList, therapistListByGroup, findBolgbySlug, therapistDetails }
