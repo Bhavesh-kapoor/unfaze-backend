@@ -17,7 +17,6 @@ router.use("/user", userRoutes);
 router.use("/email", emailRoutes);
 router.use("/blogs", blogsrouter);
 router.use("/therapist", therapistRoutes);
-router.use("/contact-us", contactusRoutes);
 router.use("/specialization", specializationRoute);
 
 export default router;

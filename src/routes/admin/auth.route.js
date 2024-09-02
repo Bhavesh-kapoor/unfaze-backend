@@ -15,10 +15,11 @@ import seoRouter from "./seo.route.js"
 import userRoutes from "../admin/user.route.js";
 import faqrouter from "./faq.route.js";
 import transactionRoutes from "./transaction.route.js"
+import contactusRoutes from "../../routes/contactUs.router.js"
 
 const authroutes = Router();
 authroutes.post("/login", adminlogin);
-authroutes.get("/get-curent-user",verifyJwtToken, getCurrentUser);
+authroutes.get("/get-curent-user", verifyJwtToken, getCurrentUser);
 
 authroutes.post("/refreshToken", verifyJwtToken, refreshToken);
 authroutes.use("/specialization", verifyJwtToken, speclizationRoute);
@@ -28,8 +29,10 @@ authroutes.use("/feedback", feedbackRoute);
 authroutes.use("/blogs", verifyJwtToken, blogsrouter);
 authroutes.use("/blog-category", verifyJwtToken, categoryRouter);
 authroutes.use("/seo", verifyJwtToken, seoRouter);
-authroutes.use('/faq', verifyJwtToken , faqrouter);
+authroutes.use('/faq', verifyJwtToken, faqrouter);
 authroutes.use('/transactions', transactionRoutes);
+authroutes.use("/contact-us", contactusRoutes);
+
 
 // faq routes
 
