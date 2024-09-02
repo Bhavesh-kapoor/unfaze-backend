@@ -168,27 +168,14 @@ const register = asyncHandler(async (req, res) => {
     }, "User created successfully"));
 });
 const updateProfile = asyncHandler(async (req, res) => {
-  const { firstName, lastName, mobile, gender } = req.body;
   const userId = req.user?._id;
 
-  const user = await User.findById(userId);
-  if (!user) {
+  const updatedUser = await User.findByIdAndUpdate(userId, req.body, { new: true });
+  if (!updatedUser) {
     return res
       .status(404)
       .json(new ApiError(404, "", "User not found"));
   }
-
-  user.firstName = firstName || user.firstName;
-  user.lastName = lastName || user.lastName;
-  user.mobile = mobile || user.mobile;
-  user.gender = gender || user.gender;
-
-  if (req.file) {
-    user.profileImage = req.file.path;
-  }
-
-  const updatedUser = await user.save();
-
   return res
     .status(200)
     .json(new ApiResponse(200, updatedUser, "User updated successfully"));

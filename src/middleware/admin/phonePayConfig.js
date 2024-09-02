@@ -28,7 +28,7 @@ export async function processPayment(req, res) {
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
-      merchantUserId: user_id,
+      merchantUserId:`MUID_${user._id}`,
       amount: course.cost * 100,
       redirectUrl: `${APP_BE_URL}/api/v1/user/validate/${transactionId}/${course_id}`,
       redirectMode: "REDIRECT",
