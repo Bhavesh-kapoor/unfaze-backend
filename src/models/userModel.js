@@ -52,10 +52,20 @@ const userSchema = new Schema(
     refreshToken: {
       type: String,
     },
-    is_active:{
-      type:Boolean,
-      default:true
-    }
+    is_active: {
+      type: Boolean,
+      default: true
+    },
+    dob: {
+      type: Date,
+      required: true,
+      validate: {
+        validator: function (value) {
+          return value < new Date();
+        },
+        message: 'Date of birth must be in the past.'
+      }
+    },
   },
   {
     timestamps: true,

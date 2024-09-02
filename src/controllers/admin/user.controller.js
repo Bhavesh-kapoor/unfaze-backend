@@ -116,7 +116,7 @@ const userlogin = asyncHandler(async (req, res) => {
     );
 });
 const register = asyncHandler(async (req, res) => {
-  const { email, firstName, lastName, password, mobile, gender, otp } = req.body;
+  const { email, firstName, lastName, password, mobile,dob, gender, otp } = req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res
@@ -144,6 +144,7 @@ const register = asyncHandler(async (req, res) => {
     password,
     mobile,
     gender,
+    dob,
     profileImage,
     is_email_verified: true
   });
