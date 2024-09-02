@@ -30,7 +30,7 @@ const getEnrolledCourseList = asyncHandler(async (req, res) => {
     });
 
   if (!enrolledList || enrolledList.length === 0) {
-    throw new ApiError(404, "You're not enrolled in any course!");
+    return res.status(403).json(new ApiError(404, "", "You're not enrolled in any course!"))
   }
 
   const totalDocuments = await EnrolledCourse.countDocuments({ user_id });
@@ -49,7 +49,7 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
   try {
     const { paymentDetails, course_id } = req;
     const user = req.user;
-    
+
     const course = await Course.findOne({ _id: course_id }).populate("therapist_id");
     if (!course) {
       return res.status(404).json(new ApiResponse(404, null, "Course not found."));
