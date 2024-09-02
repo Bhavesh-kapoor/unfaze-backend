@@ -139,4 +139,45 @@ const bookaSession = asyncHandler(async (req, res) => {
   }
 });
 
-export { availableSlots, bookaSession };
+const bookedSessions = asyncHandler(async (req, res) => {
+  const user_id = req.user?._id;
+
+  const sessions = await Session.aggregate([
+    {
+      $match: { user_id: user_id }
+    },
+    {
+      $lookup: {
+        from: "therapists",
+        localField: "therapist_id",
+        foreignField: "_id",
+        as: "therapist_details"
+      }
+    },
+    // {
+    //   $unwind: "$therapist"
+    // },
+    // {
+    //   $group: {
+    //     _id: "$status",
+    //     sessions: {
+    //       $push: {
+    //         _id: "$_id",
+    //         date: "$date",
+    //         therapist_id: "$therapist._id",
+    //         therapistName: `$therapist.firstName $therapist.firstName`,
+    //         channelName: "$channelName",
+    //         firstName: "$therapist.firstName",
+    //         lastName: "$therapist.lastName",
+    //         email: "$therapist.email"
+    //       }
+    //     }
+    //   }
+    // }
+  ]);
+  console.log("session-----------s",sessions)
+
+  res.status(200).json(new ApiResponse(200,sessions,"Session fetched successfully!" ));
+});
+
+export { availableSlots, bookaSession,bookedSessions };
