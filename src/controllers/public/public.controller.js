@@ -3,6 +3,7 @@ import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import Blog from "../../models/blogsModel.js"
+import { Course } from "../../models/courseModel.js";
 
 const therapistList = asyncHandler(async (req, res) => {
   const {
@@ -223,10 +224,50 @@ const therapistDetails = asyncHandler(async (req, res) => {
   if (!slug) {
     throw new ApiError(400, "", "slug is required!")
   }
-  const therapist = await Therapist.findOne({ email: { $regex: slug, $options: 'i' } }).select("-password -refreshToken")
+  const therapist = await Therapist.findOne({ email: { $regex: slug, $options: 'i' } }).populate({
+    path: 'specialization',
+    select: 'name'
+  }).select("-password -refreshToken");
+  console.log(therapist);
   if (!therapist) {
     return res.status(404).json(new ApiError(404, "", "failed to get therapist"))
   }
-  return res.status(200).json(new ApiResponse(200, therapist, "therapist fetched successfully!"))
+  const pipeline = [
+    { $match: { therapist_id: therapist._id } },
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "specialization_id",
+        foreignField: "_id",
+        as: "specializations",
+      },
+    },
+    {
+      $unwind: "$specializations",
+    },
+    {
+      $addFields: {
+        category: "$specializations.name",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        therapist_id: 1,
+        session_count: 1,
+        category: 1,
+        cost: 1,
+      },
+    },
+  ];
+
+  const getList = await Course.aggregate(pipeline);
+  const result = {
+    therapist: therapist,
+    course_list: getList,
+    total_courses: getList.length,
+  }
+  console.log(getList)
+  return res.status(200).json(new ApiResponse(200, result, "therapist fetched successfully!"))
 })
 export { therapistList, therapistListByGroup, findBolgbySlug, therapistDetails }

@@ -5,7 +5,7 @@ import {
   updateCourse,
   deleteCourse,
   findList,
-} from "../../controllers/admin/courseControllers.js";
+} from "../../controllers/courseControllers.js";
 import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 const courseRouter = Router();
 courseRouter.post("/create", verifyJwtToken, validateInput, createCourse);

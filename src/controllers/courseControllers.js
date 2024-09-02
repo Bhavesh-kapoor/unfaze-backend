@@ -1,7 +1,7 @@
-import ApiError from "../../utils/ApiError.js";
-import ApiResponse from "../../utils/ApiResponse.js";
-import { Course } from "../../models/courseModel.js";
-import AysncHandler from "../../utils/asyncHandler.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import { Course } from "../models/courseModel.js";
+import AysncHandler from "../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
 
 const validateInput = [
@@ -77,7 +77,7 @@ const updateCourse = AysncHandler(async (req, res) => {
       .json(new ApiResponse(200, updatedCourse, "Course updated successfully"));
   } catch (error) {
     console.error("Error updating course:", error);
-    throw new ApiError(501, "Something went wrong while updating the course",error);
+    throw new ApiError(501, "Something went wrong while updating the course", error);
   }
 });
 const deleteCourse = AysncHandler(async (req, res) => {

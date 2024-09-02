@@ -4,8 +4,22 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { User } from "../../models/userModel.js";
+import {
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  subDays,
+  subWeeks,
+  subMonths,
+  subYears,
+  addDays,
+  addHours
+} from 'date-fns';
 
-import { startOfDay, endOfDay, subDays, subMonths, subYears } from "date-fns";
+
 
 const calculateTotalSales = asyncHandler(async (req, res) => {
   const { duration = "week" } = req.query;
@@ -79,6 +93,166 @@ const calculateTotalSales = asyncHandler(async (req, res) => {
       })
     );
 });
+
+
+
+const TotalSalesByDuration = asyncHandler(async (req, res) => {
+  const now = new Date();
+
+  // Define the date ranges for different periods using a date library like date-fns
+  const getDateRanges = (now) => ({
+    today: { start: startOfDay(now), end: endOfDay(now) },
+    yesterday: {
+      start: startOfDay(subDays(now, 1)),
+      end: endOfDay(subDays(now, 1)),
+    },
+    thisWeek: { start: startOfWeek(now), end: endOfWeek(now) },
+    lastWeek: {
+      start: startOfWeek(subWeeks(now, 1)),
+      end: endOfWeek(subWeeks(now, 1)),
+    },
+    thisMonth: { start: startOfMonth(now), end: endOfMonth(now) },
+    lastMonth: {
+      start: startOfMonth(subMonths(now, 1)),
+      end: endOfMonth(subMonths(now, 1)),
+    },
+    thisYear: {
+      start: new Date(now.getFullYear(), 0, 1),
+      end: new Date(now.getFullYear(), 11, 31),
+    },
+    lastYear: {
+      start: new Date(now.getFullYear() - 1, 0, 1),
+      end: new Date(now.getFullYear() - 1, 11, 31),
+    },
+  });
+
+  const dateRanges = getDateRanges(now);
+
+  const getTotalSales = async (startDate, endDate) => {
+    const result = await EnrolledCourse.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: "$amount" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    return result[0] || { totalSales: 0, count: 0 };
+  };
+
+  // Days and hours passed calculations
+  const daysPassedInCurrentWeek = now.getDay(); // 0 (Sun) - 6 (Sat)
+  const daysPassedInCurrentMonth = now.getDate(); // Day of the month (1-31)
+  const daysPassedInCurrentYear = Math.floor(
+    (now - new Date(now.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)
+  );
+  const hoursPassedToday = now.getHours(); // Current hour of the day (0-23)
+
+  // Comparison date ranges
+  const comparativeWeekStart = startOfWeek(subWeeks(now, 1));
+  const comparativeWeekEnd = addDays(comparativeWeekStart, daysPassedInCurrentWeek);
+
+  const comparativeMonthStart = startOfMonth(subMonths(now, 1));
+  const comparativeMonthEnd = addDays(comparativeMonthStart, daysPassedInCurrentMonth - 1);
+
+  const comparativeYearStart = new Date(now.getFullYear() - 1, 0, 1);
+  const comparativeYearEnd = addDays(comparativeYearStart, daysPassedInCurrentYear);
+
+  const comparativeDayStart = startOfDay(subDays(now, 1));
+  const comparativeDayEnd = addHours(comparativeDayStart, hoursPassedToday);
+
+  const todayStart = startOfDay(now);
+  const todayEnd = addHours(todayStart, hoursPassedToday);
+
+  // Total sales of all time
+  const getTotalSalesOfAllTime = async () => {
+    const result = await EnrolledCourse.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: "$amount" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    return result[0] || { totalSales: 0, count: 0 };
+  };
+
+  const [
+    salesToday,
+    salesYesterday,
+    salesThisWeek,
+    salesLastWeek,
+    salesThisMonth,
+    salesLastMonth,
+    salesThisYear,
+    salesLastYear,
+    totalActiveTherapist,
+    totalActiveUser,
+    salesComparativeWeek,
+    salesComparativeMonth,
+    salesComparativeYear,
+    salesComparativeDay,
+    totalSalesOfAllTime,
+  ] = await Promise.all([
+    getTotalSales(dateRanges.today.start, dateRanges.today.end),
+    getTotalSales(dateRanges.yesterday.start, dateRanges.yesterday.end),
+    getTotalSales(dateRanges.thisWeek.start, dateRanges.thisWeek.end),
+    getTotalSales(dateRanges.lastWeek.start, dateRanges.lastWeek.end),
+    getTotalSales(dateRanges.thisMonth.start, dateRanges.thisMonth.end),
+    getTotalSales(dateRanges.lastMonth.start, dateRanges.lastMonth.end),
+    getTotalSales(dateRanges.thisYear.start, dateRanges.thisYear.end),
+    getTotalSales(dateRanges.lastYear.start, dateRanges.lastYear.end),
+    Therapist.countDocuments({ is_active: true }),
+    User.countDocuments({ role: "user" }),
+    getTotalSales(comparativeWeekStart, comparativeWeekEnd),
+    getTotalSales(comparativeMonthStart, comparativeMonthEnd),
+    getTotalSales(comparativeYearStart, comparativeYearEnd),
+    getTotalSales(comparativeDayStart, comparativeDayEnd),
+    getTotalSalesOfAllTime(),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      salesToday: salesToday.totalSales / 100,
+      salesYesterday: salesYesterday.totalSales / 100,
+      salesThisWeek: salesThisWeek.totalSales / 100,
+      salesLastWeek: salesLastWeek.totalSales / 100,
+      salesThisMonth: salesThisMonth.totalSales / 100,
+      salesLastMonth: salesLastMonth.totalSales / 100,
+      salesThisYear: salesThisYear.totalSales / 100,
+      salesLastYear: salesLastYear.totalSales / 100,
+      totalCountsToday: salesToday.count,
+      totalCountsYesterday: salesYesterday.count,
+      totalCountsThisWeek: salesThisWeek.count,
+      totalCountsLastWeek: salesLastWeek.count,
+      totalCountsThisMonth: salesThisMonth.count,
+      totalCountsLastMonth: salesLastMonth.count,
+      totalCountsThisYear: salesThisYear.count,
+      totalCountsLastYear: salesLastYear.count,
+      totalActiveTherapist,
+      totalActiveUser,
+      salesComparativeDay: salesComparativeDay.totalSales / 100,
+      salesComparativeWeek: salesComparativeWeek.totalSales / 100,
+      salesComparativeMonth: salesComparativeMonth.totalSales / 100,
+      salesComparativeYear: salesComparativeYear.totalSales / 100,
+      totalCountsComparativeDay: salesComparativeDay.count,
+      totalCountsComparativeWeek: salesComparativeWeek.count,
+      totalCountsComparativeMonth: salesComparativeMonth.count,
+      totalCountsComparativeYear: salesComparativeYear.count,
+      totalSalesOfAllTime: totalSalesOfAllTime.totalSales / 100,
+      totalCountOfAllTime: totalSalesOfAllTime.count,
+    })
+  );
+});
+
+
 const TotalSalesList = asyncHandler(async (req, res) => {
   try {
     const {
@@ -230,4 +404,4 @@ const ListByCategory = asyncHandler(async (req, res) => {
 });
 
 
-export { calculateTotalSales, TotalSalesList, ListByCategory };
+export { calculateTotalSales, TotalSalesList, ListByCategory, TotalSalesByDuration };

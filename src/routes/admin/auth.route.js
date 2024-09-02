@@ -20,7 +20,6 @@ import contactusRoutes from "../../routes/contactUs.router.js"
 const authroutes = Router();
 authroutes.post("/login", adminlogin);
 authroutes.get("/get-curent-user", verifyJwtToken, getCurrentUser);
-
 authroutes.post("/refreshToken", verifyJwtToken, refreshToken);
 authroutes.use("/specialization", verifyJwtToken, speclizationRoute);
 authroutes.use("/therapist", therepistRouter);
