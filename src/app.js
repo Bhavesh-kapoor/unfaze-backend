@@ -8,7 +8,9 @@ import session from "express-session";
 import rateLimit from "express-rate-limit";
 import routes from "./routes/index.js"; // Grouped routes
 import authUser from "./routes/auth/authUser.js";
-import passport from "./config/passportUser.js"
+import passport from "./config/passportUser.js";
+
+import authroutes from "./routes/admin/auth.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -77,12 +79,12 @@ app.use((req, res, next) => {
       res.statusCode >= 500
         ? chalk.red
         : res.statusCode >= 400
-          ? chalk.yellow
-          : res.statusCode >= 300
-            ? chalk.cyan
-            : res.statusCode >= 200
-              ? chalk.green
-              : chalk.white;
+        ? chalk.yellow
+        : res.statusCode >= 300
+        ? chalk.cyan
+        : res.statusCode >= 200
+        ? chalk.green
+        : chalk.white;
 
     // Logging the request
     logger.info(
@@ -98,6 +100,8 @@ app.use((req, res, next) => {
 
   next();
 });
+
+app.use("/admin", authroutes);
 
 // Social auth routes
 app.use("/auth", authUser);

@@ -65,7 +65,7 @@ const register = asyncHandler(async (req, res) => {
     start_hour,
     end_hour,
   } = req.body;
- console.log(req.body);
+  console.log(req.body);
   const therapistData = {
     firstName,
     lastName,
@@ -78,7 +78,8 @@ const register = asyncHandler(async (req, res) => {
     start_hour,
     end_hour,
   };
-  console.log(firstName,
+  console.log(
+    firstName,
     lastName,
     addressLine1,
     addressLine2,
@@ -106,7 +107,8 @@ const register = asyncHandler(async (req, res) => {
     ifsccode,
     accountNumber,
     accountHolder,
-    password,)
+    password
+  );
   therapistData.address = {};
   therapistData.social = {};
   therapistData.education = {};
@@ -300,65 +302,67 @@ const therapistList = asyncHandler(async (req, res) => {
     limit = 10,
     sortkey = "createdAt",
     sortdir = "desc",
-    search
+    search,
   } = req.query;
   // email,mobile,specialization,
-  //add is active filter 
+  //add is active filter
   /*---------------------------- Pagination ------------------------------*/
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
   const skip = (pageNumber - 1) * limitNumber;
-
-  const pipeline = [{
-    $lookup: {
-      from: "specializations",
-      localField: "specialization",
-      foreignField: "_id",
-      as: "specializationDetails",
+  let pipeline = [
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "specialization",
+        foreignField: "_id",
+        as: "specializationDetails",
+      },
     },
-  },
-  {
-    $match: {
-      $or: [{ email: { $regex: search, $options: "i" } }, { mobile: { $regex: search, $options: "i" } }, { "specializationDetails.name": { $regex: search, $options: "i" } }]
-    }
-  }
-  ]
+  ];
+  if (search)
+    pipeline = [
+      ...pipeline,
+      {
+        $match: {
+          $or: [
+            { email: { $regex: search, $options: "i" } },
+            { mobile: { $regex: search, $options: "i" } },
+            { "specializationDetails.name": { $regex: search, $options: "i" } },
+          ],
+        },
+      },
+    ];
 
-  const therapistListData = await Therapist.aggregate([...pipeline, {
-    $sort: { [sortkey]: sortdir === "desc" ? -1 : 1 },
-  },
-  {
-    $skip: skip,
-  },
-  {
-    $limit: limitNumber,
-  },
-  {
-    $project: {
-      _id: 1,
-      profileImage: 1,
-      name: { $concat: ["$firstName", " ", "$lastName"] },
-      email: 1,
-      is_email_verified: 1,
-      is_active: 1,
-      createdAt: 1,
-      specializationDetails: {
-        $map: {
-          input: "$specializationDetails",
-          as: "specialization",
-          in: {
-            _id: "$$specialization._id",
-            name: "$$specialization.name",
+  const therapistListData = await Therapist.aggregate([
+    ...pipeline,
+    { $sort: { [sortkey]: sortdir === "desc" ? -1 : 1 } },
+    { $skip: skip },
+    { $limit: limitNumber },
+    {
+      $project: {
+        _id: 1,
+        profileImage: 1,
+        name: { $concat: ["$firstName", " ", "$lastName"] },
+        email: 1,
+        is_email_verified: 1,
+        is_active: 1,
+        createdAt: 1,
+        specializationDetails: {
+          $map: {
+            input: "$specializationDetails",
+            as: "specialization",
+            in: {
+              _id: "$$specialization._id",
+              name: "$$specialization.name",
+            },
           },
         },
       },
-    }
-  }
+    },
   ]);
-  console.log('therapistListData', therapistListData)
-  pipeline.push({
-    $count: "totalCount",
-  });
+
+  pipeline.push({ $count: "totalCount" });
   const countResult = await Therapist.aggregate(pipeline);
   const totalTherapists =
     countResult.length > 0 ? countResult[0].totalCount : 0;
@@ -371,14 +375,12 @@ const therapistList = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-
         pagination: {
           totalItems: totalTherapists,
           totalPages: Math.ceil(totalTherapists / limitNumber),
-          currentPage: pageNumber
+          currentPage: pageNumber,
         },
         result: therapistListData,
-
       },
       "Therapist list fetched successfully"
     )
