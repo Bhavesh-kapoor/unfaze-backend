@@ -1,19 +1,24 @@
+import fs from "fs";
+import path from "path";
 import cors from "cors";
 import chalk from "chalk";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import express from "express";
 import winston from "winston";
+import { fileURLToPath } from "url";
 import session from "express-session";
+import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
-import routes from "./routes/index.js"; // Grouped routes
 import authUser from "./routes/auth/authUser.js";
 import passport from "./config/passportUser.js";
 
-import authroutes from "./routes/admin/auth.route.js";
-
 // Load environment variables
 dotenv.config();
+
+// Fix __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Set up Winston logger
 const logger = winston.createLogger({
@@ -101,7 +106,15 @@ app.use((req, res, next) => {
   next();
 });
 
-
+// Dynamic image serving endpoint
+app.get("/images/uploads/:folder/:image", (req, res) => {
+  const { folder, image } = req.params;
+  const imagePath = path.join(__dirname, "images/uploads", folder, image);
+  fs.access(imagePath, fs.constants.F_OK, (err) => {
+    if (err) return res.status(404).json({ message: "Image not found" });
+    res.sendFile(imagePath);
+  });
+});
 
 // Social auth routes
 app.use("/auth", authUser);
