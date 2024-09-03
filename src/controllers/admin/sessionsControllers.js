@@ -55,7 +55,6 @@ const availableSlots = async (req, res) => {
       }
     });
   });
-
   res.status(200).json({
     date: format(parsedDate, "yyyy-MM-dd"),
     slots: allSlots.map((slot) => ({
@@ -67,29 +66,30 @@ const availableSlots = async (req, res) => {
 };
 
 const bookaSession = asyncHandler(async (req, res) => {
-  const { enrolledCourseId, date, startTime} = req.body;
+  const { therapist_id, date, startTime } = req.body;
   const user_id = req.user?._id
-  // const { user_id } = req.user?._id;
+  /*
+    const enrolledCourse = await EnrolledCourse.findOne({
+      _id: enrolledCourseId,
+      user_id: user_id,
+    }).populate({
+      path: "course_id",
+      select: "therapist_id",
+    });
+    if (!enrolledCourse) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "No Enrolled course found"));
+    }
+    console.log("enrolledCourse", enrolledCourse);
+    if (enrolledCourse.active === false) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "you already booked all your sessions!"));
+    }
+        */
 
-  const enrolledCourse = await EnrolledCourse.findOne({
-    _id: enrolledCourseId,
-    user_id: user_id,
-  }).populate({
-    path: "course_id",
-    select: "therapist_id",
-  });
-  if (!enrolledCourse) {
-    return res
-      .status(404)
-      .json(new ApiError(404, "", "No Enrolled course found"));
-  }
-  console.log("enrolledCourse", enrolledCourse);
-  if (enrolledCourse.active === false) {
-    return res
-      .status(404)
-      .json(new ApiError(404, "", "you already booked all your sessions!"));
-  }
-  const therapistId = enrolledCourse.course_id.therapist_id;
+  const therapistId = therapist_id;
   const startDateTime = parseISO(`${date}T${startTime}`);
   const endDateTime = addMinutes(startDateTime, SESSION_DURATION_MINUTES);
 
@@ -97,7 +97,6 @@ const bookaSession = asyncHandler(async (req, res) => {
   if (startDateTime >= endDateTime) {
     return res.status(400).send({ error: "End time must be after start time" });
   }
-
   // Check if the slot is available
   const existingSession = await Session.findOne({
     therapist_id: therapistId,
@@ -108,13 +107,12 @@ const bookaSession = asyncHandler(async (req, res) => {
   if (existingSession) {
     return res.status(400).send({ error: "Slot is already booked!" });
   }
+//payments 
 
   // Create and save the new session
-
-
   try {
     const session = new Session({
-      enrolled_course_id: enrolledCourseId,
+      // enrolled_course_id: enrolledCourseId,
       user_id: user_id,
       therapist_id: therapistId,
       start_time: startDateTime,
@@ -125,11 +123,11 @@ const bookaSession = asyncHandler(async (req, res) => {
     session.uid = uid;
     session.channelName = channelName;
     await session.save();
-    enrolledCourse.remaining_sessions -= 1;
-    if (enrolledCourse.remaining_sessions === 0) {
-      enrolledCourse.active = false;
-    }
-    await enrolledCourse.save();
+    // enrolledCourse.remaining_sessions -= 1;
+    // if (enrolledCourse.remaining_sessions === 0) {
+    //   enrolledCourse.active = false;
+    // }
+    // await enrolledCourse.save();
     res.status(201).send({
       session,
       message: "Session booked successfully",
@@ -175,9 +173,9 @@ const bookedSessions = asyncHandler(async (req, res) => {
     //   }
     // }
   ]);
-  console.log("session-----------s",sessions)
+  console.log("session-----------s", sessions)
 
-  res.status(200).json(new ApiResponse(200,sessions,"Session fetched successfully!" ));
+  res.status(200).json(new ApiResponse(200, sessions, "Session fetched successfully!"));
 });
 
-export { availableSlots, bookaSession,bookedSessions };
+export { availableSlots, bookaSession, bookedSessions };

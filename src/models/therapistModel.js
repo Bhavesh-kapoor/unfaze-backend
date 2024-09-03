@@ -76,6 +76,15 @@ const TherapistSchema = new mongoose.Schema({
     start_hour: { type: Number, min: 0, max: 23 },
     end_hour: { type: Number, min: 0, max: 23 },
   },
+  askPrice: {
+    type: Number,
+    default: 0,
+    required: true,
+  },
+  approvedPrice: {
+    type: Number,
+    default: 0,
+  },
 }, { timestamps: true });
 
 

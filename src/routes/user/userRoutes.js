@@ -42,7 +42,7 @@ userRoutes.post("/create-order", verifyJwtToken, createOrder);
 userRoutes.post("/verify", verifyJwtToken, verifyPayment, handleCashfreePayment);
 
 userRoutes.get(
-  "/validate/:merchantTransactionId/:course_id",
+  "/validate/:merchantTransactionId",
   verifyJwtToken,
   validatePayment,
   handlePhonepayPayment

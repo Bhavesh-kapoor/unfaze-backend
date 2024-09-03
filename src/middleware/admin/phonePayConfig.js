@@ -3,34 +3,48 @@ import uniqid from "uniqid";
 import sha256 from "sha256";
 import mongoose from "mongoose";
 import ApiError from "../../utils/ApiError.js";
-import { Course } from "../../models/courseModel.js";
-import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
+import { Therapist } from "../../models/therapistModel.js";
+import { Transaction } from "../../models/transactionModel.js";
+import { parseISO, isValid, addMinutes } from "date-fns";
+// import { Course } from "../../models/courseModel.js";
+// import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 const APP_BE_URL = process.env.APP_BASE_URL
+const SESSION_DURATION_MINUTES = 30;
+const GAP_BETWEEN_SESSIONS_MINUTES = 15;
+const START_HOUR = 9;
+const END_HOUR = 17;
 export async function processPayment(req, res) {
   try {
-    const { course_id } = req.body;
-    const user= req.user;
-    if (!mongoose.Types.ObjectId.isValid(course_id)) {
-      return res.status(400).json(new ApiError(404, "", "Invalid course id!!!"));
+    const { therapist_id, date, startTime } = req.body;
+    const user = req.user;
+    const startDateTime = parseISO(`${date}T${startTime}`);
+    if (!isValid(startDateTime)) {
+      console.error("Invalid date-time format:", startDateTime);
+      return res.status(400).json(new ApiError(400, "", "Invalid date or time format"));
     }
-    const course = await Course.findOne({ _id: course_id });
-    if (!course) {
-      return res.status(404).json(new ApiError(404, "", "Invalid course !!!"));
+    const endDateTime = addMinutes(startDateTime, SESSION_DURATION_MINUTES);
+    if (startDateTime >= endDateTime) {
+      return res.status(400).send({ error: "End time must be after start time" });
     }
-    const alreadyEnrolled = await EnrolledCourse.findOne({
-      course_id: course_id,
-      user_id: user._id,
-    });
-    if (alreadyEnrolled) {
-      return res.status(403).json(new ApiError(403, "", "already enrolled"));
+    // Validate therapist_id
+    if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
+      return res.status(400).json(new ApiError(400, "", "Invalid therapist id!!!"));
     }
-    const transactionId = uniqid();
+
+    // Find therapist
+    const therapist = await Therapist.findOne({ _id: therapist_id });
+    console.log(therapist)
+    if (!therapist) {
+      return res.status(404).json(new ApiError(404, "", "Invalid therapist !!!"));
+    }
+    let transactionId = uniqid();
+    transactionId = `unfazed${transactionId}`
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
-      merchantUserId:`MUID_${user._id}`,
-      amount: course.cost * 100,
-      redirectUrl: `${APP_BE_URL}/api/v1/user/validate/${transactionId}/${course_id}`,
+      merchantUserId: `MUID_${user._id}`,
+      amount: therapist.approvedPrice * 100,
+      redirectUrl: `${APP_BE_URL}/api/v1/user/validate/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
       paymentInstrument: {
@@ -38,11 +52,13 @@ export async function processPayment(req, res) {
       },
       payMode: "PAY_PAGE",
     };
-    let bufferObj = Buffer.from(JSON.stringify(normalPayLoad), "utf8");
-    let base64EncodedPayload = bufferObj.toString("base64");
-    let string = base64EncodedPayload + "/pg/v1/pay" + process.env.SALT_KEY;
-    let sha256_val = sha256(string);
-    let xVerifyChecksum = sha256_val + "###" + process.env.SALT_INDEX;
+
+    const bufferObj = Buffer.from(JSON.stringify(normalPayLoad), "utf8");
+    const base64EncodedPayload = bufferObj.toString("base64");
+    const string = base64EncodedPayload + "/pg/v1/pay" + process.env.SALT_KEY;
+    const sha256_val = sha256(string);
+    const xVerifyChecksum = sha256_val + "###" + process.env.SALT_INDEX;
+
     const options = {
       method: "post",
       url: "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay",
@@ -55,39 +71,49 @@ export async function processPayment(req, res) {
         request: base64EncodedPayload,
       },
     };
-    axios
-      .request(options)
-      .then((response) => {
-        console.log("response->", response.data);
-        console.log(
-          "redirect",
-          response.data.data.instrumentResponse.redirectInfo.url
-        );
-        res.redirect(response.data.data.instrumentResponse.redirectInfo.url);
-      })
-      .catch((error) => {
-        console.error("error", error);
+
+    try {
+      const response = await axios.request(options);
+      console.log("response->", response.data);
+      console.log("redirect", response.data.data.instrumentResponse.redirectInfo.url);
+      const initiatedTransaction = new Transaction({
+        transactionId,
+        user_id: user._id,
+        therapist_id,
+        amount: therapist.approvedPrice,
+        status: "PAYMENT_INITIATED",
+        start_time: startDateTime,
+        end_time: endDateTime
       });
+
+      await initiatedTransaction.save();
+      res.redirect(response.data.data.instrumentResponse.redirectInfo.url);
+    } catch (error) {
+      console.error("Payment request error:", error);
+      return res.status(500).json(new ApiError(500, "", "Payment initialization failed"));
+    }
   } catch (error) {
-    console.log("erorr in payment initialization", error);
+    console.log("error in payment initialization", error);
+    return res.status(500).json(new ApiError(500, "", "An error occurred during payment processing"));
   }
 }
-
 export const validatePayment = async (req, res, next) => {
-  const { merchantTransactionId, course_id } = req.params;
-  if (merchantTransactionId) {
-    let statusUrl =
-      `${process.env.HOST_URL}/pg/v1/status/${process.env.MERCHANT_ID}/` +
-      merchantTransactionId;
+  const { merchantTransactionId } = req.params;
+  if (!merchantTransactionId) {
+    return res.status().send(new ApiError(400, "", "merchantTransactionId is required")); //
+  }
+  let statusUrl =
+    `${process.env.HOST_URL}/pg/v1/status/${process.env.MERCHANT_ID}/` +
+    merchantTransactionId;
 
-    let string =
-      `/pg/v1/status/${process.env.MERCHANT_ID}/` +
-      merchantTransactionId +
-      process.env.SALT_KEY;
-    let sha256_val = sha256(string);
-    let xVerifyChecksum = sha256_val + "###" + process.env.SALT_INDEX;
-
-    axios
+  let string =
+    `/pg/v1/status/${process.env.MERCHANT_ID}/` +
+    merchantTransactionId +
+    process.env.SALT_KEY;
+  let sha256_val = sha256(string);
+  let xVerifyChecksum = sha256_val + "###" + process.env.SALT_INDEX;
+  try {
+    const response = await axios
       .get(statusUrl, {
         headers: {
           "Content-Type": "application/json",
@@ -96,16 +122,12 @@ export const validatePayment = async (req, res, next) => {
           accept: "application/json",
         },
       })
-      .then((res) => {
-        req.course_id = course_id;
-        req.paymentDetails = res.data;
-        next();
-      })
-      .catch((error) => {
-        console.log("Error while validating the payment", error);
-        res.status(500).json({ "Error while validating the payment": error });
-      });
-  } else {
-    res.send("Sorry!! Error");
+    const transaction = await Transaction.findOne({ transactionId: merchantTransactionId })
+    req.paymentDetails = response.data;
+    req.transaction = transaction;
+    next();
+  } catch (error) {
+    console.log("Error while validating the payment", error);
+    res.status(500).json({ "Error while validating the payment": error });
   }
 };
