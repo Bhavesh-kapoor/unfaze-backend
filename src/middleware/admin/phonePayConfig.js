@@ -17,9 +17,9 @@ export async function processPayment(req, res) {
   try {
     const { therapist_id, specialization_id, date, time } = req.body;
     const formattedDate = format(date, 'yyyy-MM-dd');
-    console.log(formattedDate)
     const user = req.user;
-    const startDateTime = parseISO(`${formattedDate}T${time}`);
+    const startDateTime = new Date(`${formattedDate}T${time}`);
+    console.log(startDateTime)
     if (!isValid(startDateTime)) {
       console.error("Invalid date-time format:", startDateTime);
       return res
