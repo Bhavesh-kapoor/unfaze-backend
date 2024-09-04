@@ -56,7 +56,7 @@ export async function processPayment(req, res) {
       merchantTransactionId: transactionId,
       merchantUserId: `MUID_${user._id}`,
       amount: therapist.approvedPrice * 100,
-      redirectUrl: `verifying_payment/${transactionId}`,
+      redirectUrl: `/verifying_payment/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
       paymentInstrument: {
@@ -96,7 +96,7 @@ export async function processPayment(req, res) {
         user_id: user._id,
         therapist_id,
         category: specialization_id,
-        amount: therapist.approvedPrice,
+        amount_INR: therapist.INR_Price,
         status: "PAYMENT_INITIATED",
         start_time: startDateTime,
         end_time: endDateTime,

@@ -113,7 +113,7 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
     if (order_status === "successful") {
       const existingSession = await Session.findOne({ transaction_id: transaction._id });
       if (existingSession) {
-        return res.status(400).send({ error: "Slot is already booked!" });
+        return res.status(400).json(new ApiResponse(200, existingSession, "session already booked"));
       }
       const session = new Session({
         transaction_id: transaction._id,

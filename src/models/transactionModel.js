@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-
 const transactionSchema = new mongoose.Schema({
     transactionId: {
         type: 'string',
@@ -25,9 +24,14 @@ const transactionSchema = new mongoose.Schema({
         type: Object,
         default: {}
     },
-    amount: {
+    amount_USD:{
+        type: Number, 
+    },
+    rate_USD:{
         type: Number,
-        required: true
+    },
+    amount_INR: {
+        type: Number,
     },
     payment_status: {
         type: String,

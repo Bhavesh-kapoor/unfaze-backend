@@ -7,10 +7,12 @@ import { parseISO, isValid, addMinutes } from "date-fns";
 import uniqid from "uniqid";
 import Cashfree from "../../config/cashfree.config.js";
 import mongoose from "mongoose";
+import getExchangeRate from ""
 
 const SESSION_DURATION_MINUTES = 30;
 const createOrder = asyncHandler(async (req, res) => {
-  const { therapist_id, SpecializationId, date, startTime, order_currency = "INR" } = req.body;
+  const { therapist_id, SpecializationId, date, startTime,  } = req.body;
+  const order_currency = "USD"
   const user = req.user;
   const startDateTime = parseISO(`${date}T${startTime}`);
   if (!isValid(startDateTime)) {
@@ -53,12 +55,14 @@ const createOrder = asyncHandler(async (req, res) => {
     const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
+    rate_USD = 
     const initiatedTransaction = new Transaction({
       transactionId: order_id,
       user_id: user._id,
       therapist_id,
       category:SpecializationId,
-      amount: therapist.approvedPrice*100,
+      amount_USD: therapist.USD_Price,
+      rate_USD:
       status: "PAYMENT_INITIATED",
       start_time: startDateTime,
       end_time: endDateTime,

@@ -105,12 +105,12 @@ const TherapistSchema = new mongoose.Schema(
       start_hour: { type: Number, min: 0, max: 23 },
       end_hour: { type: Number, min: 0, max: 23 },
     },
-    askPrice: {
+    USD_Price: {
       type: Number,
       default: 0,
       required: true,
     },
-    approvedPrice: {
+    INR_Price: {
       type: Number,
       default: 0,
     },
