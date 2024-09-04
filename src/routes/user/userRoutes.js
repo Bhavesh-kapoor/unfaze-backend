@@ -12,10 +12,9 @@ import {
 import speclizationRoute from "../admin/specilization.route.js";
 import feedbackRoute from "../feeback.route.js";
 import {
-  getEnrolledCourseList,
   handlePhonepayPayment,
   handleCashfreePayment
-} from "../../controllers/enrolledCourseController.js";
+} from "../../controllers/paymentHandler.js";
 import {
   processPayment,
   validatePayment,
@@ -34,12 +33,10 @@ userRoutes.patch("/update-avatar", verifyJwtToken, upload.single('profileImage')
 userRoutes.use("/specialization", verifyJwtToken, speclizationRoute);
 userRoutes.use("/feedback", feedbackRoute);
 userRoutes.get("/get-therapist/:_id", getTherepistById)
-
 //courese enrollment route
-userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
 userRoutes.post("/pay", verifyJwtToken, processPayment);
 userRoutes.post("/create-order", verifyJwtToken, createOrder);
-userRoutes.post("/verify", verifyJwtToken, verifyPayment, handleCashfreePayment);
+userRoutes.get("/verify", verifyJwtToken, verifyPayment, handleCashfreePayment);
 
 userRoutes.get(
   "/validate/:merchantTransactionId",

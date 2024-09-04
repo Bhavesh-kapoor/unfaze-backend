@@ -1,7 +1,7 @@
 import ApiResponse from "../../utils/ApiResponse.js";
 import ApiError from "../../utils/ApiError.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
+import { Session } from "../../models/sessionsModel.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { User } from "../../models/userModel.js";
 import {
@@ -129,16 +129,27 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
   const dateRanges = getDateRanges(now);
 
   const getTotalSales = async (startDate, endDate) => {
-    const result = await EnrolledCourse.aggregate([
+    const result = await Session.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
         },
       },
       {
+        $lookup: {
+          from: "transactions",
+          localField: "transaction_id",
+          foreignField: "_id",
+          as: "transaction_details",
+        },
+      },
+      {
+        $unwind: "$transaction_details"
+      },
+      {
         $group: {
           _id: null,
-          totalSales: { $sum: "$amount" },
+          totalSales: { $sum: "$transaction_details.amount" },
           count: { $sum: 1 },
         },
       },
@@ -179,11 +190,22 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
 
   // Total sales of all time
   const getTotalSalesOfAllTime = async () => {
-    const result = await EnrolledCourse.aggregate([
+    const result = await Session.aggregate([
+      {
+        $lookup: {
+          from: "transactions",
+          localField: "transaction_id",
+          foreignField: "_id",
+          as: "transaction_details",
+        },
+      },
+      {
+        $unwind: "$transaction_details"
+      },
       {
         $group: {
           _id: null,
-          totalSales: { $sum: "$amount" },
+          totalSales: { $sum: "$transaction_details.amount" },
           count: { $sum: 1 },
         },
       },

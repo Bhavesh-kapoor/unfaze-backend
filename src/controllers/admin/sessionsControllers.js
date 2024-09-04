@@ -1,6 +1,5 @@
 import { parseISO, addMinutes, format } from "date-fns";
 import { Session } from "../../models/sessionsModel.js";
-import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 import { Therapist } from "../../models/therapistModel.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
@@ -112,7 +111,6 @@ const bookaSession = asyncHandler(async (req, res) => {
   // Create and save the new session
   try {
     const session = new Session({
-      // enrolled_course_id: enrolledCourseId,
       user_id: user_id,
       therapist_id: therapistId,
       start_time: startDateTime,
@@ -123,11 +121,6 @@ const bookaSession = asyncHandler(async (req, res) => {
     session.uid = uid;
     session.channelName = channelName;
     await session.save();
-    // enrolledCourse.remaining_sessions -= 1;
-    // if (enrolledCourse.remaining_sessions === 0) {
-    //   enrolledCourse.active = false;
-    // }
-    // await enrolledCourse.save();
     res.status(201).send({
       session,
       message: "Session booked successfully",
