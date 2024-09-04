@@ -10,7 +10,7 @@ import mongoose from "mongoose";
 
 const SESSION_DURATION_MINUTES = 30;
 const createOrder = asyncHandler(async (req, res) => {
-  const { therapist_id, date, startTime, order_currency = "INR" } = req.body;
+  const { therapist_id, SpecializationId, date, startTime, order_currency = "INR" } = req.body;
   const user = req.user;
   const startDateTime = parseISO(`${date}T${startTime}`);
   if (!isValid(startDateTime)) {
@@ -57,7 +57,8 @@ const createOrder = asyncHandler(async (req, res) => {
       transactionId: order_id,
       user_id: user._id,
       therapist_id,
-      amount: therapist.approvedPrice,
+      category:SpecializationId,
+      amount: therapist.approvedPrice*100,
       status: "PAYMENT_INITIATED",
       start_time: startDateTime,
       end_time: endDateTime,

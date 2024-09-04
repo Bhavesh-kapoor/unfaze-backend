@@ -6,6 +6,11 @@ const transactionSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    category:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Specialization',
+        required: true
+    },
     user_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

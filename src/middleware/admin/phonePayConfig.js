@@ -15,9 +15,9 @@ const START_HOUR = 9;
 const END_HOUR = 17;
 export async function processPayment(req, res) {
   try {
-    const { therapist_id, date, startTime } = req.body;
+    const { therapist_id,specializationId, date, time } = req.body;
     const user = req.user;
-    const startDateTime = parseISO(`${date}T${startTime}`);
+    const startDateTime = parseISO(`${date}T${time}`);
     if (!isValid(startDateTime)) {
       console.error("Invalid date-time format:", startDateTime);
       return res
@@ -91,6 +91,7 @@ export async function processPayment(req, res) {
         transactionId,
         user_id: user._id,
         therapist_id,
+        category:specializationId,
         amount: therapist.approvedPrice,
         status: "PAYMENT_INITIATED",
         start_time: startDateTime,

@@ -18,12 +18,13 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
 
     // Verify JWT token
     const verified = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+    console.log(verified)
 
     if (!verified) {
       return res.status(498).json(new ApiError(498, "Invalid Token"));
     }
 
-    // Find user based on role
+ // Find user based on role
     let user;
     if (verified.role === "admin" || verified.role === "user") {
       user = await User.findById(verified._id).select(
