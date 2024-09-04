@@ -5,12 +5,15 @@ import {
   updateSpecialization,
   deleteSpecialization,
 } from "../../controllers/admin/SpecilizationController.js";
-import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
-let specializationRoute = Router();
 
-specializationRoute.get("/all", getAllSpecialization);
-specializationRoute.post("/create", verifyJwtToken, createSpecialization);
-specializationRoute.put("/update/:_id", verifyJwtToken, updateSpecialization);
-specializationRoute.delete("/delete/:_id", verifyJwtToken, deleteSpecialization);
+let router = Router();
 
-export default specializationRoute;
+router.get("/all", getAllSpecialization);
+
+router.post("/create", createSpecialization);
+
+router.put("/update/:_id", updateSpecialization);
+
+router.delete("/delete/:_id", deleteSpecialization);
+
+export default router;

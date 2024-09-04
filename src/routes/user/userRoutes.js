@@ -1,53 +1,35 @@
 import { Router } from "express";
-import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
-import upload from "../../middleware/admin/multer.middleware.js";
-import {
-  register,
-  refreshToken,
-  userlogin,
-  validateRegister,
-  updateAvatar,
-  updateProfile
-} from "../../controllers/admin/user.controller.js";
-import speclizationRoute from "../admin/specilization.route.js";
 import feedbackRoute from "../feeback.route.js";
-import {
-  getEnrolledCourseList,
-  handlePhonepayPayment,
-  handleCashfreePayment
-} from "../../controllers/enrolledCourseController.js";
-import {
-  processPayment,
-  validatePayment,
-} from "../../middleware/admin/phonePayConfig.js";
-
 import sessionRouter from "./session.routes.js";
+import upload from "../../middleware/admin/multer.middleware.js";
 import { userEmailVerify } from "../../controllers/otpController.js";
-import { getTherepistById } from "../../controllers/admin/TherepistController.js";
-import { createOrder, verifyPayment } from "../../controllers/payment/cashfree.controller.js";
-const userRoutes = Router();
-userRoutes.post("/register", upload.single('profileImage'), validateRegister, register);
-userRoutes.post("/login", userlogin);
-userRoutes.post("/refreshToken", verifyJwtToken, refreshToken);
-userRoutes.put("/update-user", verifyJwtToken, updateProfile);
-userRoutes.patch("/update-avatar", verifyJwtToken, upload.single('profileImage'), updateAvatar);
-userRoutes.use("/specialization", verifyJwtToken, speclizationRoute);
-userRoutes.use("/feedback", feedbackRoute);
-userRoutes.get("/get-therapist/:_id", getTherepistById)
+import { createOrder } from "../../controllers/payment/cashfree.controller.js";
+import { getEnrolledCourseList } from "../../controllers/enrolledCourseController.js";
+import {
+  updateAvatar,
+  updateProfile,
+} from "../../controllers/admin/user.controller.js";
 
-//courese enrollment route
-userRoutes.get("/enrolled-course-list", verifyJwtToken, getEnrolledCourseList);
-userRoutes.post("/pay", verifyJwtToken, processPayment);
-userRoutes.post("/create-order", verifyJwtToken, createOrder);
-userRoutes.post("/verify", verifyJwtToken, verifyPayment, handleCashfreePayment);
+const router = Router();
 
-userRoutes.get(
-  "/validate/:merchantTransactionId/:course_id",
-  verifyJwtToken,
-  validatePayment,
-  handlePhonepayPayment
-);
-userRoutes.post("/email-verify", userEmailVerify)
-userRoutes.use("/sessions", sessionRouter)
+// Update user profile
+router.put("/update-user", updateProfile);
 
-export default userRoutes;
+// Routes for specialization and feedback
+router.use("/feedback", feedbackRoute);
+
+router.post("/create-order", createOrder);
+
+// Get EnrollmentF
+router.get("/enrolled-course-list", getEnrolledCourseList);
+
+// Email verification
+router.post("/email-verify", userEmailVerify);
+
+// Session routes
+router.use("/sessions", sessionRouter);
+
+// Update user avatar
+router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
+
+export default router;

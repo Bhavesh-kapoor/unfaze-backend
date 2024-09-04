@@ -1,10 +1,13 @@
-import {Router} from "express";
-import { raiseQuery,changeQueryStatus,getQueryList } from "../controllers/admin/contactUsController.js";
-import isAdmin from "../middleware/admin/isAdmin.js";
+import { Router } from "express";
+import {
+  getQueryList,
+  changeQueryStatus,
+} from "../controllers/admin/contactUsController.js";
 
 const router = Router();
 
-router.post("/raise-query",raiseQuery)
-router.patch("/update-status/:_id",isAdmin, changeQueryStatus)
-router.get("/query-list", isAdmin, getQueryList)
+router.get("/query-list", getQueryList);
+
+router.patch("/update-status/:_id", changeQueryStatus);
+
 export default router;

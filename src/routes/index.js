@@ -1,31 +1,41 @@
 import express from "express";
-import emailRoutes from "./emailOtpRoute.js";
-import userRoutes from "./user/userRoutes.js";
-import blogsrouter from "./admin/blogs.route.js";
-import contactusRoutes from "./contactUs.router.js";
-import publicRoute from "../routes/public.route.js";
-import therapistRoutes from "./therapist/therapist.route.js";
-import specializationRoute from "./admin/specilization.route.js";
-import authroutes from "./admin/auth.route.js";
-import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import verifyJwtToken from "../middleware/admin/auth.middleware.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import verifyJwtToken from "../middleware/admin/verifyJwtToken.js";
 
+import userRoutes from "./user/userRoutes.js";
+import paymentRoutes from "./payment.route.js";
+import adminRoutes from "./admin/auth.route.js";
+import publicRoute from "../routes/public.route.js";
+import publicAdminRoute from "../routes/admin/adminpublic.route.js";
 
 // Initialize the router
 const router = express.Router();
-router.use("/admin", authroutes);
-router.use("/public", publicRoute);
-router.use("/user", userRoutes);
-router.use("/email", emailRoutes);
-router.use("/blogs", blogsrouter);
-router.use("/therapist", therapistRoutes);
-router.use("/specialization", specializationRoute);
-router.get("/get-current-user",verifyJwtToken, asyncHandler(async (req, res) => {
-    return res
-        .status(200)
-        .json(new ApiResponse(200, req.user, "User fetched successfully"));
-}));
 
+// handle public routes
+router.use("/public", publicRoute);
+
+// handle admin public routes
+router.use("/public/admin", publicAdminRoute);
+
+// handle authentication for admin users
+router.use("/admin", verifyJwtToken, adminRoutes);
+
+// handle user auth routes for (local)
+router.use("/auth/user", verifyJwtToken, userRoutes);
+
+// handle payment routes
+router.use("/payment", verifyJwtToken, paymentRoutes);
+
+// Get current user data when JWT token is valid
+router.get(
+  "/get-current-user",
+  verifyJwtToken,
+  asyncHandler(async (req, res) => {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, req.user, "User fetched successfully"));
+  })
+);
 
 export default router;

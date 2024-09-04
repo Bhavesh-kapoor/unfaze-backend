@@ -1,11 +1,19 @@
 import { Router } from "express";
-import { createBlogCategory,allBlogCategory,updateBlogCategory,deleteBlogCategory } from "../../controllers/admin/blogCategoryController.js";
-const categoryRouter = Router();
+import {
+  createBlogCategory,
+  allBlogCategory,
+  updateBlogCategory,
+  deleteBlogCategory,
+} from "../../controllers/admin/blogCategoryController.js";
 
+const router = Router();
 
-categoryRouter.post('/create' ,createBlogCategory);
-categoryRouter.get('/all' ,allBlogCategory);
-categoryRouter.put('/update/:_id' ,updateBlogCategory);
-categoryRouter.delete('/delete/:_id' ,deleteBlogCategory);
+router.get("/all", allBlogCategory);
 
-export default categoryRouter;
+router.post("/create", createBlogCategory);
+
+router.put("/update/:_id", updateBlogCategory);
+
+router.delete("/delete/:_id", deleteBlogCategory);
+
+export default router;

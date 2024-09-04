@@ -1,41 +1,35 @@
 import { Router } from "express";
-import {
-  adminlogin,
-  refreshToken,
-  register,
-  getCurrentUser
-} from "../../controllers/admin/user.controller.js";
-import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
-import speclizationRoute from "./specilization.route.js";
-import therepistRouter from "./therepist.auth.js";
-import feedbackRoute from "../feeback.route.js";
-import blogsrouter from "./blogs.route.js";
-import categoryRouter from "./blogCategory.route.js";
-import seoRouter from "./seo.route.js"
+import seoRouter from "./seo.route.js";
+import faqRouter from "./faq.route.js";
+import blogsRouter from "./blogs.route.js";
 import userRoutes from "../admin/user.route.js";
-import faqrouter from "./faq.route.js";
-import transactionRoutes from "./transaction.route.js"
-import contactusRoutes from "../../routes/contactUs.router.js"
+import feedbackRoute from "../feeback.route.js";
+import therapistRouter from "./therepist.auth.js";
+import categoryRouter from "./blogCategory.route.js";
+import transactionRoutes from "./transaction.route.js";
+import specializationRouter from "./specilization.route.js";
+import contactUsRoutes from "../../routes/contactUs.router.js";
 
-const authroutes = Router();
-authroutes.post("/login", adminlogin);
-authroutes.get("/get-curent-user", verifyJwtToken, getCurrentUser);
-authroutes.post("/refreshToken", verifyJwtToken, refreshToken);
-authroutes.use("/specialization", verifyJwtToken, speclizationRoute);
-authroutes.use("/therapist", therepistRouter);
-authroutes.use("/user", userRoutes);
-authroutes.use("/feedback", feedbackRoute);
-authroutes.use("/blogs", verifyJwtToken, blogsrouter);
-authroutes.use("/blog-category", verifyJwtToken, categoryRouter);
-authroutes.use("/seo", verifyJwtToken, seoRouter);
-authroutes.use('/faq', verifyJwtToken, faqrouter);
-authroutes.use('/transactions', transactionRoutes);
-authroutes.use("/contact-us", contactusRoutes);
+const router = Router();
 
+router.use("/seo", seoRouter);
 
-// faq routes
+router.use("/faq", faqRouter);
 
+router.use("/user", userRoutes);
 
+router.use("/blogs", blogsRouter);
 
+router.use("/feedback", feedbackRoute);
 
-export default authroutes;
+router.use("/therapist", therapistRouter);
+
+router.use("/contact-us", contactUsRoutes);
+
+router.use("/blog-category", categoryRouter);
+
+router.use("/transactions", transactionRoutes);
+
+router.use("/specialization", specializationRouter);
+
+export default router;

@@ -54,7 +54,7 @@ const userSchema = new Schema(
     },
     is_active: {
       type: Boolean,
-      default: true
+      default: true,
     },
     dob: {
       type: Date,
@@ -63,8 +63,8 @@ const userSchema = new Schema(
         validator: function (value) {
           return value < new Date();
         },
-        message: 'Date of birth must be in the past.'
-      }
+        message: "Date of birth must be in the past.",
+      },
     },
   },
   {
@@ -86,10 +86,10 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
-      email: this.email,
-      firstName: this.firstName,
-      lastName: this.lastName,
       role: this.role,
+      email: this.email,
+      lastName: this.lastName,
+      firstName: this.firstName,
     },
     process.env.ACCESS_TOKEN_KEY,
     {
@@ -102,6 +102,7 @@ userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
+      role: this.role,
     },
     process.env.REFRESH_TOKEN_KEY,
     {

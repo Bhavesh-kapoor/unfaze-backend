@@ -8,13 +8,12 @@ import {
   logout,
   getCurrentUser,
   updateTherapist,
-  updateAvatar
+  updateAvatar,
 } from "../../controllers/admin/TherepistController.js";
-import verifyJwtToken from "../../middleware/admin/auth.middleware.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { getTherepistById } from "../../controllers/admin/TherepistController.js";
 
-const therapistAuth = Router();
+const router = Router();
 const multipleImages = upload.fields([
   { name: "passport", maxCount: 1 },
   { name: "adharcard", maxCount: 1 },
@@ -22,21 +21,22 @@ const multipleImages = upload.fields([
   { name: "profileImage", maxCount: 1 },
 ]);
 
-therapistAuth.post("/register", multipleImages, validateRegister, register);
-therapistAuth.post("/login", validateRegister, login);
-therapistAuth.post("/logout", verifyJwtToken, logout);
-therapistAuth.get("/current-user", verifyJwtToken, getCurrentUser);
-therapistAuth.patch("/update-profile",verifyJwtToken, multipleImages, updateTherapist);
-therapistAuth.patch("/update-avatar",verifyJwtToken, upload.single('profileImage'),updateAvatar);
+router.post("/logout", logout);
 
+router.get("/current-user", getCurrentUser);
 
+router.post("/login", validateRegister, login);
 
-therapistAuth.post(
-  "/activate-or-deactive/:_id",
-  verifyJwtToken,
-  activateOrDeactivate
-);
-therapistAuth.get("/therapists-list", therapistList);
-therapistAuth.get("/get-therapist/:_id", verifyJwtToken,getTherepistById);
+router.get("/therapists-list", therapistList);
 
-export default therapistAuth;
+router.get("/get-therapist/:_id", getTherepistById);
+
+router.post("/activate-or-deactive/:_id", activateOrDeactivate);
+
+router.post("/register", multipleImages, validateRegister, register);
+
+router.patch("/update-profile", multipleImages, updateTherapist);
+
+router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
+
+export default router;

@@ -10,7 +10,6 @@ import { fileURLToPath } from "url";
 import session from "express-session";
 import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
-import authUser from "./routes/auth/authUser.js";
 import passport from "./config/passportUser.js";
 
 // Load environment variables
@@ -116,11 +115,8 @@ app.get("/images/uploads/:folder/:image", (req, res) => {
   });
 });
 
-// Social auth routes
-app.use("/auth", authUser);
-
 // Use grouped routes
-app.use("/api/v1", routes);
+app.use("/api", routes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

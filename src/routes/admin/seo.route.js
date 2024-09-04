@@ -1,11 +1,23 @@
 import { Router } from "express";
-import { createSeoData,updateSeoData,deleteSeoData,listSeoData,getSeoDataById,validateSeoData} from "../../controllers/admin/seoController.js";
-const router = Router()
+import {
+  createSeoData,
+  updateSeoData,
+  deleteSeoData,
+  listSeoData,
+  getSeoDataById,
+  validateSeoData,
+} from "../../controllers/admin/seoController.js";
 
-router.post("/create",validateSeoData,createSeoData)
-router.put("/update/:_id",updateSeoData)
-router.delete("/delete/:_id",deleteSeoData)
-router.get("/list-seo-data",listSeoData)
-router.get("/seo-data/:_id",getSeoDataById)
+const router = Router();
 
-export default router
+router.post("/create", validateSeoData, createSeoData);
+
+router.put("/update/:_id", updateSeoData);
+
+router.delete("/delete/:_id", deleteSeoData);
+
+router.get("/list-seo-data", listSeoData);
+
+router.get("/seo-data/:_id", getSeoDataById);
+
+export default router;

@@ -1,10 +1,23 @@
-import {Router} from 'express';
-const faqrouter = Router();
-import { validateFaq, store,read ,deleteFaq,getById, update} from '../../controllers/admin/FaqController.js';
-faqrouter.post('/store',validateFaq,store);
-faqrouter.get('/all',read);
-faqrouter.get('/get-one/:_id',getById);
-faqrouter.delete('/delete/:_id',deleteFaq);
-faqrouter.put('/update/:id',validateFaq,update);
+import { Router } from "express";
+import {
+  read,
+  store,
+  update,
+  getById,
+  deleteFaq,
+  validateFaq,
+} from "../../controllers/admin/FaqController.js";
 
-export default faqrouter;
+const router = Router();
+
+router.get("/all", read);
+
+router.get("/get-one/:_id", getById);
+
+router.delete("/delete/:_id", deleteFaq);
+
+router.post("/store", validateFaq, store);
+
+router.put("/update/:id", validateFaq, update);
+
+export default router;

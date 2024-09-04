@@ -5,13 +5,17 @@ import mongoose from "mongoose";
 import ApiError from "../../utils/ApiError.js";
 import { Course } from "../../models/courseModel.js";
 import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
-const APP_BE_URL = process.env.APP_BASE_URL
+
+const APP_BE_URL = process.env.APP_BASE_URL;
+
 export async function processPayment(req, res) {
   try {
     const { course_id } = req.body;
-    const user= req.user;
+    const user = req.user;
     if (!mongoose.Types.ObjectId.isValid(course_id)) {
-      return res.status(400).json(new ApiError(404, "", "Invalid course id!!!"));
+      return res
+        .status(400)
+        .json(new ApiError(404, "", "Invalid course id!!!"));
     }
     const course = await Course.findOne({ _id: course_id });
     if (!course) {
@@ -28,7 +32,7 @@ export async function processPayment(req, res) {
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
-      merchantUserId:`MUID_${user._id}`,
+      merchantUserId: `MUID_${user._id}`,
       amount: course.cost * 100,
       redirectUrl: `${APP_BE_URL}/api/v1/user/validate/${transactionId}/${course_id}`,
       redirectMode: "REDIRECT",
