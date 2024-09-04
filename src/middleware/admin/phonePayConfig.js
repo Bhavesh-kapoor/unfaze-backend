@@ -3,6 +3,7 @@ import uniqid from "uniqid";
 import sha256 from "sha256";
 import mongoose from "mongoose";
 import ApiError from "../../utils/ApiError.js";
+import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format } from "date-fns";
@@ -17,6 +18,7 @@ export async function processPayment(req, res) {
   try {
     const { therapist_id, specialization_id, date, time } = req.body;
     const formattedDate = format(date, 'yyyy-MM-dd');
+    console.log(formattedDate)
     const user = req.user;
     const startDateTime = new Date(`${formattedDate}T${time}`);
     console.log(startDateTime)
@@ -101,7 +103,7 @@ export async function processPayment(req, res) {
       });
 
       await initiatedTransaction.save();
-      res.redirect(response.data.data.instrumentResponse.redirectInfo.url);
+      res.status(200).json(new ApiResponse(200, { redirect_url: response.data.data.instrumentResponse.redirectInfo.url }));
     } catch (error) {
       console.error("Payment request error:", error);
       return res
