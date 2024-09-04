@@ -17,11 +17,11 @@ const END_HOUR = 17;
 export async function processPayment(req, res) {
   try {
     const { therapist_id, specialization_id, date, time } = req.body;
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    console.log(formattedDate)
+    const formattedDate = format(date, "yyyy-MM-dd");
+    console.log(formattedDate);
     const user = req.user;
     const startDateTime = new Date(`${formattedDate}T${time}`);
-    console.log(startDateTime)
+    console.log(startDateTime);
     if (!isValid(startDateTime)) {
       console.error("Invalid date-time format:", startDateTime);
       return res
@@ -56,7 +56,7 @@ export async function processPayment(req, res) {
       merchantTransactionId: transactionId,
       merchantUserId: `MUID_${user._id}`,
       amount: therapist.approvedPrice * 100,
-      redirectUrl: `verifying_payment/${transactionId}`,
+      redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
       paymentInstrument: {
@@ -103,7 +103,11 @@ export async function processPayment(req, res) {
       });
 
       await initiatedTransaction.save();
-      res.status(200).json(new ApiResponse(200, { redirect_url: response.data.data.instrumentResponse.redirectInfo.url }));
+      res.status(200).json(
+        new ApiResponse(200, {
+          redirect_url: response.data.data.instrumentResponse.redirectInfo.url,
+        })
+      );
     } catch (error) {
       console.error("Payment request error:", error);
       return res
