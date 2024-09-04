@@ -56,7 +56,7 @@ export async function processPayment(req, res) {
       merchantTransactionId: transactionId,
       merchantUserId: `MUID_${user._id}`,
       amount: therapist.approvedPrice * 100,
-      redirectUrl: `${APP_BE_URL}/api/v1/user/validate/${transactionId}`,
+      redirectUrl: `verifying_payment/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
       paymentInstrument: {
