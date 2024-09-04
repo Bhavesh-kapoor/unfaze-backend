@@ -73,41 +73,42 @@ const TherapistSchema = new mongoose.Schema(
       enum: ["male", "female", "non-binary", "other"],
     },
 
-    role: {
-      type: String,
-      default: "therapist",
-      trim: true,
-    },
-    password: { type: String, trim: true },
-    refreshToken: String,
-    education: EducationSchema,
-    licence: { type: String, trim: true },
-    specialization: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Specialization",
-        required: true,
-      },
-    ],
-    experience: { type: String, trim: true },
-    passport: String,
-    dob: {
-      type: Date,
-      required: true,
-    },
-    bio: { type: String, trim: true },
-    address: AddressSchema,
-    language: [{ type: String, trim: true }],
-    social: SocialSchema,
-    bankdetail: BankSchema,
-    is_active: { type: Boolean, default: false },
-    availability: {
-      start_hour: { type: Number, min: 0, max: 23 },
-      end_hour: { type: Number, min: 0, max: 23 },
-    },
+  role: {
+    type: String,
+    default: "therapist",
+    trim: true,
   },
-  { timestamps: true }
-);
+  password: { type: String, trim: true },
+  refreshToken: String,
+  education: EducationSchema,
+  licence: { type: String, trim: true },
+  specialization: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Specialization', required: true }],
+  experience: { type: String, trim: true },
+  passport: String,
+  dob: {
+    type: Date,
+    required: true,
+  },
+  bio: { type: String, trim: true },
+  address: AddressSchema,
+  language: [{ type: String, trim: true }],
+  social: SocialSchema,
+  bankdetail: BankSchema,
+  is_active: { type: Boolean, default: false },
+  availability: {
+    start_hour: { type: Number, min: 0, max: 23 },
+    end_hour: { type: Number, min: 0, max: 23 },
+  },
+  askPrice: {
+    type: Number,
+    default: 0,
+    required: true,
+  },
+  approvedPrice: {
+    type: Number,
+    default: 0,
+  },
+}, { timestamps: true });
 
 TherapistSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

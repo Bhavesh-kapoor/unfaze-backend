@@ -1,7 +1,7 @@
 import ApiResponse from "../../utils/ApiResponse.js";
 import ApiError from "../../utils/ApiError.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
+import { Session } from "../../models/sessionsModel.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { User } from "../../models/userModel.js";
 import {
@@ -129,21 +129,39 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
   const dateRanges = getDateRanges(now);
 
   const getTotalSales = async (startDate, endDate) => {
-    const result = await EnrolledCourse.aggregate([
+    const result = await Session.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
         },
       },
       {
+        $lookup: {
+          from: "transactions",
+          localField: "transaction_id",
+          foreignField: "_id",
+          as: "transaction_details",
+        },
+      },
+      {
+        $unwind: "$transaction_details"
+      },
+      {
         $group: {
           _id: null,
-          totalSales: { $sum: "$amount" },
+          totalSales: { $sum: "$transaction_details.amount" },
           count: { $sum: 1 },
         },
       },
     ]);
     return result[0] || { totalSales: 0, count: 0 };
+  };
+
+  // Function to get the count of newly created users within a time range
+  const getNewUserCount = async (startDate, endDate) => {
+    return await User.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
   };
 
   // Days and hours passed calculations
@@ -172,11 +190,22 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
 
   // Total sales of all time
   const getTotalSalesOfAllTime = async () => {
-    const result = await EnrolledCourse.aggregate([
+    const result = await Session.aggregate([
+      {
+        $lookup: {
+          from: "transactions",
+          localField: "transaction_id",
+          foreignField: "_id",
+          as: "transaction_details",
+        },
+      },
+      {
+        $unwind: "$transaction_details"
+      },
       {
         $group: {
           _id: null,
-          totalSales: { $sum: "$amount" },
+          totalSales: { $sum: "$transaction_details.amount" },
           count: { $sum: 1 },
         },
       },
@@ -200,6 +229,14 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
     salesComparativeYear,
     salesComparativeDay,
     totalSalesOfAllTime,
+    newUsersToday,
+    newUsersYesterday,
+    newUsersThisWeek,
+    newUsersLastWeek,
+    newUsersThisMonth,
+    newUsersLastMonth,
+    newUsersThisYear,
+    newUsersLastYear,
   ] = await Promise.all([
     getTotalSales(dateRanges.today.start, dateRanges.today.end),
     getTotalSales(dateRanges.yesterday.start, dateRanges.yesterday.end),
@@ -216,41 +253,69 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
     getTotalSales(comparativeYearStart, comparativeYearEnd),
     getTotalSales(comparativeDayStart, comparativeDayEnd),
     getTotalSalesOfAllTime(),
+    getNewUserCount(dateRanges.today.start, dateRanges.today.end),
+    getNewUserCount(dateRanges.yesterday.start, dateRanges.yesterday.end),
+    getNewUserCount(dateRanges.thisWeek.start, dateRanges.thisWeek.end),
+    getNewUserCount(dateRanges.lastWeek.start, dateRanges.lastWeek.end),
+    getNewUserCount(dateRanges.thisMonth.start, dateRanges.thisMonth.end),
+    getNewUserCount(dateRanges.lastMonth.start, dateRanges.lastMonth.end),
+    getNewUserCount(dateRanges.thisYear.start, dateRanges.thisYear.end),
+    getNewUserCount(dateRanges.lastYear.start, dateRanges.lastYear.end),
   ]);
 
   return res.status(200).json(
     new ApiResponse(200, {
-      salesToday: salesToday.totalSales / 100,
-      salesYesterday: salesYesterday.totalSales / 100,
-      salesThisWeek: salesThisWeek.totalSales / 100,
-      salesLastWeek: salesLastWeek.totalSales / 100,
-      salesThisMonth: salesThisMonth.totalSales / 100,
-      salesLastMonth: salesLastMonth.totalSales / 100,
-      salesThisYear: salesThisYear.totalSales / 100,
-      salesLastYear: salesLastYear.totalSales / 100,
-      totalCountsToday: salesToday.count,
-      totalCountsYesterday: salesYesterday.count,
-      totalCountsThisWeek: salesThisWeek.count,
-      totalCountsLastWeek: salesLastWeek.count,
-      totalCountsThisMonth: salesThisMonth.count,
-      totalCountsLastMonth: salesLastMonth.count,
-      totalCountsThisYear: salesThisYear.count,
-      totalCountsLastYear: salesLastYear.count,
-      totalActiveTherapist,
-      totalActiveUser,
-      salesComparativeDay: salesComparativeDay.totalSales / 100,
-      salesComparativeWeek: salesComparativeWeek.totalSales / 100,
-      salesComparativeMonth: salesComparativeMonth.totalSales / 100,
-      salesComparativeYear: salesComparativeYear.totalSales / 100,
-      totalCountsComparativeDay: salesComparativeDay.count,
-      totalCountsComparativeWeek: salesComparativeWeek.count,
-      totalCountsComparativeMonth: salesComparativeMonth.count,
-      totalCountsComparativeYear: salesComparativeYear.count,
-      totalSalesOfAllTime: totalSalesOfAllTime.totalSales / 100,
-      totalCountOfAllTime: totalSalesOfAllTime.count,
+      days: {
+        current: salesToday.totalSales / 100,
+        last: salesYesterday.totalSales / 100,
+        comparative: salesComparativeDay.totalSales / 100,
+        countsCurrent: salesToday.count,
+        countsLast: salesYesterday.count,
+        countsComparative: salesComparativeDay.count,
+        currentUserCount:newUsersToday,
+        lastUserCount:newUsersYesterday,
+      },
+      weeks: {
+        current: salesThisWeek.totalSales / 100,
+        last: salesLastWeek.totalSales / 100,
+        comparative: salesComparativeWeek.totalSales / 100,
+        countsCurrent: salesThisWeek.count,
+        countsLast: salesLastWeek.count,
+        countsComparative: salesComparativeWeek.count,
+        newUsersThisWeek,
+        newUsersLastWeek,
+      },
+      months: {
+        current: salesThisMonth.totalSales / 100,
+        last: salesLastMonth.totalSales / 100,
+        comparative: salesComparativeMonth.totalSales / 100,
+        countsCurrent: salesThisMonth.count,
+        countsLast: salesLastMonth.count,
+        countsComparative: salesComparativeMonth.count,
+        newUsersThisMonth,
+        newUsersLastMonth,
+      },
+      years: {
+        current: salesThisYear.totalSales / 100,
+        last: salesLastYear.totalSales / 100,
+        comparative: salesComparativeYear.totalSales / 100,
+        countsCurrent: salesThisYear.count,
+        countsLast: salesLastYear.count,
+        countsComparative: salesComparativeYear.count,
+        newUsersThisYear,
+        newUsersLastYear,
+      },
+      allTime: {
+        totalSalesOfAllTime: totalSalesOfAllTime.totalSales / 100,
+        totalCountOfAllTime: totalSalesOfAllTime.count,
+        totalActiveTherapist,
+        totalActiveUser,
+      },
+
     })
   );
 });
+
 
 
 const TotalSalesList = asyncHandler(async (req, res) => {
