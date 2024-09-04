@@ -2,7 +2,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
-import Blog from "../../models/blogsModel.js"
+import Blog from "../../models/blogsModel.js";
 import { Course } from "../../models/courseModel.js";
 
 const therapistList = asyncHandler(async (req, res) => {
@@ -62,12 +62,11 @@ const therapistList = asyncHandler(async (req, res) => {
   const therapistListData = await Therapist.aggregate(pipeline);
 
   // Add count stage to get total number of therapists
-  const countPipeline = [
-    { $count: "totalCount" }
-  ];
+  const countPipeline = [{ $count: "totalCount" }];
 
   const countResult = await Therapist.aggregate(countPipeline);
-  const totalTherapists = countResult.length > 0 ? countResult[0].totalCount : 0;
+  const totalTherapists =
+    countResult.length > 0 ? countResult[0].totalCount : 0;
 
   if (!therapistListData.length) {
     return res.status(404).json(new ApiError(404, "", "No therapists found!"));
@@ -80,7 +79,7 @@ const therapistList = asyncHandler(async (req, res) => {
         pagination: {
           totalItems: totalTherapists,
           totalPages: Math.ceil(totalTherapists / limitNumber),
-          currentPage: pageNumber
+          currentPage: pageNumber,
         },
         result: therapistListData,
       },
@@ -134,7 +133,6 @@ const therapistListByGroup = asyncHandler(async (req, res) => {
           },
         },
       },
-
     },
 
     {
@@ -196,7 +194,7 @@ const therapistListByGroup = asyncHandler(async (req, res) => {
         pagination: {
           totalItems: totalGroups,
           totalPages: Math.ceil(totalGroups / limitNumber),
-          currentPage: pageNumber
+          currentPage: pageNumber,
         },
         result: therapistListData,
       },
@@ -208,34 +206,47 @@ const therapistListByGroup = asyncHandler(async (req, res) => {
 const findBolgbySlug = asyncHandler(async (req, res) => {
   const { slug } = req.query;
   if (!slug) {
-    throw new ApiError(400, "", "slug is required!")
+    throw new ApiError(400, "", "slug is required!");
   }
-  const blog = await Blog.findOne({ slug })
+  const blog = await Blog.findOne({ slug });
   if (!blog) {
-    throw new ApiError(404, "", "Blog not found!")
+    throw new ApiError(404, "", "Blog not found!");
   }
-  return res.status(200).json(new ApiResponse(200, blog, "Blog fetched succsessfully!"))
-})
-
+  return res
+    .status(200)
+    .json(new ApiResponse(200, blog, "Blog fetched succsessfully!"));
+});
 
 const therapistDetails = asyncHandler(async (req, res) => {
-  const { slug } = req.params
-  console.log(slug)
+  const { slug } = req.params;
+  console.log(slug);
   if (!slug) {
-    throw new ApiError(400, "", "slug is required!")
+    throw new ApiError(400, "", "slug is required!");
   }
-  const therapist = await Therapist.findOne({ email: { $regex: slug, $options: 'i' } }).populate({
-    path: 'specialization',
-    select: 'name'
-  }).select("-password -refreshToken");
+  const therapist = await Therapist.findOne({
+    email: { $regex: slug, $options: "i" },
+  })
+    .populate({
+      path: "specialization",
+      select: "name",
+    })
+    .select("-password -refreshToken");
   console.log(therapist);
   if (!therapist) {
-    return res.status(404).json(new ApiError(404, "", "failed to get therapist"))
+    return res
+      .status(404)
+      .json(new ApiError(404, "", "failed to get therapist"));
   }
   const result = {
     therapist: therapist,
-  }
-  console.log(getList)
-  return res.status(200).json(new ApiResponse(200, result, "therapist fetched successfully!"))
-})
-export { therapistList, therapistListByGroup, findBolgbySlug, therapistDetails }
+  };
+  return res
+    .status(200)
+    .json(new ApiResponse(200, result, "therapist fetched successfully!"));
+});
+export {
+  therapistList,
+  findBolgbySlug,
+  therapistDetails,
+  therapistListByGroup,
+};
