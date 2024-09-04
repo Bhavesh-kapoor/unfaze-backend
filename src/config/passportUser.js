@@ -1,9 +1,9 @@
 // passportConfig.js
+import dotenv from "dotenv";
 import passport from "passport";
+import { User } from "../models/userModel.js";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
-import { User } from "../models/userModel.js";
-import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/user/google/callback",
+      callbackURL: "/api/public/user/google/callback",
       scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -49,7 +49,7 @@ passport.use(
     {
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: "/auth/user/facebook/callback",
+      callbackURL: "/api/public/user/facebook/callback",
       profileFields: ["id", "emails", "name"],
       scope: ["email"],
     },
