@@ -232,39 +232,8 @@ const therapistDetails = asyncHandler(async (req, res) => {
   if (!therapist) {
     return res.status(404).json(new ApiError(404, "", "failed to get therapist"))
   }
-  const pipeline = [
-    { $match: { therapist_id: therapist._id } },
-    {
-      $lookup: {
-        from: "specializations",
-        localField: "specialization_id",
-        foreignField: "_id",
-        as: "specializations",
-      },
-    },
-    {
-      $unwind: "$specializations",
-    },
-    {
-      $addFields: {
-        category: "$specializations.name",
-      },
-    },
-    {
-      $project: {
-        _id: 1,
-        session_count: 1,
-        category: 1,
-        cost: 1,
-      },
-    },
-  ];
-
-  const getList = await Course.aggregate(pipeline);
   const result = {
     therapist: therapist,
-    course_list: getList,
-    total_courses: getList.length,
   }
   console.log(getList)
   return res.status(200).json(new ApiResponse(200, result, "therapist fetched successfully!"))
