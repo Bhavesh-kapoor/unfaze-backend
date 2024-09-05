@@ -9,19 +9,15 @@ import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format } from "date-fns";
 // import { Course } from "../../models/courseModel.js";
 // import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
-const APP_BE_URL = process.env.APP_BASE_URL;
 const SESSION_DURATION_MINUTES = 30;
-const GAP_BETWEEN_SESSIONS_MINUTES = 15;
-const START_HOUR = 9;
-const END_HOUR = 17;
 export async function processPayment(req, res) {
   try {
     const { therapist_id, specialization_id, date, time } = req.body;
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    console.log(formattedDate)
+    const formattedDate = format(date, "yyyy-MM-dd");
+    console.log(formattedDate);
     const user = req.user;
     const startDateTime = new Date(`${formattedDate}T${time}`);
-    console.log(startDateTime)
+    console.log(startDateTime);
     if (!isValid(startDateTime)) {
       console.error("Invalid date-time format:", startDateTime);
       return res
@@ -56,7 +52,7 @@ export async function processPayment(req, res) {
       merchantTransactionId: transactionId,
       merchantUserId: `MUID_${user._id}`,
       amount: therapist.approvedPrice * 100,
-      redirectUrl: `/verifying_payment/${transactionId}`,
+      redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
       paymentInstrument: {
@@ -103,7 +99,11 @@ export async function processPayment(req, res) {
       });
 
       await initiatedTransaction.save();
-      res.status(200).json(new ApiResponse(200, { redirect_url: response.data.data.instrumentResponse.redirectInfo.url }));
+      res.status(200).json(
+        new ApiResponse(200, {
+          redirect_url: response.data.data.instrumentResponse.redirectInfo.url,
+        })
+      );
     } catch (error) {
       console.error("Payment request error:", error);
       return res
@@ -124,7 +124,7 @@ export const validatePayment = async (req, res, next) => {
   if (!merchantTransactionId) {
     return res
       .status()
-      .send(new ApiError(400, "", "merchantTransactionId is required")); //
+      .send(new ApiError(400, "", "merchantTransactionId is required"));
   }
   let statusUrl =
     `${process.env.HOST_URL}/pg/v1/status/${process.env.MERCHANT_ID}/` +

@@ -3,18 +3,21 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
-import { parseISO, isValid, addMinutes } from "date-fns";
+import { parseISO, isValid, addMinutes, format } from "date-fns";
 import uniqid from "uniqid";
 import Cashfree from "../../config/cashfree.config.js";
 import mongoose from "mongoose";
-import getExchangeRate from ""
+import getExchangeRate from "../../utils/currencyConverter.js"
+import axios from "axios";
 
 const SESSION_DURATION_MINUTES = 30;
 const createOrder = asyncHandler(async (req, res) => {
-  const { therapist_id, SpecializationId, date, startTime,  } = req.body;
-  const order_currency = "USD"
+  const { therapist_id, specialization_id, date, time, } = req.body;
+  const order_currency = "INR"
   const user = req.user;
-  const startDateTime = parseISO(`${date}T${startTime}`);
+  const formattedDate = format(date, "yyyy-MM-dd");
+  console.log(formattedDate);
+  const startDateTime = parseISO(`${formattedDate}T${time}`);
   if (!isValid(startDateTime)) {
     console.error("Invalid date-time format:", startDateTime);
     return res
@@ -33,14 +36,13 @@ const createOrder = asyncHandler(async (req, res) => {
   }
   // Find therapist
   const therapist = await Therapist.findOne({ _id: therapist_id });
-  console.log(therapist);
   if (!therapist) {
     return res.status(404).json(new ApiError(404, "", "Invalid therapist !!!"));
   }
   let transactionId = uniqid();
   transactionId = `unfazed${transactionId}`;
   let request = {
-    order_amount: `${therapist.approvedPrice}`,
+    order_amount: `${therapist.USD_Price}`,
     order_currency: `${order_currency}`,
     order_id: `${transactionId}`,
     customer_details: {
@@ -55,20 +57,35 @@ const createOrder = asyncHandler(async (req, res) => {
     const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
-    rate_USD = 
+    // const return_url = 
+    // const return url = response.data.
+   
+    const rate = await getExchangeRate("USD", "INR")
+    let rate_USD =rate*100
     const initiatedTransaction = new Transaction({
       transactionId: order_id,
       user_id: user._id,
       therapist_id,
-      category:SpecializationId,
+      category: specialization_id,
       amount_USD: therapist.USD_Price,
-      rate_USD:
+      rate_USD: rate_USD,
       status: "PAYMENT_INITIATED",
       start_time: startDateTime,
       end_time: endDateTime,
     });
-
     await initiatedTransaction.save();
+    // const response = await axios.post(
+    //   'https://api.cashfree.com/pg/orders',
+    //   request,
+    //   {
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //       'x-client-id': process.env.CASHFREE_APP_ID,
+    //       'x-client-secret': process.env.CASHFREE_SECRET_KEY,
+    //       'x-api-version': '2023-08-01'
+    //     },
+    //   }
+    // );
     return res
       .status(200)
       .json(
@@ -83,13 +100,12 @@ const createOrder = asyncHandler(async (req, res) => {
       "Error creating order:",
       error.response ? error.response.data : error.message
     );
-    res.status(500).json({ error: "Failed to create order" });
+    return res.status(500).json(new ApiResponse(500, error, "failed to book slot"));
   }
 });
 
 const verifyPayment = asyncHandler(async (req, res, next) => {
   const { order_id } = req.query;
-  console.log("received ", order_id);
   if (!order_id) {
     return res
       .status(501)
@@ -106,5 +122,4 @@ const verifyPayment = asyncHandler(async (req, res, next) => {
     return res.status(500).json(new ApiError(500, "", "something went wrong!"));
   }
 });
-
 export { createOrder, verifyPayment };

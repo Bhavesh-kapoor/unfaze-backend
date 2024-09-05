@@ -11,6 +11,7 @@ import session from "express-session";
 import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
+import getExchangeRate from "./utils/currencyConverter.js";
 
 // Load environment variables
 dotenv.config();
@@ -73,6 +74,7 @@ app.use(passport.session());
 app.use((req, res, next) => {
   const startTime = process.hrtime();
 
+
   res.on("finish", () => {
     // Calculate response time
     const diff = process.hrtime(startTime);
@@ -83,12 +85,12 @@ app.use((req, res, next) => {
       res.statusCode >= 500
         ? chalk.red
         : res.statusCode >= 400
-        ? chalk.yellow
-        : res.statusCode >= 300
-        ? chalk.cyan
-        : res.statusCode >= 200
-        ? chalk.green
-        : chalk.white;
+          ? chalk.yellow
+          : res.statusCode >= 300
+            ? chalk.cyan
+            : res.statusCode >= 200
+              ? chalk.green
+              : chalk.white;
 
     // Logging the request
     logger.info(
