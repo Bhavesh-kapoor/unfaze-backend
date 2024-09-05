@@ -228,6 +228,58 @@ const login = asyncHandler(async (req, res) => {
     );
 });
 
+export const getTherapistSpecialization = asyncHandler(
+  async (request, response) => {
+    try {
+      const { therapist_id, specialization_id } = request.body;
+      if (!therapist_id || !specialization_id) {
+        return response
+          .status(400)
+          .json(
+            new ApiError(400, "Therapist id and specialization id required!")
+          );
+      }
+      const therapist = await Therapist.findById(therapist_id, {
+        _id: 1,
+        email: 1,
+        mobile: 1,
+        gender: 1,
+        address: 1,
+        lastName: 1,
+        language: 1,
+        firstName: 1,
+        is_active: 1,
+        profileImage: 1,
+        approvedPrice: 1,
+      }).populate({
+        path: "specialization",
+        select: "name",
+      });
+      if (!therapist) {
+        return response
+          .status(404)
+          .json(new ApiError(404, "Therapist not found!"));
+      }
+      const specialization = therapist.specialization.find(
+        (item) => item._id.toString() === specialization_id.toString()
+      );
+      if (!specialization) {
+        return response
+          .status(404)
+          .json(new ApiError(404, "Specialization not found!"));
+      }
+      delete therapist.specialization;
+      const result = { therapist, specialization };
+      return response
+        .status(200)
+        .json(new ApiResponse(200, result, "Data fetched successfully"));
+    } catch (error) {
+      console.error(error);
+      response.status(500).json(new ApiError(500, "Server Error"));
+    }
+  }
+);
+
 const logout = asyncHandler(async (req, res) => {
   console.log("console.log", req.user);
   await Therapist.findByIdAndUpdate(

@@ -18,7 +18,10 @@ import {
 import upload from "../middleware/admin/multer.middleware.js";
 import specializationRoutes from "./admin/specilization.route.js";
 import { raiseQuery } from "../controllers/admin/contactUsController.js";
-import { validateRegister as therapistValidateRegister } from "../controllers/admin/TherepistController.js";
+import {
+  getTherapistSpecialization,
+  validateRegister as therapistValidateRegister,
+} from "../controllers/admin/TherepistController.js";
 
 const router = express.Router();
 
@@ -59,7 +62,6 @@ router.post("/login", userlogin);
 
 router.use("/specialization", specializationRoutes);
 
-// Token refresh
 router.post("/refreshToken", refreshToken);
 
 router.get("/get-blog-list", getAllBlogs);
@@ -75,6 +77,8 @@ router.use("/contact-us/raise-query", raiseQuery);
 router.get("/get-services-list", getAllSpecialization);
 
 router.get("/therapist-details/:slug", therapistDetails);
+
+router.post("/get-checkout", getTherapistSpecialization);
 
 router.get("/get-therapist-list-by-category", therapistListByGroup);
 
