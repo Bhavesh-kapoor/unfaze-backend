@@ -1,4 +1,5 @@
 import { Router } from "express";
+import slotRoutes from "../slot.route.js";
 import feedbackRoute from "../feeback.route.js";
 import sessionRouter from "./session.routes.js";
 import upload from "../../middleware/admin/multer.middleware.js";
@@ -12,6 +13,9 @@ const router = Router();
 
 // Update user profile
 router.put("/update-user", updateProfile);
+
+// to create slots
+router.use("/slot", slotRoutes);
 
 // Routes for specialization and feedback
 router.use("/feedback", feedbackRoute);
