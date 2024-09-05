@@ -5,6 +5,8 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import mongoose from "mongoose";
 import { sendNotification } from "../notificationController.js";
+import { transporter, mailOptions } from "../../config/nodeMailer.js"
+import { loginCredentialEmail } from "../../static/emailcontent.js";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -32,6 +34,7 @@ const register = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiError(400, "Validation Error", errors.array()));
   }
+  const admin = req.user || ""
   const {
     firstName,
     lastName,
@@ -62,10 +65,13 @@ const register = asyncHandler(async (req, res) => {
     accountNumber,
     accountHolder,
     password,
-    start_hour,
-    end_hour,
+    service_charge_USD,
+    USD_Price,
+    service_charge_INR,
+    INR_Price,
+    adhar_Number,
+    PAN_Number,
   } = req.body;
-  console.log(req.body);
   const therapistData = {
     firstName,
     lastName,
@@ -75,48 +81,21 @@ const register = asyncHandler(async (req, res) => {
     dob,
     experience,
     password,
-    start_hour,
-    end_hour,
+    adhar_Number,
+    PAN_Number,
+    service_charge_USD,
+    USD_Price,
+    service_charge_INR,
+    INR_Price,
   };
-  console.log(
-    firstName,
-    lastName,
-    addressLine1,
-    addressLine2,
-    email,
-    mobile,
-    gender,
-    dob,
-    licence,
-    specialization,
-    bio,
-    state,
-    city,
-    pincode,
-    linkedin,
-    facebook,
-    highSchool,
-    intermediate,
-    graduation,
-    postgraduation,
-    additional,
-    language,
-    experience,
-    instagram,
-    bankName,
-    ifsccode,
-    accountNumber,
-    accountHolder,
-    password
-  );
   therapistData.address = {};
   therapistData.social = {};
   therapistData.education = {};
   therapistData.bankdetail = {};
   therapistData.availability = {};
 
-  therapistData.availability.start_hour = start_hour;
-  therapistData.availability.end_hour = end_hour;
+  // therapistData.availability.start_hour = start_hour;
+  // therapistData.availability.end_hour = end_hour;
   if (highSchool) therapistData.education.highSchool = highSchool;
   if (intermediate) therapistData.education.intermediate = intermediate;
   if (graduation) therapistData.education.graduation = graduation;
@@ -174,15 +153,31 @@ const register = asyncHandler(async (req, res) => {
     if (req.files?.profileImage) {
       therapistData.profileImage = req.files.profileImage[0].path;
     }
-
+    if (admin) {
+      therapistData.is_active = true;
+    }
     let createTherepist = new Therapist(therapistData);
     await createTherepist.save();
+    if (admin) {
+      const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
+      const htmlContent = loginCredentialEmail(email, password)
+      const EmailOptions = mailOptions(email, subject, htmlContent)
+      transporter.sendMail(EmailOptions, (error, info) => {
+        if (error) {
+          console.log("Error while sending email:", error);
+        } else {
+          console.log("Email sent successfully:", info.response);
+        }
+      });
+
+    }
     res
       .status(200)
       .json(
         new ApiResponse(200, createTherepist, "Therepist created Successfully")
       );
   } catch (err) {
+    console.log(err);
     res.status(500).json(new ApiError(500, "", err));
   }
 });
@@ -198,6 +193,9 @@ const login = asyncHandler(async (req, res) => {
   let existUser = await Therapist.findOne({ $or: [{ email }, { mobile }] });
   if (!existUser)
     return res.status(404).json(new ApiError(400, "", "user not found"));
+  if (!existUser.is_active) {
+    return res.status(200).json(new ApiResponse(200, null, "Your account is inactive pleae contact to admin."))
+  }
 
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
   if (!isPasswordCorrect)

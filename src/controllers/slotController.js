@@ -176,7 +176,6 @@ export const getSlotsByDate = async (req, res) => {
       .status(400)
       .json(new ApiError(400, "Therapist ID and date are required"));
   }
-
   try {
     // Convert date to ISO format for comparison
     const isoDate = new Date(date).toISOString().split("T")[0]; // Format date as YYYY-MM-DD

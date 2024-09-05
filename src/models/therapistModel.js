@@ -89,6 +89,16 @@ const TherapistSchema = new mongoose.Schema(
         required: true,
       },
     ],
+    adhar_Number: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    PAN_Number: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     experience: { type: String, trim: true },
     passport: String,
     dob: {
@@ -101,11 +111,21 @@ const TherapistSchema = new mongoose.Schema(
     social: SocialSchema,
     bankdetail: BankSchema,
     is_active: { type: Boolean, default: false },
-    availability: {
-      start_hour: { type: Number, min: 0, max: 23 },
-      end_hour: { type: Number, min: 0, max: 23 },
+    // availability: {
+    //   start_hour: { type: Number, min: 0, max: 23 },
+    //   end_hour: { type: Number, min: 0, max: 23 },
+    // },
+    service_charge_USD: {
+      type: Number,
+      default: 0,
+      required: true,
     },
     USD_Price: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
+    service_charge_INR: {
       type: Number,
       default: 0,
       required: true,

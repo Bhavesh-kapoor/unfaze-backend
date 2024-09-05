@@ -5,6 +5,16 @@ const sessionSchema = new Schema({
     ref: "Transaction",
     required: true,
   },
+  therapist_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Therapist",
+    required: true,
+  },
+  user_id: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   status: {
     type: String,
     enum: ["upcomming", "completed", "cancelled"],

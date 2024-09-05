@@ -1,5 +1,5 @@
 import express from "express";
-import passport from "../config//passportUser.js";
+import passport from "../config/passportUser.js";
 import {
   therapistList,
   therapistDetails,
@@ -19,6 +19,8 @@ import upload from "../middleware/admin/multer.middleware.js";
 import specializationRoutes from "./admin/specilization.route.js";
 import { raiseQuery } from "../controllers/admin/contactUsController.js";
 import {
+  register as therapistRegister,
+  login as therapistLogin,
   getTherapistSpecialization,
   validateRegister as therapistValidateRegister,
 } from "../controllers/admin/TherepistController.js";
@@ -59,6 +61,7 @@ router.post(
 
 // User login
 router.post("/login", userlogin);
+router.post("/therapist/login", therapistLogin);
 
 router.use("/specialization", specializationRoutes);
 
@@ -86,7 +89,7 @@ router.post(
   "/therapist/register",
   multipleImages,
   therapistValidateRegister,
-  register
+  therapistRegister
 );
 
 router.get(

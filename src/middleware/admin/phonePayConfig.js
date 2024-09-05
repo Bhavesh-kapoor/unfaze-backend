@@ -51,7 +51,7 @@ export async function processPayment(req, res) {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
       merchantUserId: `MUID_${user._id}`,
-      amount: therapist.approvedPrice * 100,
+      amount: therapist.INR_Price * 100,
       redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,

@@ -97,8 +97,6 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
   };
   try {
     const { paymentDetails, transaction } = req;
-    console.log("paymentDetails-----", paymentDetails)
-    console.log("transaction-----------", transaction)
     const user = req.user;
     const therapist = await Therapist.findById(transaction.therapist_id);
 
@@ -117,6 +115,8 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       }
       const session = new Session({
         transaction_id: transaction._id,
+        therapist_id: transaction.therapist_id,
+        user_id: user._id,
         start_time: transaction.start_time,
         end_time: transaction.end_time,
       });
@@ -166,6 +166,8 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       }
       const session = new Session({
         transaction_id: transaction._id,
+        therapist_id: transaction.therapist_id,
+        user_id: user._id,
         start_time: transaction.start_time,
         end_time: transaction.end_time,
       });

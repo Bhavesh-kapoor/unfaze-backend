@@ -8,6 +8,7 @@ import paymentRoutes from "./payment.route.js";
 import adminRoutes from "./admin/auth.route.js";
 import publicRoute from "../routes/public.route.js";
 import publicAdminRoute from "../routes/admin/adminpublic.route.js";
+import therapistRoute from "../routes/therapist/therapist.route.js"
 
 // Initialize the router
 const router = express.Router();
@@ -23,9 +24,12 @@ router.use("/admin", verifyJwtToken, adminRoutes);
 
 // handle user auth routes for (local)
 router.use("/auth/user", verifyJwtToken, userRoutes);
+//therapist auth routes
+router.use("/auth/therapist", verifyJwtToken, therapistRoute);
 
 // handle payment routes
 router.use("/payment", verifyJwtToken, paymentRoutes);
+
 
 // Get current user data when JWT token is valid
 router.get(
