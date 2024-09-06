@@ -1,4 +1,3 @@
-
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -18,7 +17,12 @@ const sendNotificationsAndEmails = async (transaction, user) => {
   };
 
   try {
-    const notification = await sendNotification(receiverId, "Therapist", message, payload);
+    const notification = await sendNotification(
+      receiverId,
+      "Therapist",
+      message,
+      payload
+    );
     console.log("Notification sent:", notification);
   } catch (err) {
     console.error("Error sending notification:", err);
@@ -88,10 +92,10 @@ const sendNotificationsAndEmails = async (transaction, user) => {
 const handlePhonepayPayment = asyncHandler(async (req, res) => {
   const mapPaymentStatus = (responseCode) => {
     const statusMap = {
-      "PENDING": "pending",
-      "SUCCESS": "successful",
-      "FAILED": "failed",
-      "REFUNDED": "refunded"
+      PENDING: "pending",
+      SUCCESS: "successful",
+      FAILED: "failed",
+      REFUNDED: "refunded",
     };
     return statusMap[responseCode] || "pending"; // Default for unknown status
   };
@@ -104,14 +108,20 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       return res.status(404).json({ error: "Therapist not found" });
     }
 
-    const order_status = mapPaymentStatus(paymentDetails.data.responseCode);
-    transaction.payment_details = paymentDetails
-    paymentDetails.payment_status = order_status
+    const order_status = mapPaymentStatus(paymentDetails?.data?.responseCode);
+    transaction.payment_details = paymentDetails;
+    paymentDetails.payment_status = order_status;
     transaction.save();
     if (order_status === "successful") {
-      const existingSession = await Session.findOne({ transaction_id: transaction._id });
+      const existingSession = await Session.findOne({
+        transaction_id: transaction._id,
+      });
       if (existingSession) {
-        return res.status(400).json(new ApiResponse(200, existingSession, "session already booked"));
+        return res
+          .status(400)
+          .json(
+            new ApiResponse(200, existingSession, "session already booked")
+          );
       }
       const session = new Session({
         transaction_id: transaction._id,
@@ -125,11 +135,12 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       await session.save();
       await sendNotificationsAndEmails(transaction, user);
 
-      res.status(201).json(new ApiResponse(201, session, "Session booked successfully"));
+      res
+        .status(201)
+        .json(new ApiResponse(201, session, "Session booked successfully"));
     } else {
       res.status(200).json(new ApiResponse(200, null, paymentDetails.message));
     }
-
   } catch (error) {
     console.error("Error in session booking:", error);
     res.status(500).json(new ApiError(500, error, "something went wrong!"));
@@ -138,31 +149,37 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
 const handleCashfreePayment = asyncHandler(async (req, res) => {
   const mapPaymentStatus = (responseCode) => {
     const statusMap = {
-      "ACTIVE": "pending",
-      "PAID": "successful",
-      "FAILED": "failed",
-      "REFUNDED": "refunded",
-      "CANCELLED": "cancelled"
+      ACTIVE: "pending",
+      PAID: "successful",
+      FAILED: "failed",
+      REFUNDED: "refunded",
+      CANCELLED: "cancelled",
     };
     return statusMap[responseCode] || "pending"; // Default for unknown status
   };
   try {
     const { paymentDetails, transaction } = req;
-    console.log("paymentDetails", paymentDetails)
-    console.log("paymentDetails", paymentDetails)
+    console.log("paymentDetails", paymentDetails);
+    console.log("paymentDetails", paymentDetails);
     const user = req.user;
     const therapist = await Therapist.findById(transaction.therapist_id);
     if (!therapist) {
       return res.status(404).json({ error: "Therapist not found" });
     }
     const order_status = mapPaymentStatus(paymentDetails.order_status);
-    transaction.payment_details = paymentDetails.data
-    paymentDetails.payment_status = order_status
+    transaction.payment_details = paymentDetails.data;
+    paymentDetails.payment_status = order_status;
     transaction.save();
     if (order_status === "successful") {
-      const existingSession = await Session.findOne({ transaction_id: transaction._id });
+      const existingSession = await Session.findOne({
+        transaction_id: transaction._id,
+      });
       if (existingSession) {
-        return res.status(200).send(new ApiResponse(200, existingSession, "session already booked"));
+        return res
+          .status(200)
+          .send(
+            new ApiResponse(200, existingSession, "session already booked")
+          );
       }
       const session = new Session({
         transaction_id: transaction._id,
@@ -176,9 +193,13 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       await session.save();
       await sendNotificationsAndEmails(transaction, user);
 
-      return res.status(201).json(new ApiResponse(201, session, "Session booked successfully"));
+      return res
+        .status(201)
+        .json(new ApiResponse(201, session, "Session booked successfully"));
     } else {
-      return res.status(200).json(new ApiResponse(200, null, paymentDetails.message));
+      return res
+        .status(200)
+        .json(new ApiResponse(200, null, paymentDetails.message));
     }
   } catch (error) {
     console.error("Error in handleCashfreePayment:", error);
