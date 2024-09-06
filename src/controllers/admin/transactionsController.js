@@ -94,7 +94,7 @@ const calculateTotalSales = asyncHandler(async (req, res) => {
 const TotalSalesByDuration = asyncHandler(async (req, res) => {
   const now = new Date();
 
-  // Define the date ranges for different periods using a date library like date-fns
+  // Defined the date ranges for different periods using a date library like date-fns
   const getDateRanges = (now) => ({
     today: { start: startOfDay(now), end: endOfDay(now) },
     yesterday: {
@@ -144,21 +144,31 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: null,
-          totalSales: { $sum: "$transaction_details.amount" },
-          count: { $sum: 1 },
-        },
-      },
+          totalUSDSales: { $sum: "$transaction_details.amount_USD" },
+          totalINRSales: { $sum: "$transaction_details.amount_INR" },
+          countUSDSales: {
+            $sum: {
+              $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0]
+            }
+          },
+          countINRSales: {
+            $sum: {
+              $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0]
+            }
+          }
+        }
+      }
     ]);
-    return result[0] || { totalSales: 0, count: 0 };
+    return result[0] || { totalUSDSales: 0, totalINRSales: 0, countUSDSales: 0, countINRSales: 0 };
   };
 
   // Function to get the count of newly created users within a time range
   const getNewUserCount = async (startDate, endDate) => {
     return await User.countDocuments({
       createdAt: { $gte: startDate, $lte: endDate },
+      role: "user"
     });
   };
-
   // Days and hours passed calculations
   const daysPassedInCurrentWeek = now.getDay(); // 0 (Sun) - 6 (Sat)
   const daysPassedInCurrentMonth = now.getDate(); // Day of the month (1-31)
@@ -209,12 +219,24 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: null,
-          totalSales: { $sum: "$transaction_details.amount" },
-          count: { $sum: 1 },
-        },
+          totalUSDSales: { $sum: "$transaction_details.amount_USD" },
+          totalINRSales: { $sum: "$transaction_details.amount_INR" },
+          countUSDSales: {
+            $sum: {
+              $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0]
+            }
+          },
+          countINRSales: {
+            $sum: {
+              $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0]
+            }
+          }
+        }
       },
     ]);
-    return result[0] || { totalSales: 0, count: 0 };
+
+    // Ensure the result object is returned correctly
+    return result[0] || { totalUSDSales: 0, totalINRSales: 0, countUSDSales: 0, countINRSales: 0 };
   };
 
   const [
@@ -270,56 +292,106 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
   return res.status(200).json(
     new ApiResponse(200, {
       days: {
-        current: salesToday.totalSales / 100,
-        last: salesYesterday.totalSales / 100,
-        comparative: salesComparativeDay.totalSales / 100,
-        countsCurrent: salesToday.count,
-        countsLast: salesYesterday.count,
-        countsComparative: salesComparativeDay.count,
-        currentUserCount: newUsersToday,
-        lastUserCount: newUsersYesterday,
+        current: {
+          INR: salesToday.totalINRSales,
+          USD: salesToday.totalUSDSales,
+          countsUSD: salesToday.countUSDSales,
+          countsINR: salesToday.countINRSales,
+          UserCount: newUsersToday,
+        },
+        last: {
+          INR: salesYesterday.totalINRSales,
+          USD: salesYesterday.totalUSDSales,
+          comparativeUSD: salesComparativeDay.totalUSDSales,
+          comparativeINR: salesComparativeDay.totalINRSales,
+          countsCompUSD: salesComparativeDay.countUSDSales,
+          countsCompINR: salesComparativeDay.countINRSales,
+          countsUSD: salesYesterday.countUSDSales,
+          countsINR: salesYesterday.countINRSales,
+          UserCount: newUsersYesterday,
+        },
       },
       weeks: {
-        current: salesThisWeek.totalSales / 100,
-        last: salesLastWeek.totalSales / 100,
-        comparative: salesComparativeWeek.totalSales / 100,
-        countsCurrent: salesThisWeek.count,
-        countsLast: salesLastWeek.count,
-        countsComparative: salesComparativeWeek.count,
-        currentUserCount: newUsersThisWeek,
-        lastUserCount: newUsersLastWeek,
+        current: {
+          INR: salesThisWeek.totalINRSales,
+          USD: salesThisWeek.totalUSDSales,
+          countsUSD: salesThisWeek.countUSDSales,
+          countsINR: salesThisWeek.countINRSales,
+          UserCount: newUsersThisWeek,
+        },
+        last: {
+          INR: salesLastWeek.totalINRSales,
+          USD: salesLastWeek.totalUSDSales,
+          comparativeUSD: salesComparativeWeek.totalUSDSales,
+          comparativeINR: salesComparativeWeek.totalINRSales,
+          countsCompUSD: salesComparativeWeek.countUSDSales,
+          countsCompINR: salesComparativeWeek.countINRSales,
+          countsUSD: salesLastWeek.countUSDSales,
+          countsINR: salesLastWeek.countINRSales,
+          UserCount: newUsersLastWeek,
+        },
       },
       months: {
-        current: salesThisMonth.totalSales / 100,
-        last: salesLastMonth.totalSales / 100,
-        comparative: salesComparativeMonth.totalSales / 100,
-        countsCurrent: salesThisMonth.count,
-        countsLast: salesLastMonth.count,
-        countsComparative: salesComparativeMonth.count,
-        currentUserCount: newUsersThisMonth,
-        lastUserCount: newUsersLastMonth,
+        current: {
+          INR: salesThisMonth.totalINRSales,
+          USD: salesThisMonth.totalUSDSales,
+          countsUSD: salesThisMonth.countUSDSales,
+          countsINR: salesThisMonth.countINRSales,
+          UserCount: newUsersThisMonth,
+        },
+        last: {
+          INR: salesLastMonth.totalINRSales,
+          USD: salesLastMonth.totalUSDSales,
+          comparativeUSD: salesComparativeMonth.totalUSDSales,
+          comparativeINR: salesComparativeMonth.totalINRSales,
+          countsCompUSD: salesComparativeMonth.countUSDSales,
+          countsCompINR: salesComparativeMonth.countINRSales,
+          countsUSD: salesLastMonth.countUSDSales,
+          countsINR: salesLastMonth.countINRSales,
+          UserCount: newUsersLastMonth,
+        },
       },
       years: {
-        current: salesThisYear.totalSales / 100,
-        last: salesLastYear.totalSales / 100,
-        comparative: salesComparativeYear.totalSales / 100,
-        countsCurrent: salesThisYear.count,
-        countsLast: salesLastYear.count,
-        countsComparative: salesComparativeYear.count,
-        currentUserCount: newUsersThisYear,
-        lastUserCount: newUsersLastYear,
+        current: {
+          INR: salesThisYear.totalINRSales,
+          USD: salesThisYear.totalUSDSales,
+          countsUSD: salesThisYear.countUSDSales,
+          countsINR: salesThisYear.countINRSales,
+          UserCount: newUsersThisYear,
+        },
+        last: {
+          INR: salesLastYear.totalINRSales,
+          USD: salesLastYear.totalUSDSales,
+          comparativeUSD: salesComparativeYear.totalUSDSales,
+          comparativeINR: salesComparativeYear.totalINRSales,
+          countsCompUSD: salesComparativeYear.countUSDSales,
+          countsCompINR: salesComparativeYear.countINRSales,
+          countsUSD: salesLastYear.countUSDSales,
+          countsINR: salesLastYear.countINRSales,
+          UserCount: newUsersLastYear,
+        },
       },
       allTime: {
-        current: totalSalesOfAllTime.totalSales / 100,
-        last: null,
-        comparative: null,
-        countsCurrent: totalSalesOfAllTime.count,
-        countsLast: null,
-        countsComparative: null,
-        currentUserCount: totalActiveUser,
-        lastUserCount: null,
+        current: {
+          INR: totalSalesOfAllTime.totalINRSales,
+          USD: totalSalesOfAllTime.totalUSDSales,
+          countsUSD: totalSalesOfAllTime.countUSDSales,
+          countsINR: totalSalesOfAllTime.countINRSales,
+          UserCount: totalActiveUser,
+        },
+        last: {
+          INR: null,
+          USD: null,
+          comparativeUSD: null,
+          comparativeINR: null,
+          countsCompUSD: null,
+          countsCompINR: null,
+          countsUSD: null,
+          countsINR: null,
+          UserCount: null,
+        },
       },
-      total: totalActiveTherapist,
+      totalActiveTherapist: totalActiveTherapist,
     })
   );
 });
@@ -585,26 +657,23 @@ const getTherapistRevenue = async (req, res) => {
 
 const getUserSessions = async (req, res) => {
   try {
-    const { status = "upcoming" } = req.query;
     const user = req.user;
     console.log(user)
     if (!user) {
       return res.status(400).json(new ApiError(400, null, "User ID is required!"));
     }
-    const sessions = await Session.find({ user_id: user._i,  })
-    console.log(sessions)
-    .populate({
-       path: 'therapist_id',
-       select: 'firstName lastName email mobile' 
-     })
-     .populate({
-       path: 'transaction_id',
-       populate: {
-         path: 'category', 
-         select: 'name'
-       }
-     }); 
-
+    const sessions = await Session.find({ user_id: user._id})
+      .populate({
+        path: 'therapist_id',
+        select: 'firstName lastName email mobile'
+      })
+      .populate({
+        path: 'transaction_id',
+        populate: {
+          path: 'category',
+          select: 'name '
+        }
+      })
     if (!sessions.length) {
       return res.status(404).json(new ApiResponse(200, [], 'You are not enrolled in any sessions!'));
     }

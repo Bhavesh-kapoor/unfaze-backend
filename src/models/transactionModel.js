@@ -25,13 +25,16 @@ const transactionSchema = new mongoose.Schema({
         default: {}
     },
     amount_USD:{
-        type: Number, 
+        type: Number,
+        default: 0
     },
     rate_USD:{
         type: Number,
+        default: 0
     },
     amount_INR: {
         type: Number,
+        default: 0
     },
     payment_status: {
         type: String,
