@@ -662,7 +662,7 @@ const getUserSessions = async (req, res) => {
     if (!user) {
       return res.status(400).json(new ApiError(400, null, "User ID is required!"));
     }
-    const sessions = await Session.find({ user_id: user._id})
+    const sessions = await Session.find({ user_id: user._id })
       .populate({
         path: 'therapist_id',
         select: 'firstName lastName email mobile'
@@ -674,6 +674,17 @@ const getUserSessions = async (req, res) => {
           select: 'name '
         }
       })
+      .lean()
+      .then(sessions => {
+        console.log(sessions)
+        return sessions.map(session => ({
+          therapistName: `${session.therapist_id.firstName} ${session.therapist_id.lastName}`,
+          categoryName: session.transaction_id.category?.name || "",
+          startTime: session.start_time,
+          status: session.status,
+          channelName: session.channelName,
+        }));
+      });
     if (!sessions.length) {
       return res.status(404).json(new ApiResponse(200, [], 'You are not enrolled in any sessions!'));
     }
@@ -684,5 +695,10 @@ const getUserSessions = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+const UserTransactions = asyncHandler(async () => {
+
+
+})
 
 export { calculateTotalSales, TotalSalesList, ListByCategory, TotalSalesByDuration, getTherapistSessions, getTherapistRevenue, getUserSessions };
