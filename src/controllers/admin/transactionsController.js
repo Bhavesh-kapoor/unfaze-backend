@@ -585,7 +585,7 @@ const getUserSessions = async (req, res) => {
     }
     const sessions = await Session.find({ user_id: user._i,  })
     console.log(sessions)
-    /* .populate({
+    .populate({
        path: 'therapist_id',
        select: 'firstName lastName email mobile' 
      })
@@ -595,7 +595,7 @@ const getUserSessions = async (req, res) => {
          path: 'category', 
          select: 'name'
        }
-     }); */
+     }); 
 
     if (!sessions.length) {
       return res.status(404).json(new ApiResponse(200, [], 'You are not enrolled in any sessions!'));
