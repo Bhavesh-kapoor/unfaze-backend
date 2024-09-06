@@ -17,10 +17,8 @@ import {
   subMonths,
   subYears,
   addDays,
-  addHours
-} from 'date-fns';
-
-
+  addHours,
+} from "date-fns";
 
 const calculateTotalSales = asyncHandler(async (req, res) => {
   const { duration = "week" } = req.query;
@@ -83,19 +81,15 @@ const calculateTotalSales = asyncHandler(async (req, res) => {
   });
 
   // Ammount in rupees----------------------------------------
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, {
-        totalSales: totalAmount / 100,
-        totalCounts: totalRecords,
-        totalActiveTherapist,
-        totalActiveUser,
-      })
-    );
+  return res.status(200).json(
+    new ApiResponse(200, {
+      totalSales: totalAmount / 100,
+      totalCounts: totalRecords,
+      totalActiveTherapist,
+      totalActiveUser,
+    })
+  );
 });
-
-
 
 const TotalSalesByDuration = asyncHandler(async (req, res) => {
   const now = new Date();
@@ -145,7 +139,7 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         },
       },
       {
-        $unwind: "$transaction_details"
+        $unwind: "$transaction_details",
       },
       {
         $group: {
@@ -175,13 +169,22 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
 
   // Comparison date ranges
   const comparativeWeekStart = startOfWeek(subWeeks(now, 1));
-  const comparativeWeekEnd = addDays(comparativeWeekStart, daysPassedInCurrentWeek);
+  const comparativeWeekEnd = addDays(
+    comparativeWeekStart,
+    daysPassedInCurrentWeek
+  );
 
   const comparativeMonthStart = startOfMonth(subMonths(now, 1));
-  const comparativeMonthEnd = addDays(comparativeMonthStart, daysPassedInCurrentMonth - 1);
+  const comparativeMonthEnd = addDays(
+    comparativeMonthStart,
+    daysPassedInCurrentMonth - 1
+  );
 
   const comparativeYearStart = new Date(now.getFullYear() - 1, 0, 1);
-  const comparativeYearEnd = addDays(comparativeYearStart, daysPassedInCurrentYear);
+  const comparativeYearEnd = addDays(
+    comparativeYearStart,
+    daysPassedInCurrentYear
+  );
 
   const comparativeDayStart = startOfDay(subDays(now, 1));
   const comparativeDayEnd = addHours(comparativeDayStart, hoursPassedToday);
@@ -201,7 +204,7 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         },
       },
       {
-        $unwind: "$transaction_details"
+        $unwind: "$transaction_details",
       },
       {
         $group: {
@@ -283,8 +286,8 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         countsCurrent: salesThisWeek.count,
         countsLast: salesLastWeek.count,
         countsComparative: salesComparativeWeek.count,
-        newUsersThisWeek,
-        newUsersLastWeek,
+        currentUserCount: newUsersThisWeek,
+        lastUserCount: newUsersLastWeek,
       },
       months: {
         current: salesThisMonth.totalSales / 100,
@@ -293,8 +296,8 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         countsCurrent: salesThisMonth.count,
         countsLast: salesLastMonth.count,
         countsComparative: salesComparativeMonth.count,
-        newUsersThisMonth,
-        newUsersLastMonth,
+        currentUserCount: newUsersThisMonth,
+        lastUserCount: newUsersLastMonth,
       },
       years: {
         current: salesThisYear.totalSales / 100,
@@ -303,21 +306,23 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         countsCurrent: salesThisYear.count,
         countsLast: salesLastYear.count,
         countsComparative: salesComparativeYear.count,
-        newUsersThisYear,
-        newUsersLastYear,
+        currentUserCount: newUsersThisYear,
+        lastUserCount: newUsersLastYear,
       },
       allTime: {
-        totalSalesOfAllTime: totalSalesOfAllTime.totalSales / 100,
-        totalCountOfAllTime: totalSalesOfAllTime.count,
-        totalActiveTherapist,
-        totalActiveUser,
+        current: totalSalesOfAllTime.totalSales / 100,
+        last: null,
+        comparative: null,
+        countsCurrent: totalSalesOfAllTime.count,
+        countsLast: null,
+        countsComparative: null,
+        currentUserCount: totalActiveUser,
+        lastUserCount: null,
       },
-
+      total: totalActiveTherapist,
     })
   );
 });
-
-
 
 const TotalSalesList = asyncHandler(async (req, res) => {
   try {
@@ -455,7 +460,10 @@ const ListByCategory = asyncHandler(async (req, res) => {
         courses: {
           $slice: [
             {
-              $sortArray: { input: "$courses", sortBy: { "enrolledCourse.createdAt": -1 } }, // Sort courses by 'createdAt' within each group
+              $sortArray: {
+                input: "$courses",
+                sortBy: { "enrolledCourse.createdAt": -1 },
+              }, // Sort courses by 'createdAt' within each group
             },
             3, // Limit to top 3
           ],
