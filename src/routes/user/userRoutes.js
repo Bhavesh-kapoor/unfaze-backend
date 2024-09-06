@@ -29,5 +29,6 @@ router.use("/sessions", sessionRouter);
 
 // Update user avatar
 router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
+
 router.get("/get-sessions", getUserSessions);
 export default router;
