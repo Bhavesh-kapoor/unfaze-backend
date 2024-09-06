@@ -546,8 +546,8 @@ const getTherapistRevenue = async (req, res) => {
       const result = await Session.aggregate([
         {
           $match: {
-            therapistId: therapistId, // Assuming the session model has therapistId field
-            start_time: { $gte: start, $lte: end }
+            therapistId: therapistId,
+            createdAt: { $gte: start, $lte: end }
           }
         },
         {
@@ -574,4 +574,38 @@ const getTherapistRevenue = async (req, res) => {
 };
 
 
-export { calculateTotalSales, TotalSalesList, ListByCategory, TotalSalesByDuration, getTherapistSessions, getTherapistRevenue };
+
+const getUserSessions = async (req, res) => {
+  try {
+    const { status = "upcoming" } = req.query;
+    const user = req.user;
+    console.log(user)
+    if (!user) {
+      return res.status(400).json(new ApiError(400, null, "User ID is required!"));
+    }
+    const sessions = await Session.find({ user_id: user._i,  })
+    console.log(sessions)
+    /* .populate({
+       path: 'therapist_id',
+       select: 'firstName lastName email mobile' 
+     })
+     .populate({
+       path: 'transaction_id',
+       populate: {
+         path: 'category', 
+         select: 'name'
+       }
+     }); */
+
+    if (!sessions.length) {
+      return res.status(404).json(new ApiResponse(200, [], 'You are not enrolled in any sessions!'));
+    }
+    return res.status(200).json(new ApiResponse(200, sessions, "Sessions fetched successfully!"));
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export { calculateTotalSales, TotalSalesList, ListByCategory, TotalSalesByDuration, getTherapistSessions, getTherapistRevenue, getUserSessions };

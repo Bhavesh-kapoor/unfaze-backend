@@ -4,6 +4,7 @@ import feedbackRoute from "../feeback.route.js";
 import sessionRouter from "./session.routes.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { userEmailVerify } from "../../controllers/otpController.js";
+import { getUserSessions } from "../../controllers/admin/transactionsController.js";
 import {
   updateAvatar,
   updateProfile,
@@ -28,5 +29,5 @@ router.use("/sessions", sessionRouter);
 
 // Update user avatar
 router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
-
+router.get("/get-sessions", getUserSessions);
 export default router;

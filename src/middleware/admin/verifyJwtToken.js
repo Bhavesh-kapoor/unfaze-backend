@@ -13,18 +13,16 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
       req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
-      return res.status(404).json(new ApiError(404, "Token Not Found!"));
+      throw new ApiError(404, "Token Not Found!");
     }
 
     // Verify JWT token
     const verified = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
-    console.log(verified)
-
     if (!verified) {
-      return res.status(498).json(new ApiError(498, "Invalid Token"));
+      throw new ApiError(498, "Invalid Token");
     }
 
- // Find user based on role
+    // Find user based on role
     let user;
     if (verified.role === "admin" || verified.role === "user") {
       user = await User.findById(verified._id).select(
@@ -37,7 +35,7 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
     }
 
     if (!user) {
-      return res.status(404).json(new ApiError(404, "User Not Found"));
+      return res.status(404).json(new ApiError(404, null, "User Not Found"));
     }
 
     // Attach user to the request object
@@ -46,9 +44,9 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
   } catch (error) {
     console.error(error); // Log the error for debugging
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(498).json(new ApiError(498, "Invalid Token"));
+      return res.status(498).json(new ApiError(498, null, "Invalid Token"));
     }
-    return res.status(401).json(new ApiError(401, "Unauthorized"));
+    return res.status(401).json(new ApiError(401, null, "Unauthorized"));
   }
 });
 
