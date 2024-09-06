@@ -7,13 +7,13 @@ import { parseISO, isValid, addMinutes, format } from "date-fns";
 import uniqid from "uniqid";
 import Cashfree from "../../config/cashfree.config.js";
 import mongoose from "mongoose";
-import getExchangeRate from "../../utils/currencyConverter.js"
+import getExchangeRate from "../../utils/currencyConverter.js";
 import axios from "axios";
 
 const SESSION_DURATION_MINUTES = 30;
 const createOrder = asyncHandler(async (req, res) => {
-  const { therapist_id, specialization_id, date, time, } = req.body;
-  const order_currency = "INR"
+  const { therapist_id, specialization_id, date, time } = req.body;
+  const order_currency = "INR";
   const user = req.user;
   const formattedDate = format(date, "yyyy-MM-dd");
   console.log(formattedDate);
@@ -50,18 +50,18 @@ const createOrder = asyncHandler(async (req, res) => {
       customer_phone: `${user.mobile}`,
     },
     order_meta: {
-      return_url: `https://www.cashfree.com/devstudio/preview/pg/web/checkout?order_id=${transactionId}`,
+      return_url: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
     },
   };
   try {
     const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
-    // const return_url = 
+    // const return_url =
     // const return url = response.data.
-   
-    const rate = await getExchangeRate("USD", "INR")
-    let rate_USD =rate*100
+
+    const rate = await getExchangeRate("USD", "INR");
+    let rate_USD = rate * 100;
     const initiatedTransaction = new Transaction({
       transactionId: order_id,
       user_id: user._id,
@@ -100,7 +100,9 @@ const createOrder = asyncHandler(async (req, res) => {
       "Error creating order:",
       error.response ? error.response.data : error.message
     );
-    return res.status(500).json(new ApiResponse(500, error, "failed to book slot"));
+    return res
+      .status(500)
+      .json(new ApiResponse(500, error, "failed to book slot"));
   }
 });
 

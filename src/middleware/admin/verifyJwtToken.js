@@ -18,6 +18,7 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
 
     // Verify JWT token
     const verified = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+
     if (!verified) {
       throw new ApiError(498, "Invalid Token");
     }

@@ -17,10 +17,8 @@ import {
   subMonths,
   subYears,
   addDays,
-  addHours
-} from 'date-fns';
-
-
+  addHours,
+} from "date-fns";
 
 const calculateTotalSales = asyncHandler(async (req, res) => {
   const { duration = "week" } = req.query;
@@ -83,19 +81,15 @@ const calculateTotalSales = asyncHandler(async (req, res) => {
   });
 
   // Ammount in rupees----------------------------------------
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, {
-        totalSales: totalAmount / 100,
-        totalCounts: totalRecords,
-        totalActiveTherapist,
-        totalActiveUser,
-      })
-    );
+  return res.status(200).json(
+    new ApiResponse(200, {
+      totalSales: totalAmount / 100,
+      totalCounts: totalRecords,
+      totalActiveTherapist,
+      totalActiveUser,
+    })
+  );
 });
-
-
 
 const TotalSalesByDuration = asyncHandler(async (req, res) => {
   const now = new Date();
@@ -145,7 +139,7 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         },
       },
       {
-        $unwind: "$transaction_details"
+        $unwind: "$transaction_details",
       },
       {
         $group: {
@@ -175,13 +169,22 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
 
   // Comparison date ranges
   const comparativeWeekStart = startOfWeek(subWeeks(now, 1));
-  const comparativeWeekEnd = addDays(comparativeWeekStart, daysPassedInCurrentWeek);
+  const comparativeWeekEnd = addDays(
+    comparativeWeekStart,
+    daysPassedInCurrentWeek
+  );
 
   const comparativeMonthStart = startOfMonth(subMonths(now, 1));
-  const comparativeMonthEnd = addDays(comparativeMonthStart, daysPassedInCurrentMonth - 1);
+  const comparativeMonthEnd = addDays(
+    comparativeMonthStart,
+    daysPassedInCurrentMonth - 1
+  );
 
   const comparativeYearStart = new Date(now.getFullYear() - 1, 0, 1);
-  const comparativeYearEnd = addDays(comparativeYearStart, daysPassedInCurrentYear);
+  const comparativeYearEnd = addDays(
+    comparativeYearStart,
+    daysPassedInCurrentYear
+  );
 
   const comparativeDayStart = startOfDay(subDays(now, 1));
   const comparativeDayEnd = addHours(comparativeDayStart, hoursPassedToday);
@@ -201,7 +204,7 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         },
       },
       {
-        $unwind: "$transaction_details"
+        $unwind: "$transaction_details",
       },
       {
         $group: {
@@ -283,8 +286,8 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         countsCurrent: salesThisWeek.count,
         countsLast: salesLastWeek.count,
         countsComparative: salesComparativeWeek.count,
-        newUsersThisWeek,
-        newUsersLastWeek,
+        currentUserCount: newUsersThisWeek,
+        lastUserCount: newUsersLastWeek,
       },
       months: {
         current: salesThisMonth.totalSales / 100,
@@ -293,8 +296,8 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         countsCurrent: salesThisMonth.count,
         countsLast: salesLastMonth.count,
         countsComparative: salesComparativeMonth.count,
-        newUsersThisMonth,
-        newUsersLastMonth,
+        currentUserCount: newUsersThisMonth,
+        lastUserCount: newUsersLastMonth,
       },
       years: {
         current: salesThisYear.totalSales / 100,
@@ -303,21 +306,23 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
         countsCurrent: salesThisYear.count,
         countsLast: salesLastYear.count,
         countsComparative: salesComparativeYear.count,
-        newUsersThisYear,
-        newUsersLastYear,
+        currentUserCount: newUsersThisYear,
+        lastUserCount: newUsersLastYear,
       },
       allTime: {
-        totalSalesOfAllTime: totalSalesOfAllTime.totalSales / 100,
-        totalCountOfAllTime: totalSalesOfAllTime.count,
-        totalActiveTherapist,
-        totalActiveUser,
+        current: totalSalesOfAllTime.totalSales / 100,
+        last: null,
+        comparative: null,
+        countsCurrent: totalSalesOfAllTime.count,
+        countsLast: null,
+        countsComparative: null,
+        currentUserCount: totalActiveUser,
+        lastUserCount: null,
       },
-
+      total: totalActiveTherapist,
     })
   );
 });
-
-
 
 const TotalSalesList = asyncHandler(async (req, res) => {
   try {
@@ -455,7 +460,10 @@ const ListByCategory = asyncHandler(async (req, res) => {
         courses: {
           $slice: [
             {
-              $sortArray: { input: "$courses", sortBy: { "enrolledCourse.createdAt": -1 } }, // Sort courses by 'createdAt' within each group
+              $sortArray: {
+                input: "$courses",
+                sortBy: { "enrolledCourse.createdAt": -1 },
+              }, // Sort courses by 'createdAt' within each group
             },
             3, // Limit to top 3
           ],
@@ -469,143 +477,9 @@ const ListByCategory = asyncHandler(async (req, res) => {
   return res.status(200).json({ data });
 });
 
-const salesByTHerapist = asyncHandler(async () => {
-
-})
-
-
-const getTherapistSessions = async (req, res) => {
-  try {
-    const { therapistId, status = "upcomming" } = req.query;
-    if (!therapistId || !status) {
-      return res.status(400).json(new ApiError(400, null, "therapistID is required!"));
-    }
-    // Fetch all transactions for the given therapist
-    const transactions = await Transaction.find({ therapist_id: therapistId });
-
-    if (transactions.length === 0) {
-      return res.status(404).json({ message: 'No transactions found for this therapist' });
-    }
-
-    // Extract transaction IDs from the transactions
-    const transactionIds = transactions.map(transaction => transaction._id);
-
-    // Fetch upcoming sessions using the transaction IDs
-    const sessions = await Session.find({
-      transaction_id: { $in: transactionIds },
-      // start_time: { $gte: new Date() }, // Filter for sessions in the future
-      status: status,
-    }).sort({ start_time: 1 });
-
-    if (sessions.length === 0) {
-      return res.status(404).json({ message: 'No sessions found' });
-    }
-
-    res.status(200).json(sessions);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
+export {
+  calculateTotalSales,
+  TotalSalesList,
+  ListByCategory,
+  TotalSalesByDuration,
 };
-
-
-const getTherapistRevenue = async (req, res) => {
-  try {
-    const { therapistId } = req.params;
-    const { duration } = req.query;
-    let start, end;
-    const now = new Date();
-    switch (duration) {
-      case 'today':
-        start = startOfDay(now);
-        end = endOfDay(now);
-        break;
-      case 'week':
-        start = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday as start of the week
-        end = endOfWeek(new Date(), { weekStartsOn: 1 });
-        break;
-      case 'month':
-        start = startOfMonth(new Date());
-        end = endOfMonth(new Date());
-        break;
-      case 'year':
-        start = startOfYear(new Date());
-        end = endOfYear(new Date());
-        break;
-      case 'all':
-        // For "all time", set a very early start date
-        start = new Date(0); // January 1, 1970
-        end = new Date(); // Current date
-        break;
-      default:
-        return res.status(400).json({ message: 'Invalid duration parameter' });
-    }
-
-    // Function to calculate total revenue in a specific time range for both USD and INR
-    const calculateRevenue = async (start, end) => {
-      const result = await Session.aggregate([
-        {
-          $match: {
-            therapistId: therapistId,
-            createdAt: { $gte: start, $lte: end }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            totalUSD: { $sum: "$amount_USD" },
-            totalINR: { $sum: "$amount_INR" }
-          }
-        }
-      ]);
-
-      return result.length > 0 ? result[0] : { totalUSD: 0, totalINR: 0 };
-    };
-
-    // Calculate revenue for the specified time range
-    const revenue = await calculateRevenue(start, end);
-
-    // Return the calculated revenue data
-    res.status(200).json(revenue);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-
-
-const getUserSessions = async (req, res) => {
-  try {
-    const { status = "upcoming" } = req.query;
-    const user = req.user;
-    console.log(user)
-    if (!user) {
-      return res.status(400).json(new ApiError(400, null, "User ID is required!"));
-    }
-    const sessions = await Session.find({ user_id: user._i,  })
-    console.log(sessions)
-    /* .populate({
-       path: 'therapist_id',
-       select: 'firstName lastName email mobile' 
-     })
-     .populate({
-       path: 'transaction_id',
-       populate: {
-         path: 'category', 
-         select: 'name'
-       }
-     }); */
-
-    if (!sessions.length) {
-      return res.status(404).json(new ApiResponse(200, [], 'You are not enrolled in any sessions!'));
-    }
-    return res.status(200).json(new ApiResponse(200, sessions, "Sessions fetched successfully!"));
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
-
-export { calculateTotalSales, TotalSalesList, ListByCategory, TotalSalesByDuration, getTherapistSessions, getTherapistRevenue, getUserSessions };
