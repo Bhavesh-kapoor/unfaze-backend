@@ -148,25 +148,32 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
           totalINRSales: { $sum: "$transaction_details.amount_INR" },
           countUSDSales: {
             $sum: {
-              $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0]
-            }
+              $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0],
+            },
           },
           countINRSales: {
             $sum: {
-              $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0]
-            }
-          }
-        }
-      }
+              $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0],
+            },
+          },
+        },
+      },
     ]);
-    return result[0] || { totalUSDSales: 0, totalINRSales: 0, countUSDSales: 0, countINRSales: 0 };
+    return (
+      result[0] || {
+        totalUSDSales: 0,
+        totalINRSales: 0,
+        countUSDSales: 0,
+        countINRSales: 0,
+      }
+    );
   };
 
   // Function to get the count of newly created users within a time range
   const getNewUserCount = async (startDate, endDate) => {
     return await User.countDocuments({
       createdAt: { $gte: startDate, $lte: endDate },
-      role: "user"
+      role: "user",
     });
   };
   // Days and hours passed calculations
@@ -223,20 +230,27 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
           totalINRSales: { $sum: "$transaction_details.amount_INR" },
           countUSDSales: {
             $sum: {
-              $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0]
-            }
+              $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0],
+            },
           },
           countINRSales: {
             $sum: {
-              $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0]
-            }
-          }
-        }
+              $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0],
+            },
+          },
+        },
       },
     ]);
 
     // Ensure the result object is returned correctly
-    return result[0] || { totalUSDSales: 0, totalINRSales: 0, countUSDSales: 0, countINRSales: 0 };
+    return (
+      result[0] || {
+        totalUSDSales: 0,
+        totalINRSales: 0,
+        countUSDSales: 0,
+        countINRSales: 0,
+      }
+    );
   };
 
   const [
@@ -549,35 +563,90 @@ const ListByCategory = asyncHandler(async (req, res) => {
   return res.status(200).json({ data });
 });
 
-
 const getTherapistSessions = async (req, res) => {
   try {
-    const { therapistId, status = "upcoming" } = req.query;
+    
+    const user = req.user;
+    console.log(user)
+    let therapistId;
+    if (user.role === "admin") {
+      therapistId = req.query.therapistId;
+    } else {
+      therapistId = req.user?._id;
+    }
+    const { status = "upcoming" } = req.query;
     if (!therapistId || !status) {
-      return res.status(400).json(new ApiError(400, null, "therapistID is required!"));
+      return res
+        .status(400)
+        .json(new ApiError(400, null, "therapistID is required!"));
     }
-    const transactions = await Transaction.find({ therapist_id: therapistId });
-
-    if (transactions.length === 0) {
-      return res.status(404).json({ message: 'No transactions found for this therapist' });
+    const userTransactions = await Transaction.aggregate([
+      {
+        $match: { therapist_id: therapistId },
+      },
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "therapist_id",
+          foreignField: "_id",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "therapist_details",
+        },
+      },
+      { $unwind: "$therapist_details" },
+      {
+        $lookup: {
+          from: "specializations",
+          localField: "category",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "category",
+        },
+      },
+      { $unwind: "$category" },
+      {
+        $lookup: {
+          from: "users",
+          localField: "category",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "category",
+        },
+      },
+      {
+        $project: {
+          transactionId: 1,
+          createdAt: 1,
+          therapist_Name: {
+            $concat: [
+              "$therapist_details.firstName",
+              " ",
+              "$therapist_details.lastName",
+            ],
+          },
+          category: "$category.name",
+          amount: {
+            $ifNull: ["$amount_USD", "$amount_INR"],
+          },
+        },
+      },
+    ]);
+    if (!userTransactions.length) {
+      return res
+        .status(404)
+        .json(new ApiResponse(200, [], "No transactions found for this user"));
     }
-    const transactionIds = transactions.map(transaction => transaction._id);
-    const sessions = await Session.find({
-      transaction_id: { $in: transactionIds },
-      status: status,
-    }).sort({ start_time: 1 });
 
     if (sessions.length === 0) {
-      return res.status(404).json({ message: 'No sessions found' });
+      return res.status(404).json({ message: "No sessions found" });
     }
 
     res.status(200).json(sessions);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
-
 
 const getTherapistRevenue = async (req, res) => {
   try {
@@ -586,28 +655,28 @@ const getTherapistRevenue = async (req, res) => {
     let start, end;
     const now = new Date();
     switch (duration) {
-      case 'today':
+      case "today":
         start = startOfDay(now);
         end = endOfDay(now);
         break;
-      case 'week':
+      case "week":
         start = startOfWeek(new Date(), { weekStartsOn: 1 });
         end = endOfWeek(new Date(), { weekStartsOn: 1 });
         break;
-      case 'month':
+      case "month":
         start = startOfMonth(new Date());
         end = endOfMonth(new Date());
         break;
-      case 'year':
+      case "year":
         start = startOfYear(new Date());
         end = endOfYear(new Date());
         break;
-      case 'all':
+      case "all":
         start = new Date(0);
         end = new Date();
         break;
       default:
-        return res.status(400).json({ message: 'Invalid duration parameter' });
+        return res.status(400).json({ message: "Invalid duration parameter" });
     }
 
     // Function to calculate total revenue in a specific time range for both USD and INR
@@ -616,8 +685,8 @@ const getTherapistRevenue = async (req, res) => {
         {
           $match: {
             therapistId: therapistId,
-            createdAt: { $gte: start, $lte: end }
-          }
+            createdAt: { $gte: start, $lte: end },
+          },
         },
         {
           $lookup: {
@@ -637,52 +706,61 @@ const getTherapistRevenue = async (req, res) => {
             totalINRSales: { $sum: "$transaction_details.amount_INR" },
             countUSDSales: {
               $sum: {
-                $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0]
-              }
+                $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0],
+              },
             },
             countINRSales: {
               $sum: {
-                $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0]
-              }
-            }
-          }
-        }
+                $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0],
+              },
+            },
+          },
+        },
       ]);
-      return result.length > 0 ? result[0] : { totalUSDSales: 0, totalINRSales: 0, countUSDSales: 0, countINRSales: 0 };
+      return result.length > 0
+        ? result[0]
+        : {
+          totalUSDSales: 0,
+          totalINRSales: 0,
+          countUSDSales: 0,
+          countINRSales: 0,
+        };
     };
     const revenue = await calculateRevenue(start, end);
-    res.status(200).json(ApiResponse(200, revenue, "revenue fetched successfully!"));
+    res
+      .status(200)
+      .json(ApiResponse(200, revenue, "revenue fetched successfully!"));
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 const getUserSessions = async (req, res) => {
   try {
     const user = req.user;
-    console.log(user)
+    console.log(user);
+    console.log(user);
     if (!user) {
-      return res.status(400).json(new ApiError(400, null, "User ID is required!"));
+      return res
+        .status(400)
+        .json(new ApiError(400, null, "User ID is required!"));
     }
     const sessions = await Session.find({ user_id: user._id })
       .populate({
-        path: 'therapist_id',
-        select: 'firstName lastName email mobile'
+        path: "therapist_id",
+        select: "firstName lastName email mobile",
       })
       .populate({
-        path: 'transaction_id',
+        path: "transaction_id",
         populate: {
-          path: 'category',
-          select: 'name '
-        }
+          path: "category",
+          select: "name ",
+        },
       })
       .lean()
-      .then(sessions => {
-        console.log(sessions)
-        return sessions.map(session => ({
+      .then((sessions) => {
+        return sessions.map((session) => ({
           _id: session._id,
           therapistName: `${session.therapist_id.firstName} ${session.therapist_id.lastName}`,
           categoryName: session.transaction_id.category?.name || "",
@@ -692,34 +770,39 @@ const getUserSessions = async (req, res) => {
         }));
       });
     if (!sessions.length) {
-      return res.status(404).json(new ApiResponse(200, [], 'You are not enrolled in any sessions!'));
+      return res
+        .status(404)
+        .json(
+          new ApiResponse(200, [], "You are not enrolled in any sessions!")
+        );
     }
-    return res.status(200).json(new ApiResponse(200, sessions, "Sessions fetched successfully!"));
-
+    return res
+      .status(200)
+      .json(new ApiResponse(200, sessions, "Sessions fetched successfully!"));
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
 const UserTransactions = asyncHandler(async (req, res) => {
   const user = req.user;
   if (!user) {
-    return res.status(400).json(new ApiResponse(400, null, "User ID is required!"));
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "User ID is required!"));
   }
 
   const userTransactions = await Transaction.aggregate([
     {
-      $match: { user_id: user._id }
+      $match: { user_id: user._id },
     },
     {
       $lookup: {
         from: "therapists",
         localField: "therapist_id",
         foreignField: "_id",
-        pipeline: [
-          { $project: { firstName: 1, lastName: 1 } }
-        ],
+        pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
         as: "therapist_details",
       },
     },
@@ -729,9 +812,7 @@ const UserTransactions = asyncHandler(async (req, res) => {
         from: "specializations",
         localField: "category",
         foreignField: "_id",
-        pipeline: [
-          { $project: { name: 1 } }
-        ],
+        pipeline: [{ $project: { name: 1 } }],
         as: "category",
       },
     },
@@ -741,19 +822,40 @@ const UserTransactions = asyncHandler(async (req, res) => {
         transactionId: 1,
         createdAt: 1,
         therapist_Name: {
-          $concat: ["$therapist_details.firstName", " ", "$therapist_details.lastName"]
+          $concat: [
+            "$therapist_details.firstName",
+            " ",
+            "$therapist_details.lastName",
+          ],
         },
         category: "$category.name",
         amount: {
-          $ifNull: ["$amount_USD", "$amount_INR"]
+          $ifNull: ["$amount_USD", "$amount_INR"],
         },
       },
     },
   ]);
   if (!userTransactions.length) {
-    return res.status(404).json(new ApiResponse(200, [], 'No transactions found for this user'));
+    return res
+      .status(404)
+      .json(new ApiResponse(200, [], "No transactions found for this user"));
   }
-  return res.json(new ApiResponse(200, userTransactions, "Transactions retrieved successfully."));
+  return res.json(
+    new ApiResponse(
+      200,
+      userTransactions,
+      "Transactions retrieved successfully."
+    )
+  );
 });
 
-export { calculateTotalSales, TotalSalesList, ListByCategory, TotalSalesByDuration, getTherapistSessions, getTherapistRevenue, getUserSessions, UserTransactions };
+export {
+  calculateTotalSales,
+  TotalSalesList,
+  ListByCategory,
+  TotalSalesByDuration,
+  getTherapistSessions,
+  getTherapistRevenue,
+  getUserSessions,
+  UserTransactions,
+};

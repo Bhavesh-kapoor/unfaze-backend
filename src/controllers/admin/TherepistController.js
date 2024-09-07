@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { sendNotification } from "../notificationController.js";
 import { transporter, mailOptions } from "../../config/nodeMailer.js"
 import { loginCredentialEmail } from "../../static/emailcontent.js";
+import { generateTempPassword } from "../../utils/tempPasswordGenerator.js";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -64,7 +65,6 @@ const register = asyncHandler(async (req, res) => {
     ifsccode,
     accountNumber,
     accountHolder,
-    password,
     service_charge_USD,
     USD_Price,
     service_charge_INR,
@@ -80,7 +80,6 @@ const register = asyncHandler(async (req, res) => {
     gender,
     dob,
     experience,
-    password,
     adhar_Number,
     PAN_Number,
     service_charge_USD,
@@ -159,6 +158,8 @@ const register = asyncHandler(async (req, res) => {
     let createTherepist = new Therapist(therapistData);
     await createTherepist.save();
     if (admin) {
+      const password = generateTempPassword()
+      console.log("temp password: " + password)
       const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
       const htmlContent = loginCredentialEmail(email, password)
       const EmailOptions = mailOptions(email, subject, htmlContent)
@@ -169,7 +170,6 @@ const register = asyncHandler(async (req, res) => {
           console.log("Email sent successfully:", info.response);
         }
       });
-
     }
     res
       .status(200)
@@ -319,8 +319,19 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
   if (!therapist) {
     return res.status(400).json(new ApiError(400, "Therapist not found!"));
   }
-
+  const password = generateTempPassword()
+  const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
+  const htmlContent = loginCredentialEmail(email, password)
+  const EmailOptions = mailOptions(email, subject, htmlContent)
+  transporter.sendMail(EmailOptions, (error, info) => {
+    if (error) {
+      console.log("Error while sending email:", error);
+    } else {
+      console.log("Email sent successfully:", info.response);
+    }
+  });
   therapist.is_active = !therapist.is_active;
+  therapist.password = password;
   await therapist.save();
   let activeStatus = "";
   if (therapist.is_active) {

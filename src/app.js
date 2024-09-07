@@ -11,7 +11,7 @@ import session from "express-session";
 import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
-import getExchangeRate from "./utils/currencyConverter.js";
+import crypto from 'crypto';
 
 // Load environment variables
 dotenv.config();
@@ -69,12 +69,9 @@ app.use(
 // Initialize Passport.js
 app.use(passport.initialize());
 app.use(passport.session());
-
 // Middleware to log request details
 app.use((req, res, next) => {
   const startTime = process.hrtime();
-
-
   res.on("finish", () => {
     // Calculate response time
     const diff = process.hrtime(startTime);
