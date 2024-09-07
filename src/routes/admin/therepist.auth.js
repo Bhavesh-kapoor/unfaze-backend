@@ -12,6 +12,7 @@ import {
 } from "../../controllers/admin/TherepistController.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { getTherepistById } from "../../controllers/admin/TherepistController.js";
+import { getTherapistRevenue } from "../../controllers/admin/transactionsController.js";
 
 const router = Router();
 const multipleImages = upload.fields([
@@ -38,5 +39,6 @@ router.post("/register", multipleImages, validateRegister, register);
 router.patch("/update-profile", multipleImages, updateTherapist);
 
 router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
+router.get("/get-therapist-revenue", getTherapistRevenue);
 
 export default router;

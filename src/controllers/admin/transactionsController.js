@@ -549,31 +549,21 @@ const ListByCategory = asyncHandler(async (req, res) => {
   return res.status(200).json({ data });
 });
 
-const salesByTHerapist = asyncHandler(async () => {
-
-})
-
 
 const getTherapistSessions = async (req, res) => {
   try {
-    const { therapistId, status = "upcomming" } = req.query;
+    const { therapistId, status = "upcoming" } = req.query;
     if (!therapistId || !status) {
       return res.status(400).json(new ApiError(400, null, "therapistID is required!"));
     }
-    // Fetch all transactions for the given therapist
     const transactions = await Transaction.find({ therapist_id: therapistId });
 
     if (transactions.length === 0) {
       return res.status(404).json({ message: 'No transactions found for this therapist' });
     }
-
-    // Extract transaction IDs from the transactions
     const transactionIds = transactions.map(transaction => transaction._id);
-
-    // Fetch upcoming sessions using the transaction IDs
     const sessions = await Session.find({
       transaction_id: { $in: transactionIds },
-      // start_time: { $gte: new Date() }, // Filter for sessions in the future
       status: status,
     }).sort({ start_time: 1 });
 
@@ -601,7 +591,7 @@ const getTherapistRevenue = async (req, res) => {
         end = endOfDay(now);
         break;
       case 'week':
-        start = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday as start of the week
+        start = startOfWeek(new Date(), { weekStartsOn: 1 });
         end = endOfWeek(new Date(), { weekStartsOn: 1 });
         break;
       case 'month':
@@ -613,9 +603,8 @@ const getTherapistRevenue = async (req, res) => {
         end = endOfYear(new Date());
         break;
       case 'all':
-        // For "all time", set a very early start date
-        start = new Date(0); // January 1, 1970
-        end = new Date(); // Current date
+        start = new Date(0);
+        end = new Date();
         break;
       default:
         return res.status(400).json({ message: 'Invalid duration parameter' });
@@ -631,22 +620,38 @@ const getTherapistRevenue = async (req, res) => {
           }
         },
         {
+          $lookup: {
+            from: "transactions",
+            localField: "transaction_id",
+            foreignField: "_id",
+            as: "transaction_details",
+          },
+        },
+        {
+          $unwind: "$transaction_details",
+        },
+        {
           $group: {
             _id: null,
-            totalUSD: { $sum: "$amount_USD" },
-            totalINR: { $sum: "$amount_INR" }
+            totalUSDSales: { $sum: "$transaction_details.amount_USD" },
+            totalINRSales: { $sum: "$transaction_details.amount_INR" },
+            countUSDSales: {
+              $sum: {
+                $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0]
+              }
+            },
+            countINRSales: {
+              $sum: {
+                $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0]
+              }
+            }
           }
         }
       ]);
-
-      return result.length > 0 ? result[0] : { totalUSD: 0, totalINR: 0 };
+      return result.length > 0 ? result[0] : { totalUSDSales: 0, totalINRSales: 0, countUSDSales: 0, countINRSales: 0 };
     };
-
-    // Calculate revenue for the specified time range
     const revenue = await calculateRevenue(start, end);
-
-    // Return the calculated revenue data
-    res.status(200).json(revenue);
+    res.status(200).json(ApiResponse(200, revenue, "revenue fetched successfully!"));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -678,6 +683,7 @@ const getUserSessions = async (req, res) => {
       .then(sessions => {
         console.log(sessions)
         return sessions.map(session => ({
+          _id: session._id,
           therapistName: `${session.therapist_id.firstName} ${session.therapist_id.lastName}`,
           categoryName: session.transaction_id.category?.name || "",
           startTime: session.start_time,
@@ -696,9 +702,58 @@ const getUserSessions = async (req, res) => {
   }
 };
 
-const UserTransactions = asyncHandler(async () => {
+const UserTransactions = asyncHandler(async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    return res.status(400).json(new ApiResponse(400, null, "User ID is required!"));
+  }
 
+  const userTransactions = await Transaction.aggregate([
+    {
+      $match: { user_id: user._id }
+    },
+    {
+      $lookup: {
+        from: "therapists",
+        localField: "therapist_id",
+        foreignField: "_id",
+        pipeline: [
+          { $project: { firstName: 1, lastName: 1 } }
+        ],
+        as: "therapist_details",
+      },
+    },
+    { $unwind: "$therapist_details" },
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "category",
+        foreignField: "_id",
+        pipeline: [
+          { $project: { name: 1 } }
+        ],
+        as: "category",
+      },
+    },
+    { $unwind: "$category" },
+    {
+      $project: {
+        transactionId: 1,
+        createdAt: 1,
+        therapist_Name: {
+          $concat: ["$therapist_details.firstName", " ", "$therapist_details.lastName"]
+        },
+        category: "$category.name",
+        amount: {
+          $ifNull: ["$amount_USD", "$amount_INR"]
+        },
+      },
+    },
+  ]);
+  if (!userTransactions.length) {
+    return res.status(404).json(new ApiResponse(200, [], 'No transactions found for this user'));
+  }
+  return res.json(new ApiResponse(200, userTransactions, "Transactions retrieved successfully."));
+});
 
-})
-
-export { calculateTotalSales, TotalSalesList, ListByCategory, TotalSalesByDuration, getTherapistSessions, getTherapistRevenue, getUserSessions };
+export { calculateTotalSales, TotalSalesList, ListByCategory, TotalSalesByDuration, getTherapistSessions, getTherapistRevenue, getUserSessions, UserTransactions };

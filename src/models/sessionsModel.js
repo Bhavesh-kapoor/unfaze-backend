@@ -17,14 +17,14 @@ const sessionSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ["upcomming", "completed", "cancelled"],
-    default: "upcomming",
+    enum: ["upcoming", "completed", "cancelled"],
+    default: "upcoming",
   },
-  channelName:{
-    type:String,
+  channelName: {
+    type: String,
   },
   start_time: { type: Date, required: true },
   end_time: { type: Date, required: true },
-},{timestamps:true});
+}, { timestamps: true });
 
 export const Session = mongoose.model("Session", sessionSchema);

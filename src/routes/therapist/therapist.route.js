@@ -8,7 +8,7 @@ const router = Router();
 
 router.use("/auth", therepistAuth);
 
-router.use("/course", courseRouter);
+// router.use("/course", courseRouter);
 
 router.post("/email-verify", therapistEmailVerify);
 router.get("/get-sessions", getTherapistSessions);
