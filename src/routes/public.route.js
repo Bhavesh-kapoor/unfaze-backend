@@ -41,7 +41,7 @@ const handleAuthRedirect = (req, res) => {
     if (user && accessToken) {
       const { firstName, lastName } = user;
       res.redirect(
-        `${process.env.FRONTEND_URL}?token=${accessToken}&user=${firstName} ${lastName}`
+        `${process.env.FRONTEND_URL}?token=${accessToken}&user=${firstName} ${lastName}&role=user`
       );
     } else {
       res.redirect(`${process.env.FRONTEND_URL}/login`);
