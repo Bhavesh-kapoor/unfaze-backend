@@ -153,7 +153,7 @@ const register = asyncHandler(async (req, res) => {
       therapistData.profileImage = req.files.profileImage[0].path;
     }
     if (admin) {
-      therapistData.is_active = true;
+      therapistData.isActive = true;
     }
     let createTherepist = new Therapist(therapistData);
     await createTherepist.save();
@@ -193,7 +193,7 @@ const login = asyncHandler(async (req, res) => {
   let existUser = await Therapist.findOne({ $or: [{ email }, { mobile }] });
   if (!existUser)
     return res.status(404).json(new ApiError(400, "", "user not found"));
-  if (!existUser.is_active) {
+  if (!existUser.isActive) {
     return res.status(200).json(new ApiResponse(200, null, "Your account is inactive pleae contact to admin."))
   }
 
@@ -246,7 +246,7 @@ export const getTherapistSpecialization = asyncHandler(
         lastName: 1,
         language: 1,
         firstName: 1,
-        is_active: 1,
+        isActive: 1,
         profileImage: 1,
         approvedPrice: 1,
       }).populate({
@@ -330,11 +330,11 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
       console.log("Email sent successfully:", info.response);
     }
   });
-  therapist.is_active = !therapist.is_active;
+  therapist.isActive = !therapist.isActive;
   therapist.password = password;
   await therapist.save();
   let activeStatus = "";
-  if (therapist.is_active) {
+  if (therapist.isActive) {
     activeStatus = "active";
   } else {
     activeStatus = "deactive";
@@ -406,8 +406,8 @@ const therapistList = asyncHandler(async (req, res) => {
         profileImage: 1,
         name: { $concat: ["$firstName", " ", "$lastName"] },
         email: 1,
-        is_email_verified: 1,
-        is_active: 1,
+        isEmailVerified: 1,
+        isActive: 1,
         createdAt: 1,
         specializationDetails: {
           $map: {

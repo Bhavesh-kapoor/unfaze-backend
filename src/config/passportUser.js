@@ -27,7 +27,7 @@ passport.use(
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value,
-            is_email_verified: true,
+            isEmailVerified: true,
           });
           const refreshToken = user.generateRefreshToken();
           user.refreshToken = refreshToken;
@@ -65,7 +65,7 @@ passport.use(
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value,
-            is_email_verified: true,
+            isEmailVerified: true,
           });
           await user.save();
         }

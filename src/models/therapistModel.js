@@ -1,31 +1,34 @@
-import mongoose, { model, Schema, Types } from "mongoose";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 // Education Schema
 const EducationSchema = new mongoose.Schema(
   {
-    highSchool: String,
-    intermediate: String,
-    graduation: String,
-    postgraduation: String,
-    additional: String,
+    highSchool: { type: String, trim: true },
+    highSchooolImg: { type: String, trim: true },
+    intermediate: { type: String, trim: true },
+    intermediateImg: { type: String, trim: true },
+    graduation: { type: String, trim: true },
+    graduationImg: { type: String, trim: true },
+    postgraduation: { type: String, trim: true },
+    postgraduationImg: { type: String, trim: true },
+    additional: { type: String, trim: true }
   },
   { _id: false }
 );
-
 // Address Schema
 const AddressSchema = new mongoose.Schema(
   {
     state: { type: String, trim: true },
     city: { type: String, trim: true },
+    country: { type: String, trim: true },
     pincode: { type: String, trim: true },
     addressLine1: { type: String, trim: true },
     addressLine2: { type: String, trim: true },
   },
   { _id: false }
 );
-
 // Social Schema
 const SocialSchema = new mongoose.Schema(
   {
@@ -64,9 +67,9 @@ const TherapistSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    is_email_verified: { type: Boolean, default: false },
+    isEmailVerified: { type: Boolean, default: false },
     mobile: { type: String, trim: true },
-    is_mobile_verified: { type: Boolean, default: false },
+    isMobileVerified: { type: Boolean, default: false },
     gender: {
       type: String,
       trim: true,
@@ -110,7 +113,7 @@ const TherapistSchema = new mongoose.Schema(
     language: [{ type: String, trim: true }],
     social: SocialSchema,
     bankdetail: BankSchema,
-    is_active: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: false },
     // availability: {
     //   start_hour: { type: Number, min: 0, max: 23 },
     //   end_hour: { type: Number, min: 0, max: 23 },

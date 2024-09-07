@@ -42,8 +42,8 @@ const therapistList = asyncHandler(async (req, res) => {
         profileImage: 1,
         name: { $concat: ["$firstName", " ", "$lastName"] },
         email: 1,
-        is_email_verified: 1,
-        is_active: 1,
+        isEmailVerified: 1,
+        isActive: 1,
         createdAt: 1,
         specializationDetails: {
           $map: {
@@ -123,8 +123,8 @@ const therapistListByGroup = asyncHandler(async (req, res) => {
             profileImage: "$profileImage",
             name: { $concat: ["$firstName", " ", "$lastName"] },
             email: "$email",
-            is_email_verified: "$is_email_verified",
-            is_active: "$is_active",
+            isEmailVerified: "$isEmailVerified",
+            isActive: "$isActive",
             createdAt: "$createdAt",
             specialization: {
               _id: "$specializationDetails._id",

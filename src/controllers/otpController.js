@@ -87,7 +87,7 @@ const userEmailVerify = async (req, res) => {
         .status(404)
         .json(new ApiError(404, "", "user doesn't exists!"));
     }
-    user.is_email_verified = true;
+    user.isEmailVerified = true;
     await user.save();
     res
       .status(200)
@@ -110,7 +110,7 @@ const therapistEmailVerify = async (req, res) => {
 
   if (isValid) {
     const user = await Therapist.findOne({ email: email });
-    user.is_email_verified = true;
+    user.isEmailVerified = true;
     await user.save();
     res
       .status(200)

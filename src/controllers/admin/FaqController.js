@@ -128,12 +128,12 @@ const update = AysncHandler(async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(_id)) {
             return res.status(400).json(new ApiError(401, "", "Invalid Object id"));
         } else {
-            const { question, answer, url, is_active } = req.body;
+            const { question, answer, url, isActive } = req.body;
             const getdata = await Faq.findById(_id);
             getdata.question = question;
             getdata.answer = answer;
             getdata.url = url;
-            getdata.is_active = is_active;
+            getdata.isActive = isActive;
 
             await getdata.save();
             if (getdata) {

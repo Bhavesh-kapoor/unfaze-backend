@@ -31,11 +31,11 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    is_email_verified: { type: Boolean, default: false },
+    isEmailVerified: { type: Boolean, default: false },
     mobile: {
       type: Number,
     },
-    is_mobile_verified: { type: Boolean, default: false },
+    isMobileVerified: { type: Boolean, default: false },
     gender: {
       type: String,
       trim: true,
@@ -52,7 +52,7 @@ const userSchema = new Schema(
     refreshToken: {
       type: String,
     },
-    is_active: {
+    isActive: {
       type: Boolean,
       default: true,
     },

@@ -12,18 +12,18 @@ const FaqSchema = new mongoose.Schema({
         required: true,
 
     },
-    answer :{
-        type : String,
-        trim :  true,
-        required : true,
+    answer: {
+        type: String,
+        trim: true,
+        required: true,
     }
     ,
-    is_active : {
-        type : Boolean,
-        required :  true ,
-        default : true
+    isActive: {
+        type: Boolean,
+        required: true,
+        default: true
     }
 
 }, { timestamps: true });
 
-export const  Faq = mongoose.model('Faq',FaqSchema);
+export const Faq = mongoose.model('Faq', FaqSchema);

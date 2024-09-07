@@ -27,7 +27,7 @@ const BlogSchema = new mongoose.Schema(
       type: Schema.Types.ObjectId,
       ref: "Category",
     },
-    is_active: {
+    isActive: {
       type: Boolean,
       default: false,
     },

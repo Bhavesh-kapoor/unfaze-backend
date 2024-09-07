@@ -19,7 +19,7 @@ const courseSchema = new Schema(
       ref: "Specialization",
       required: true,
     },
-    is_active:{
+    isActive: {
       type: Boolean,
       default: true,
     }

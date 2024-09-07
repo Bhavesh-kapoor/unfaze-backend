@@ -73,10 +73,10 @@ const calculateTotalSales = asyncHandler(async (req, res) => {
   const totalRecords = totalSales[0]?.count || 0;
   const totalAmount = totalSales[0]?.totalSales || 0;
   const totalActiveTherapist = await Therapist.countDocuments({
-    is_active: true,
+    isActive: true,
   });
   const totalActiveUser = await User.countDocuments({
-    // is_active: true,
+    // isActive: true,
     role: "user",
   });
 
@@ -286,7 +286,7 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
     getTotalSales(dateRanges.lastMonth.start, dateRanges.lastMonth.end),
     getTotalSales(dateRanges.thisYear.start, dateRanges.thisYear.end),
     getTotalSales(dateRanges.lastYear.start, dateRanges.lastYear.end),
-    Therapist.countDocuments({ is_active: true }),
+    Therapist.countDocuments({ isActive: true }),
     User.countDocuments({ role: "user" }),
     getTotalSales(comparativeWeekStart, comparativeWeekEnd),
     getTotalSales(comparativeMonthStart, comparativeMonthEnd),
@@ -565,7 +565,7 @@ const ListByCategory = asyncHandler(async (req, res) => {
 
 const getTherapistSessions = async (req, res) => {
   try {
-    
+
     const user = req.user;
     console.log(user)
     let therapistId;
@@ -760,9 +760,10 @@ const getUserSessions = async (req, res) => {
       })
       .lean()
       .then((sessions) => {
+        console.log(sessions)
         return sessions.map((session) => ({
           _id: session._id,
-          therapistName: `${session.therapist_id.firstName} ${session.therapist_id.lastName}`,
+          therapistName: `${session.therapist_id?.firstName} ${session.therapist_id?.lastName}`,
           categoryName: session.transaction_id.category?.name || "",
           startTime: session.start_time,
           status: session.status,
@@ -821,11 +822,11 @@ const UserTransactions = asyncHandler(async (req, res) => {
       $project: {
         transactionId: 1,
         createdAt: 1,
-        therapist_Name: {
+        therapistName: {
           $concat: [
-            "$therapist_details.firstName",
+            "$therapist_details?.firstName",
             " ",
-            "$therapist_details.lastName",
+            "$therapist_details?.lastName",
           ],
         },
         category: "$category.name",
