@@ -29,7 +29,7 @@ const userSchema = new Schema(
       trim: true,
       enum: ["male", "female", "non-binary", "other"],
     },
-    dob: {
+    dateOfBirth: {
       type: Date,
       required: true,
       validate: {

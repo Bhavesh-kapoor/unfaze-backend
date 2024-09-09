@@ -119,7 +119,7 @@ const userlogin = asyncHandler(async (req, res) => {
 });
 
 const register = asyncHandler(async (req, res) => {
-  const { email, firstName, lastName, password, mobile, dob, gender, otp } =
+  const { email, firstName, lastName, password, mobile, dateOfBirth, gender, otp } =
     req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -424,7 +424,7 @@ export const getAdminDetails = asyncHandler(async (req, res) => {
       { _id: id, role: "admin" },
       {
         _id: 1,
-        dob: 1,
+        dateOfBirth: 1,
         role: 1,
         email: 1,
         mobile: 1,
