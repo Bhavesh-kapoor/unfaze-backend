@@ -1,12 +1,13 @@
+import jwt from "jsonwebtoken";
+import { process } from "uniqid";
 import ApiError from "../../utils/ApiError.js";
+import { verifyOTP } from "../otpController.js";
+import { User } from "../../models/userModel.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { User } from "../../models/userModel.js";
-import jwt from "jsonwebtoken";
 import { check, validationResult } from "express-validator";
-import { process } from "uniqid";
-import { parseISO, addDays, startOfDay, endOfDay } from "date-fns"
-import { verifyOTP } from "../otpController.js";
+import { parseISO, addDays, startOfDay, endOfDay } from "date-fns";
+
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
   const accessToken = await user.generateAccessToken();
@@ -67,11 +68,12 @@ const adminlogin = asyncHandler(async (req, res) => {
       })
     );
 });
+
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, req.user, "User fetched successfully"));
-})
+});
 
 const userlogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -115,8 +117,10 @@ const userlogin = asyncHandler(async (req, res) => {
       })
     );
 });
+
 const register = asyncHandler(async (req, res) => {
-  const { email, firstName, lastName, password, mobile, dateOfBirth, gender, otp } = req.body;
+  const { email, firstName, lastName, password, mobile, dob, gender, otp } =
+    req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res
@@ -146,7 +150,7 @@ const register = asyncHandler(async (req, res) => {
     gender,
     dateOfBirth,
     profileImage,
-    isEmailVerified: true
+    isEmailVerified: true,
   });
 
   newUser.password = undefined;
@@ -163,19 +167,27 @@ const register = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(200, {
-      accessToken: accessToken,
-      refreshToken: refreshToken, user: newUser
-    }, "User created successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        {
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          user: newUser,
+        },
+        "User created successfully"
+      )
+    );
 });
+
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
-  const updatedUser = await User.findByIdAndUpdate(userId, req.body, { new: true });
+  const updatedUser = await User.findByIdAndUpdate(userId, req.body, {
+    new: true,
+  });
   if (!updatedUser) {
-    return res
-      .status(404)
-      .json(new ApiError(404, "", "User not found"));
+    return res.status(404).json(new ApiError(404, "", "User not found"));
   }
   return res
     .status(200)
@@ -248,8 +260,8 @@ const allUser = asyncHandler(async (req, res) => {
     search,
     startDate,
     endDate,
-    sortkey = 'createdAt',
-    sortdir = 'desc',
+    sortkey = "createdAt",
+    sortdir = "desc",
   } = req.query;
 
   // Pagination
@@ -262,7 +274,7 @@ const allUser = asyncHandler(async (req, res) => {
 
   if (search) {
     filter.$or = [
-      { email: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: "i" } },
       { mobile: search },
     ];
   }
@@ -270,7 +282,7 @@ const allUser = asyncHandler(async (req, res) => {
   if (startDate && endDate) {
     filter.createdAt = {
       $gte: startOfDay(parseISO(startDate)),
-      $lt: endOfDay(addDays(parseISO(endDate), 1))
+      $lt: endOfDay(addDays(parseISO(endDate), 1)),
     };
   } else if (startDate) {
     filter.createdAt = {
@@ -283,45 +295,220 @@ const allUser = asyncHandler(async (req, res) => {
   }
 
   // Fetching Users
-  const userList = await User.find(filter).select("-password -refreshToken")
+  const userList = await User.find(filter)
+    .select("-password -refreshToken")
     .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
     .skip(skip)
     .limit(limitNumber);
 
   if (!userList) {
-    return res.status(400).json(new ApiError(404, "", "User list fetching failed!"));
+    return res
+      .status(400)
+      .json(new ApiError(404, "", "User list fetching failed!"));
   }
 
   const totalUsers = await User.countDocuments(filter);
 
-  return res.status(200).json(new ApiResponse(200, {
-    pagination: {
-      totalItems: totalUsers,
-      totalPages: Math.ceil(totalUsers / limitNumber),
-      currentPage: pageNumber,
-      itemsPerPage: limitNumber,
-    },
-    result: userList,
-  }, "User list fetched successfully"));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        pagination: {
+          totalItems: totalUsers,
+          totalPages: Math.ceil(totalUsers / limitNumber),
+          currentPage: pageNumber,
+          itemsPerPage: limitNumber,
+        },
+        result: userList,
+      },
+      "User list fetched successfully"
+    )
+  );
+});
+
+export const getAllAdminList = asyncHandler(async (req, res) => {
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    startDate,
+    endDate,
+    sortkey = "createdAt",
+    sortdir = "desc",
+  } = req.query;
+
+  // Pagination
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  // Search and Date Filter
+  let filter = { role: "admin" };
+
+  if (search) {
+    filter.$or = [
+      { email: { $regex: search, $options: "i" } },
+      { mobile: search },
+    ];
+  }
+
+  if (startDate && endDate) {
+    filter.createdAt = {
+      $gte: startOfDay(parseISO(startDate)),
+      $lt: endOfDay(addDays(parseISO(endDate), 1)),
+    };
+  } else if (startDate) {
+    filter.createdAt = {
+      $gte: startOfDay(parseISO(startDate)),
+    };
+  } else if (endDate) {
+    filter.createdAt = {
+      $lt: endOfDay(addDays(parseISO(endDate), 1)),
+    };
+  }
+
+  // Fetching Users
+  const userList = await User.find(filter)
+    .select("-password -refreshToken")
+    .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
+    .skip(skip)
+    .limit(limitNumber);
+
+  if (!userList) {
+    return res
+      .status(400)
+      .json(new ApiError(404, "", "User list fetching failed!"));
+  }
+
+  const totalUsers = await User.countDocuments(filter);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        pagination: {
+          totalItems: totalUsers,
+          totalPages: Math.ceil(totalUsers / limitNumber),
+          currentPage: pageNumber,
+          itemsPerPage: limitNumber,
+        },
+        result: userList,
+      },
+      "User list fetched successfully"
+    )
+  );
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-  const { oldPassword, newPassword } = req.body
+  const { oldPassword, newPassword } = req.body;
 
-  const user = await User.findById(req.user?._id)
-  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+  const user = await User.findById(req.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordCorrect) {
-    throw new ApiError(400, "Invalid old password")
+    throw new ApiError(400, "Invalid old password");
   }
 
-  user.password = newPassword
-  await user.save({ validateBeforeSave: false })
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Password changed successfully"))
-})
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+export const getAdminDetails = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminUser = await User.findOne(
+      { _id: id, role: "admin" },
+      {
+        _id: 1,
+        dob: 1,
+        role: 1,
+        email: 1,
+        mobile: 1,
+        isActive: 1,
+        password: 1,
+        lastName: 1,
+        firstName: 1,
+        permissions: 1,
+        profileImage: 1,
+      }
+    );
+
+    if (!adminUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin user not found" });
+    }
+
+    res.status(200).json({ success: true, data: adminUser });
+  } catch (error) {
+    console.error("Error fetching admin user:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+export const updateAdminDetails = asyncHandler(async (req, res) => {
+  try {
+    let profileImagePath;
+    const { id } = req.params;
+    const updates = req.body;
+
+    if (req?.file?.path) profileImagePath = req.file.path;
+
+    const adminUser = await User.findOne({ _id: id, role: "admin" });
+
+    if (!adminUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin user not found" });
+    }
+
+    Object.assign(adminUser, {
+      ...updates,
+      profileImage: profileImagePath
+        ? profileImagePath
+        : adminUser.profileImage,
+    });
+
+    await adminUser.save();
+    return res.status(200).json({ success: true, data: adminUser });
+  } catch (error) {
+    console.error("Error updating admin user:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+export const deleteAdmin = asyncHandler(async (req, res) => {
+  const { _id } = req.params;
+  const document = await User.findByIdAndDelete(_id);
+  if (!document) {
+    return res.status(404).json(new ApiError(404, "", "invalid Docs!"));
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "", "Blog category deleted successfully"));
+});
+
+export const createAdmin = asyncHandler(async (req, res) => {
+  try {
+    let profileImagePath;
+    const updates = req.body;
+    if (req?.file?.path) profileImagePath = req.file.path;
+    const adminUser = new User({
+      ...updates,
+      profileImage: profileImagePath ? profileImagePath : "",
+    });
+    await adminUser.save();
+    return res.status(200).json({ success: true, data: adminUser });
+  } catch (error) {
+    console.error("Error updating admin user:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 export {
   adminlogin,
   userlogin,
@@ -332,5 +519,5 @@ export {
   updateProfile,
   allUser,
   getCurrentUser,
-  changeCurrentPassword
+  changeCurrentPassword,
 };

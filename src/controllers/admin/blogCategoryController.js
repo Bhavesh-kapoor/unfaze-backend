@@ -78,7 +78,9 @@ const deleteBlogCategory = asyncHandler(async (req, res) => {
   if (!deletedBlogCategory) {
     return res.status(404).json(new ApiError(404, "", "invalid category!"));
   }
-  return res.status(200).json(new ApiResponse(200, "", "Blog category deleted successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "", "Blog category deleted successfully"));
 });
 
 export {
