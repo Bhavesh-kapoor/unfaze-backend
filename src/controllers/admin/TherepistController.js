@@ -187,177 +187,142 @@ const validateRegister = [
 //   }
 // });
 
-const register = (req, res) => {
-  console.log(req.files)
-}
+const register = asyncHandler(async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Validation Error", errors.array()));
+    }
+    const admin = req.user || "";
+    const {
+      firstName,
+      lastName,
+      email,
+      mobile,
+      adharNumber,
+      panNumber,
+      dateOfBirth,
+      gender,
+      specialization,
+      usdPrice,
+      inrPrice,
+      license,
+      experience,
+      bio,
+      languages,
+      addressDetails,
+      bankDetails,
+      //education
+      highSchool,
+      intermediate,
+      graduation,
+      postGraduation,
+      additional,
+      socialMedia,
+    } = req.body;
+    const existingTherapist = await Therapist.findOne({
+      $or: [
+        { email },
+        { mobile },
+        { adharNumber },
+        { panNumber },
+      ],
+    });
+    if (existingTherapist) {
+      let duplicateField = "";
 
-// const register = asyncHandler(async (req, res) => {
-//   console.log(req.files); // Log all received files
-// return;
-//   try {
+      // Determine which field is duplicated
+      if (existingTherapist.email === email) duplicateField = "Email";
+      else if (existingTherapist.mobile === mobile) duplicateField = "Phone Number";
+      else if (existingTherapist.adharNumber === adharNumber) duplicateField = "Aadhar Number";
+      else if (existingTherapist.panNumber === panNumber) duplicateField = "PAN Number";
 
-
-//     const errors = validationResult(req);
-//     if (!errors.isEmpty()) {
-//       return res
-//         .status(400)
-//         .json(new ApiError(400, "Validation Error", errors.array()));
-//     }
-//     // const admin = req.user || "";
-//     const {
-//       firstName,
-//       lastName,
-//       email,
-//       mobile,
-//       adharNumber,
-//       panNumber,
-//       dateOfBirth,
-//       gender,
-//       specialization,
-//       usdPrice,
-//       inrPrice,
-//       license,
-//       experience,
-//       bio,
-//       languages,
-//       addressDetails,
-//       bankDetails,
-//       //education
-//       highSchool,
-//       intermediate,
-//       graduation,
-//       postGraduation,
-//       additional,
-//       socialMedia,
-//     } = req.body;
-//     console.log(firstName,
-//       lastName,
-//       email,
-//       mobile,
-//       adharNumber,
-//       panNumber,
-//       dateOfBirth,
-//       gender,
-//       specialization,
-//       usdPrice,
-//       inrPrice,
-//       license,
-//       experience,
-//       bio,
-//       languages,
-//       addressDetails,
-//       bankDetails,
-//       //education
-//       highSchool,
-//       intermediate,
-//       graduation,
-//       postGraduation,
-//       additional,
-//       socialMedia,
-//     )
-
-
-//     const existingTherapist = await Therapist.findOne({
-//       $or: [
-//         { email },
-//         { mobile },
-//         { adharNumber },
-//         { panNumber },
-//       ],
-//     });
-//     if (existingTherapist) {
-//       let duplicateField = "";
-
-//       // Determine which field is duplicated
-//       if (existingTherapist.email === email) duplicateField = "Email";
-//       else if (existingTherapist.mobile === mobile) duplicateField = "Phone Number";
-//       else if (existingTherapist.adharNumber === adharNumber) duplicateField = "Aadhar Number";
-//       else if (existingTherapist.panNumber === panNumber) duplicateField = "PAN Number";
-
-//       return res.status(400).json({
-//         message: `${duplicateField} already exists.`,
-//       });
-//     }
-//     if (!Array.isArray(specialization)) {
-//       return res
-//         .status(400)
-//         .json(new ApiError(400, "", "specialization Should be array!"));
-//     }
-//     if (!Array.isArray(languages)) {
-//       return res
-//         .status(400)
-//         .json(new ApiError(400, "", "Language should be array!"));
-//     }
-//     const therapistData = {
-//       firstName,
-//       lastName,
-//       email,
-//       mobile,
-//       adharNumber,
-//       panNumber,
-//       dateOfBirth,
-//       gender,
-//       specialization,
-//       usdPrice,
-//       inrPrice,
-//       license,
-//       experience,
-//       bio,
-//       languages,
-//       bankDetails,
-//       addressDetails,
-//       socialMedia,
-//       educationDetails: {
-//         highSchool,
-//         intermediate,
-//         graduation,
-//         postGraduation,
-//         additional,
-//       }
-//     }
-//     if (req.files?.profileImage) {
-//       therapistData.profileImageUrl = req.files.profileImage[0]?.path;
-//     }
-//     if (req.files?.highschoolImg) {
-//       therapistData.educationDetails.highSchool.certificateImageUrl = req.files.highschoolImg[0]?.path;
-//     }
-//     if (req.files?.intermediateImg) {
-//       therapistData.educationDetails.intermediate.certificateImageUrl = req.files.intermediateImg[0]?.path;
-//     }
-//     if (req.files?.graduationImg) {
-//       therapistData.educationDetails.graduation.certificateImageUrl = req.files.graduationImg[0]?.path;
-//     }
-//     if (req.files?.postGraduationImgs) {
-//       console.log("test", req.files);
-//       therapistData.educationDetails.postGraduation.certificateImageUrl = req.files.postGraduationImgs[0]?.path;
-//     }
-//     let createTherepist = new Therapist(therapistData);
-//     await createTherepist.save();
-//     if (admin) {
-//       const password = generateTempPassword()
-//       console.log("temp password: " + password)
-//       const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
-//       const htmlContent = loginCredentialEmail(email, password)
-//       const EmailOptions = mailOptions(email, subject, htmlContent)
-//       transporter.sendMail(EmailOptions, (error, info) => {
-//         if (error) {
-//           console.log("Error while sending email:", error);
-//         } else {
-//           console.log("Email sent successfully:", info.response);
-//         }
-//       });
-//     }
-//     res
-//       .status(200)
-//       .json(
-//         new ApiResponse(200, createTherepist, "Therepist created Successfully")
-//       );
-//   } catch (err) {
-//     console.log("else");
-//     console.log(err);
-//     res.status(500).json(new ApiError(500, "", err));
-//   }
-// });
+      return res.status(400).json({
+        message: `${duplicateField} already exists.`,
+      });
+    }
+    if (!Array.isArray(specialization)) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "specialization Should be array!"));
+    }
+    if (!Array.isArray(languages)) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Language should be array!"));
+    }
+    const therapistData = {
+      firstName,
+      lastName,
+      email,
+      mobile,
+      adharNumber,
+      panNumber,
+      dateOfBirth,
+      gender,
+      specialization,
+      usdPrice,
+      inrPrice,
+      license,
+      experience,
+      bio,
+      languages,
+      bankDetails,
+      addressDetails,
+      socialMedia,
+      educationDetails: {
+        highSchool,
+        intermediate,
+        graduation,
+        postGraduation,
+        additional,
+      }
+    }
+    if (req.files?.profileImage) {
+      therapistData.profileImageUrl = req.files.profileImage[0]?.path;
+    }
+    if (req.files?.highschoolImg) {
+      therapistData.educationDetails.highSchool.certificateImageUrl = req.files.highschoolImg[0]?.path;
+    }
+    if (req.files?.intermediateImg) {
+      therapistData.educationDetails.intermediate.certificateImageUrl = req.files.intermediateImg[0]?.path;
+    }
+    if (req.files?.graduationImg) {
+      therapistData.educationDetails.graduation.certificateImageUrl = req.files.graduationImg[0]?.path;
+    }
+    if (req.files?.postGraduationImgs) {
+      console.log("test", req.files);
+      therapistData.educationDetails.postGraduation.certificateImageUrl = req.files.postGraduationImgs[0]?.path;
+    }
+    let createTherepist = new Therapist(therapistData);
+    await createTherepist.save();
+    if (admin) {
+      const password = generateTempPassword()
+      console.log("temp password: " + password)
+      const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
+      const htmlContent = loginCredentialEmail(email, password)
+      const EmailOptions = mailOptions(email, subject, htmlContent)
+      transporter.sendMail(EmailOptions, (error, info) => {
+        if (error) {
+          console.log("Error while sending email:", error);
+        } else {
+          console.log("Email sent successfully:", info.response);
+        }
+      });
+    }
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, createTherepist, "Therepist created Successfully")
+      );
+  } catch (err) {
+    console.log("else");
+    console.log(err);
+    res.status(500).json(new ApiError(500, "", err));
+  }
+});
 const login = asyncHandler(async (req, res) => {
   const { email, mobile, password } = req.body;
   if (!email && !mobile) {

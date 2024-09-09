@@ -21,6 +21,7 @@ const multipleImages = upload.fields([
   { name: "graduationImg", maxCount: 1 },
   { name: "postGraduationImg", maxCount: 1 },
   { name: "profileImage", maxCount: 1 },
+
 ]);
 
 router.post("/logout", logout);

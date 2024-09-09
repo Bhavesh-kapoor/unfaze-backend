@@ -78,21 +78,20 @@ const storage = multer.diskStorage({
     console.log("Received file field: ", file.fieldname);
     const emailPrefix = getEmailPrefix(req.body.email);
     let folder;
-    if (file.fieldname === "highschoolImg") {
+    if (file.fieldname === "profileImage") {
+      folder = `src/images/uploads/therapists/${emailPrefix}/profileImage`;
+    } else if (file.fieldname === "highschoolImg") {
       folder = `src/images/uploads/therapists/${emailPrefix}/highschool`;
     } else if (file.fieldname === "intermediateImg") {
       folder = `src/images/uploads/therapists/${emailPrefix}/intermediate`;
     } else if (file.fieldname === "graduationImg") {
       folder = `src/images/uploads/therapists/${emailPrefix}/graduation`;
-    } else if (file.fieldname === "postGraduationImgs") {
-      console.log(emailPrefix, 'emailPrefix')
-
+    } else if (file.fieldname === "postGraduationImg") {
       folder = `src/images/uploads/therapists/${emailPrefix}/postGraduation`;
-      console.log(folder, emailPrefix, 'hey bro testing');
     } else if (file.fieldname === "blog") {
       folder = "src/images/uploads/blogs";
     } else {
-      folder = `src/images/uploads/therapists/test/other`;
+      folder = `src/images/uploads/other`;
     }
 
     // Create folder if it doesn't exist
