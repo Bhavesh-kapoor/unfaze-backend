@@ -56,7 +56,7 @@ const userSchema = new Schema(
       type: Boolean,
       default: true,
     },
-    dob: {
+    dateOfBirth: {
       type: Date,
       required: true,
       validate: {

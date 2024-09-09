@@ -24,164 +24,340 @@ const validateRegister = [
   check("email", "Email is required").isEmail(),
   check("mobile", "Mobile is required").notEmpty(),
   check("specialization", "Specialization is required").notEmpty(),
+  check("adharNumber", "Adhar Number is required").notEmpty(),
+  check("panNumber", "Pan Number is required").notEmpty(),
+  check("dateOfBirth", "Date Of Birth is required").notEmpty(),
+  check("usdPrice", "USD Price is required").notEmpty(),
+  check("inrPrice", "INR Price is required").notEmpty(),
+  check("experience", "Experience is required").notEmpty(),
   check("gender", "Gender is required").notEmpty(),
-  check("password", "password is required").notEmpty(),
 ];
 
-const register = asyncHandler(async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "Validation Error", errors.array()));
-  }
-  const admin = req.user || ""
-  const {
-    firstName,
-    lastName,
-    addressLine1,
-    addressLine2,
-    email,
-    mobile,
-    gender,
-    dob,
-    licence,
-    specialization,
-    bio,
-    state,
-    city,
-    pincode,
-    linkedin,
-    facebook,
-    highSchool,
-    intermediate,
-    graduation,
-    postgraduation,
-    additional,
-    language,
-    experience,
-    instagram,
-    bankName,
-    ifsccode,
-    accountNumber,
-    accountHolder,
-    service_charge_USD,
-    USD_Price,
-    service_charge_INR,
-    INR_Price,
-    adhar_Number,
-    PAN_Number,
-  } = req.body;
-  const therapistData = {
-    firstName,
-    lastName,
-    email,
-    mobile,
-    gender,
-    dob,
-    experience,
-    adhar_Number,
-    PAN_Number,
-    service_charge_USD,
-    USD_Price,
-    service_charge_INR,
-    INR_Price,
-  };
-  therapistData.address = {};
-  therapistData.social = {};
-  therapistData.education = {};
-  therapistData.bankdetail = {};
-  therapistData.availability = {};
+// const register = asyncHandler(async (req, res) => {
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) {
+//     return res
+//       .status(400)
+//       .json(new ApiError(400, "Validation Error", errors.array()));
+//   }
+//   const admin = req.user || ""
+//   const {
+//     firstName,
+//     lastName,
+//     addressLine1,
+//     addressLine2,
+//     email,
+//     mobile,
+//     gender,
+//     dateOfBirth,
+//     licence,
+//     specialization,
+//     bio,
+//     state,
+//     city,
+//     pincode,
+//     linkedin,
+//     facebook,
+//     highSchool,
+//     intermediate,
+//     graduation,
+//     postgraduation,
+//     additional,
+//     language,
+//     experience,
+//     instagram,
+//     bankName,
+//     ifsccode,
+//     accountNumber,
+//     accountHolder,
+//     serviceChargeUsd,
+//     usdPrice,
+//     serviceChargeInr,
+//     inrPrice,
+//     adharNumber,
+//     panNumber,
+//   } = req.body;
+//   const therapistData = {
+//     firstName,
+//     lastName,
+//     email,
+//     mobile,
+//     gender,
+//     dateOfBirth,
+//     experience,
+//     adharNumber,
+//     panNumber,
+//     serviceChargeUsd,
+//     usdPrice,
+//     serviceChargeInr,
+//     inrPrice,
+//   };
+//   therapistData.address = {};
+//   therapistData.social = {};
+//   therapistData.education = {};
+//   therapistData.bankdetail = {};
+//   therapistData.availability = {};
 
-  // therapistData.availability.start_hour = start_hour;
-  // therapistData.availability.end_hour = end_hour;
-  if (highSchool) therapistData.education.highSchool = highSchool;
-  if (intermediate) therapistData.education.intermediate = intermediate;
-  if (graduation) therapistData.education.graduation = graduation;
-  if (postgraduation) therapistData.education.postgraduation = postgraduation;
-  if (additional) therapistData.education.additional = additional;
-  if (licence) therapistData.licence = licence;
-  if (experience) therapistData.experience = experience;
-  if (state) therapistData.address.state = state;
-  if (city) therapistData.address.city = city;
-  if (pincode) therapistData.address.pincode = pincode;
-  if (addressLine1) therapistData.address.addressLine1 = addressLine1;
-  if (addressLine2) therapistData.address.addressLine2 = addressLine2;
-  if (linkedin) therapistData.social.linkedin = linkedin;
-  if (instagram) therapistData.social.instagram = instagram;
-  if (facebook) therapistData.social.facebook = facebook;
-  if (bankName) therapistData.bankdetail.bankName = bankName;
-  if (ifsccode) therapistData.bankdetail.ifsccode = ifsccode;
-  if (accountHolder) therapistData.bankdetail.accountHolder = accountHolder;
-  if (accountNumber) therapistData.bankdetail.accountNumber = accountNumber;
-  if (bio) therapistData.bio = bio;
+//   // therapistData.availability.start_hour = start_hour;
+//   // therapistData.availability.end_hour = end_hour;
+//   if (highSchool) therapistData.education.highSchool = highSchool;
+//   if (intermediate) therapistData.education.intermediate = intermediate;
+//   if (graduation) therapistData.education.graduation = graduation;
+//   if (postgraduation) therapistData.education.postgraduation = postgraduation;
+//   if (additional) therapistData.education.additional = additional;
+//   if (licence) therapistData.licence = licence;
+//   if (experience) therapistData.experience = experience;
+//   if (state) therapistData.address.state = state;
+//   if (city) therapistData.address.city = city;
+//   if (pincode) therapistData.address.pincode = pincode;
+//   if (addressLine1) therapistData.address.addressLine1 = addressLine1;
+//   if (addressLine2) therapistData.address.addressLine2 = addressLine2;
+//   if (linkedin) therapistData.social.linkedin = linkedin;
+//   if (instagram) therapistData.social.instagram = instagram;
+//   if (facebook) therapistData.social.facebook = facebook;
+//   if (bankName) therapistData.bankdetail.bankName = bankName;
+//   if (ifsccode) therapistData.bankdetail.ifsccode = ifsccode;
+//   if (accountHolder) therapistData.bankdetail.accountHolder = accountHolder;
+//   if (accountNumber) therapistData.bankdetail.accountNumber = accountNumber;
+//   if (bio) therapistData.bio = bio;
 
-  if (specialization) {
-    if (!Array.isArray(specialization)) {
-      return res
-        .status(400)
-        .json(new ApiError(400, "", "specialization Should be array!"));
-    }
-    therapistData.specialization = specialization;
-  }
+//   if (specialization) {
+//     if (!Array.isArray(specialization)) {
+//       return res
+//         .status(400)
+//         .json(new ApiError(400, "", "specialization Should be array!"));
+//     }
+//     therapistData.specialization = specialization;
+//   }
 
-  if (language) {
-    if (!Array.isArray(language)) {
-      return res
-        .status(400)
-        .json(new ApiError(400, "", "Language should be array!"));
-    }
-    therapistData.language = language;
-  }
+//   if (language) {
+//     if (!Array.isArray(language)) {
+//       return res
+//         .status(400)
+//         .json(new ApiError(400, "", "Language should be array!"));
+//     }
+//     therapistData.language = language;
+//   }
 
-  try {
-    let checkExist = await Therapist.find({ $or: [{ mobile }, { email }] });
-    if (checkExist.length > 0) {
-      return res.status(400).json(new ApiError(400, "", "You already exist!"));
-    }
+//   try {
+//     let checkExist = await Therapist.find({ $or: [{ mobile }, { email }] });
+//     if (checkExist.length > 0) {
+//       return res.status(400).json(new ApiError(400, "", "You already exist!"));
+//     }
 
-    if (req.files?.passport) {
-      therapistData.bankdetail.passport = req.files.passport[0]?.path;
-    }
-    if (req.files?.adharcard) {
-      therapistData.bankdetail.adharcard = req.files.adharcard[0]?.path;
-    }
-    if (req.files?.pancard) {
-      therapistData.bankdetail.pancard = req.files.pancard[0]?.path;
-    }
-    if (req.files?.profileImage) {
-      therapistData.profileImage = req.files.profileImage[0].path;
-    }
-    if (admin) {
-      therapistData.isActive = true;
-    }
-    let createTherepist = new Therapist(therapistData);
-    await createTherepist.save();
-    if (admin) {
-      const password = generateTempPassword()
-      console.log("temp password: " + password)
-      const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
-      const htmlContent = loginCredentialEmail(email, password)
-      const EmailOptions = mailOptions(email, subject, htmlContent)
-      transporter.sendMail(EmailOptions, (error, info) => {
-        if (error) {
-          console.log("Error while sending email:", error);
-        } else {
-          console.log("Email sent successfully:", info.response);
-        }
-      });
-    }
-    res
-      .status(200)
-      .json(
-        new ApiResponse(200, createTherepist, "Therepist created Successfully")
-      );
-  } catch (err) {
-    console.log(err);
-    res.status(500).json(new ApiError(500, "", err));
-  }
-});
+//     if (req.files?.passport) {
+//       therapistData.bankdetail.passport = req.files.passport[0]?.path;
+//     }
+//     if (req.files?.adharcard) {
+//       therapistData.bankdetail.adharcard = req.files.adharcard[0]?.path;
+//     }
+//     if (req.files?.pancard) {
+//       therapistData.bankdetail.pancard = req.files.pancard[0]?.path;
+//     }
+//     if (req.files?.profileImage) {
+//       therapistData.profileImage = req.files.profileImage[0].path;
+//     }
+//     if (admin) {
+//       therapistData.isActive = true;
+//     }
+//     let createTherepist = new Therapist(therapistData);
+//     await createTherepist.save();
+//     if (admin) {
+//       const password = generateTempPassword()
+//       console.log("temp password: " + password)
+//       const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
+//       const htmlContent = loginCredentialEmail(email, password)
+//       const EmailOptions = mailOptions(email, subject, htmlContent)
+//       transporter.sendMail(EmailOptions, (error, info) => {
+//         if (error) {
+//           console.log("Error while sending email:", error);
+//         } else {
+//           console.log("Email sent successfully:", info.response);
+//         }
+//       });
+//     }
+//     res
+//       .status(200)
+//       .json(
+//         new ApiResponse(200, createTherepist, "Therepist created Successfully")
+//       );
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json(new ApiError(500, "", err));
+//   }
+// });
 
+const register = (req, res) => {
+  console.log(req.files)
+}
+
+// const register = asyncHandler(async (req, res) => {
+//   console.log(req.files); // Log all received files
+// return;
+//   try {
+
+
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res
+//         .status(400)
+//         .json(new ApiError(400, "Validation Error", errors.array()));
+//     }
+//     // const admin = req.user || "";
+//     const {
+//       firstName,
+//       lastName,
+//       email,
+//       mobile,
+//       adharNumber,
+//       panNumber,
+//       dateOfBirth,
+//       gender,
+//       specialization,
+//       usdPrice,
+//       inrPrice,
+//       license,
+//       experience,
+//       bio,
+//       languages,
+//       addressDetails,
+//       bankDetails,
+//       //education
+//       highSchool,
+//       intermediate,
+//       graduation,
+//       postGraduation,
+//       additional,
+//       socialMedia,
+//     } = req.body;
+//     console.log(firstName,
+//       lastName,
+//       email,
+//       mobile,
+//       adharNumber,
+//       panNumber,
+//       dateOfBirth,
+//       gender,
+//       specialization,
+//       usdPrice,
+//       inrPrice,
+//       license,
+//       experience,
+//       bio,
+//       languages,
+//       addressDetails,
+//       bankDetails,
+//       //education
+//       highSchool,
+//       intermediate,
+//       graduation,
+//       postGraduation,
+//       additional,
+//       socialMedia,
+//     )
+
+
+//     const existingTherapist = await Therapist.findOne({
+//       $or: [
+//         { email },
+//         { mobile },
+//         { adharNumber },
+//         { panNumber },
+//       ],
+//     });
+//     if (existingTherapist) {
+//       let duplicateField = "";
+
+//       // Determine which field is duplicated
+//       if (existingTherapist.email === email) duplicateField = "Email";
+//       else if (existingTherapist.mobile === mobile) duplicateField = "Phone Number";
+//       else if (existingTherapist.adharNumber === adharNumber) duplicateField = "Aadhar Number";
+//       else if (existingTherapist.panNumber === panNumber) duplicateField = "PAN Number";
+
+//       return res.status(400).json({
+//         message: `${duplicateField} already exists.`,
+//       });
+//     }
+//     if (!Array.isArray(specialization)) {
+//       return res
+//         .status(400)
+//         .json(new ApiError(400, "", "specialization Should be array!"));
+//     }
+//     if (!Array.isArray(languages)) {
+//       return res
+//         .status(400)
+//         .json(new ApiError(400, "", "Language should be array!"));
+//     }
+//     const therapistData = {
+//       firstName,
+//       lastName,
+//       email,
+//       mobile,
+//       adharNumber,
+//       panNumber,
+//       dateOfBirth,
+//       gender,
+//       specialization,
+//       usdPrice,
+//       inrPrice,
+//       license,
+//       experience,
+//       bio,
+//       languages,
+//       bankDetails,
+//       addressDetails,
+//       socialMedia,
+//       educationDetails: {
+//         highSchool,
+//         intermediate,
+//         graduation,
+//         postGraduation,
+//         additional,
+//       }
+//     }
+//     if (req.files?.profileImage) {
+//       therapistData.profileImageUrl = req.files.profileImage[0]?.path;
+//     }
+//     if (req.files?.highschoolImg) {
+//       therapistData.educationDetails.highSchool.certificateImageUrl = req.files.highschoolImg[0]?.path;
+//     }
+//     if (req.files?.intermediateImg) {
+//       therapistData.educationDetails.intermediate.certificateImageUrl = req.files.intermediateImg[0]?.path;
+//     }
+//     if (req.files?.graduationImg) {
+//       therapistData.educationDetails.graduation.certificateImageUrl = req.files.graduationImg[0]?.path;
+//     }
+//     if (req.files?.postGraduationImgs) {
+//       console.log("test", req.files);
+//       therapistData.educationDetails.postGraduation.certificateImageUrl = req.files.postGraduationImgs[0]?.path;
+//     }
+//     let createTherepist = new Therapist(therapistData);
+//     await createTherepist.save();
+//     if (admin) {
+//       const password = generateTempPassword()
+//       console.log("temp password: " + password)
+//       const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
+//       const htmlContent = loginCredentialEmail(email, password)
+//       const EmailOptions = mailOptions(email, subject, htmlContent)
+//       transporter.sendMail(EmailOptions, (error, info) => {
+//         if (error) {
+//           console.log("Error while sending email:", error);
+//         } else {
+//           console.log("Email sent successfully:", info.response);
+//         }
+//       });
+//     }
+//     res
+//       .status(200)
+//       .json(
+//         new ApiResponse(200, createTherepist, "Therepist created Successfully")
+//       );
+//   } catch (err) {
+//     console.log("else");
+//     console.log(err);
+//     res.status(500).json(new ApiError(500, "", err));
+//   }
+// });
 const login = asyncHandler(async (req, res) => {
   const { email, mobile, password } = req.body;
   if (!email && !mobile) {
@@ -462,99 +638,223 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, req.user, "User fetched successfully"));
 });
 
-const updateTherapist = asyncHandler(async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "Validation Error", errors.array()));
-  }
+// const updateTherapist = asyncHandler(async (req, res) => {
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) {
+//     return res
+//       .status(400)
+//       .json(new ApiError(400, "Validation Error", errors.array()));
+//   }
 
+//   const { _id } = req.user?._id;
+//   const {
+//     firstName,
+//     lastName,
+//     email,
+//     mobile,
+//     adharNumber,
+//     panNumber,
+//     dateOfBirth,
+//     gender,
+//     specialization,
+//     usdPrice,
+//     inrPrice,
+//     license,
+//     experience,
+//     bio,
+//     languages,
+//     // Bank Details
+//     bankName,
+//     ifscCode,
+//     accountHolder,
+//     accountNumber,
+//     branchName,
+//     accountType,
+//     // Address Details
+//     country,
+//     state,
+//     city,
+//     pincode,
+//     addressLine1,
+//     addressLine2,
+//     landmark = "",
+//     latitude = "",
+//     longitude = "",
+//   } = req.body;
+//   // const therapistData = {
+//   //   firstName,
+//   //   lastName,
+//   //   email,
+//   //   mobile,
+//   //   gender,
+//   //   experience,
+//   //   password,
+//   // };
+//   // therapistData.address = {};
+//   // therapistData.social = {};
+//   // therapistData.education = {};
+//   // therapistData.bankdetail = {};
+//   // // EDUCATION FIELDS
+//   // if (highSchool) therapistData.education.highSchool = highSchool;
+//   // if (intermediate) therapistData.education.intermediate = intermediate;
+//   // if (graduation) therapistData.education.graduation = graduation;
+//   // if (postgraduation) therapistData.education.postgraduation = postgraduation;
+//   // if (additional) therapistData.education.additional = additional;
+//   // if (licenese) therapistData.licenese = licenese;
+//   // if (experience) therapistData.experience = experience;
+//   // // ADDRESS FIELDS
+//   // if (state) therapistData.address.state = state;
+//   // if (city) therapistData.address.city = city;
+//   // if (pincode) therapistData.address.pincode = pincode;
+//   // if (completeAddress) therapistData.address.completeAddress = completeAddress;
+//   // // SOCIAL ACCOUNT FIELDS
+//   // if (linkedin) therapistData.social.linkedin = linkedin;
+//   // if (instagram) therapistData.social.instagram = instagram;
+//   // if (facebook) therapistData.social.facebook = facebook;
+//   // // BANK FIELDS
+//   // if (bankName) therapistData.bankdetail.bankName = bankName;
+//   // if (ifsccode) therapistData.bankdetail.ifsccode = ifsccode;
+//   // if (accountHolder) therapistData.bankdetail.accountHolder = accountHolder;
+//   // if (accountNumber) therapistData.bankdetail.accountNumber = accountNumber;
+//   // if (bio) therapistData.bio = bio;
+
+//   // if (specialization) {
+//   //   if (!Array.isArray(specialization)) {
+//   //     return res
+//   //       .status(400)
+//   //       .json(new ApiError(400, "", "specialization Should be array!"));
+//   //   }
+//   //   therapistData.specialization = specialization;
+//   // }
+
+//   // if (language) {
+//   //   if (!Array.isArray(language)) {
+//   //     return res
+//   //       .status(400)
+//   //       .json(new ApiError(400, "", "Language should be array!"));
+//   //   }
+//   //   therapistData.language = language;
+//   // }
+
+//   try {
+//     if (req.files?.passport) {
+//       therapistData.bankdetail.passport = req.files.passport[0]?.path;
+//     }
+//     if (req.files?.adharcard) {
+//       therapistData.bankdetail.adharcard = req.files.adharcard[0]?.path;
+//     }
+//     if (req.files?.pancard) {
+//       therapistData.bankdetail.pancard = req.files.pancard[0]?.path;
+//     }
+
+//     let updateTherepist = await Therapist.findByIdAndUpdate(
+//       _id,
+//       therapistData,
+//       {
+//         new: true,
+//         select: "-password -refreshToken",
+//       }
+//     );
+
+//     res
+//       .status(200)
+//       .json(
+//         new ApiResponse(200, updateTherepist, "profile updated Successfully")
+//       );
+//   } catch (err) {
+//     res.status(500).send(new ApiError(500, "", err.message));
+//   }
+// });
+const updateTherapist = asyncHandler(async (req, res) => {
   const { _id } = req.user?._id;
   const {
     firstName,
     lastName,
     email,
     mobile,
+    adharNumber,
+    panNumber,
+    dateOfBirth,
     gender,
-    licenese,
     specialization,
+    usdPrice,
+    inrPrice,
+    license,
+    experience,
     bio,
+    languages,
+    // Bank Details
+    bankName,
+    ifscCode,
+    accountHolder,
+    accountNumber,
+    branchName,
+    accountType,
+    // Address Details
+    country,
     state,
     city,
     pincode,
-    completeAddress,
-    linkedin,
-    facebook,
-    highSchool,
-    intermediate,
-    graduation,
-    postgraduation,
-    additional,
-    language,
-    experience,
-    instagram,
-    bankName,
-    ifsccode,
-    accountNumber,
-    accountHolder,
-    password,
+    addressLine1,
+    addressLine2,
+    landmark = "",
+    latitude = "",
+    longitude = "",
   } = req.body;
+  // const therapistData = {
+  //   firstName,
+  //   lastName,
+  //   email,
+  //   mobile,
+  //   gender,
+  //   experience,
+  //   password,
+  // };
+  // therapistData.address = {};
+  // therapistData.social = {};
+  // therapistData.education = {};
+  // therapistData.bankdetail = {};
+  // // EDUCATION FIELDS
+  // if (highSchool) therapistData.education.highSchool = highSchool;
+  // if (intermediate) therapistData.education.intermediate = intermediate;
+  // if (graduation) therapistData.education.graduation = graduation;
+  // if (postgraduation) therapistData.education.postgraduation = postgraduation;
+  // if (additional) therapistData.education.additional = additional;
+  // if (licenese) therapistData.licenese = licenese;
+  // if (experience) therapistData.experience = experience;
+  // // ADDRESS FIELDS
+  // if (state) therapistData.address.state = state;
+  // if (city) therapistData.address.city = city;
+  // if (pincode) therapistData.address.pincode = pincode;
+  // if (completeAddress) therapistData.address.completeAddress = completeAddress;
+  // // SOCIAL ACCOUNT FIELDS
+  // if (linkedin) therapistData.social.linkedin = linkedin;
+  // if (instagram) therapistData.social.instagram = instagram;
+  // if (facebook) therapistData.social.facebook = facebook;
+  // // BANK FIELDS
+  // if (bankName) therapistData.bankdetail.bankName = bankName;
+  // if (ifsccode) therapistData.bankdetail.ifsccode = ifsccode;
+  // if (accountHolder) therapistData.bankdetail.accountHolder = accountHolder;
+  // if (accountNumber) therapistData.bankdetail.accountNumber = accountNumber;
+  // if (bio) therapistData.bio = bio;
 
-  const therapistData = {
-    firstName,
-    lastName,
-    email,
-    mobile,
-    gender,
-    experience,
-    password,
-  };
-  therapistData.address = {};
-  therapistData.social = {};
-  therapistData.education = {};
-  therapistData.bankdetail = {};
-  // EDUCATION FIELDS
-  if (highSchool) therapistData.education.highSchool = highSchool;
-  if (intermediate) therapistData.education.intermediate = intermediate;
-  if (graduation) therapistData.education.graduation = graduation;
-  if (postgraduation) therapistData.education.postgraduation = postgraduation;
-  if (additional) therapistData.education.additional = additional;
-  if (licenese) therapistData.licenese = licenese;
-  if (experience) therapistData.experience = experience;
-  // ADDRESS FIELDS
-  if (state) therapistData.address.state = state;
-  if (city) therapistData.address.city = city;
-  if (pincode) therapistData.address.pincode = pincode;
-  if (completeAddress) therapistData.address.completeAddress = completeAddress;
-  // SOCIAL ACCOUNT FIELDS
-  if (linkedin) therapistData.social.linkedin = linkedin;
-  if (instagram) therapistData.social.instagram = instagram;
-  if (facebook) therapistData.social.facebook = facebook;
-  // BANK FIELDS
-  if (bankName) therapistData.bankdetail.bankName = bankName;
-  if (ifsccode) therapistData.bankdetail.ifsccode = ifsccode;
-  if (accountHolder) therapistData.bankdetail.accountHolder = accountHolder;
-  if (accountNumber) therapistData.bankdetail.accountNumber = accountNumber;
-  if (bio) therapistData.bio = bio;
+  // if (specialization) {
+  //   if (!Array.isArray(specialization)) {
+  //     return res
+  //       .status(400)
+  //       .json(new ApiError(400, "", "specialization Should be array!"));
+  //   }
+  //   therapistData.specialization = specialization;
+  // }
 
-  if (specialization) {
-    if (!Array.isArray(specialization)) {
-      return res
-        .status(400)
-        .json(new ApiError(400, "", "specialization Should be array!"));
-    }
-    therapistData.specialization = specialization;
-  }
-
-  if (language) {
-    if (!Array.isArray(language)) {
-      return res
-        .status(400)
-        .json(new ApiError(400, "", "Language should be array!"));
-    }
-    therapistData.language = language;
-  }
+  // if (language) {
+  //   if (!Array.isArray(language)) {
+  //     return res
+  //       .status(400)
+  //       .json(new ApiError(400, "", "Language should be array!"));
+  //   }
+  //   therapistData.language = language;
+  // }
 
   try {
     if (req.files?.passport) {

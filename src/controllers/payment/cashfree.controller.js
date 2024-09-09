@@ -42,7 +42,7 @@ const createOrder = asyncHandler(async (req, res) => {
   let transactionId = uniqid();
   transactionId = `unfazed${transactionId}`;
   let request = {
-    order_amount: `${therapist.USD_Price}`,
+    order_amount: `${therapist.usdPrice}`,
     order_currency: `${order_currency}`,
     order_id: `${transactionId}`,
     customer_details: {
@@ -67,7 +67,7 @@ const createOrder = asyncHandler(async (req, res) => {
       user_id: user._id,
       therapist_id,
       category: specialization_id,
-      amount_USD: therapist.USD_Price,
+      amount_USD: therapist.usdPrice,
       rate_USD: rate_USD,
       status: "PAYMENT_INITIATED",
       start_time: startDateTime,
