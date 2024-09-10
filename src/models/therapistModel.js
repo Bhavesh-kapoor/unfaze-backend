@@ -183,6 +183,7 @@ import mongoose, { Schema } from "mongoose";
 // Education Detail Schema
 const educationDetailSchema = new Schema(
   {
+    courseName: { type: String, trim: true, Default: "" }, // Name of the institution
     institutionName: { type: String, required: true, trim: true }, // Name of the institution
     completionYear: {
       type: Number,
@@ -201,7 +202,6 @@ const educationSchema = new Schema(
     intermediate: { type: educationDetailSchema, required: true }, // Intermediate Details
     graduation: { type: educationDetailSchema, required: false }, // Graduation Details
     postGraduation: { type: educationDetailSchema, required: false }, // Post Graduation Details
-    additional: { type: educationDetailSchema, required: false }, // Additional Education (if any)
   },
   { _id: false }
 );
@@ -250,10 +250,12 @@ const bankSchema = new Schema(
 // Therapist Schema
 const TherapistSchema = new Schema(
   {
+    mobile: { type: String, unique: true, trim: true },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
-    mobile: { type: String, unique: true, trim: true },
     role: { type: String, default: "therapist", trim: true },
+    ratings: { type: String, trim: true, default: "4.5" },
+    sessionCount: { type: Number, default: "100" },
     license: { type: String, trim: true },
     password: { type: String, trim: true },
     experience: { type: String, trim: true },
@@ -270,9 +272,7 @@ const TherapistSchema = new Schema(
     gender: {
       type: String,
       trim: true,
-      enum: [
-        "male", "female", "non-binary", "other"
-      ],
+      enum: ["male", "female", "non-binary", "other"],
       required: true,
     },
     refreshToken: { type: String },

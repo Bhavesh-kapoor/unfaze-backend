@@ -31,7 +31,6 @@ const userSchema = new Schema(
     },
     dateOfBirth: {
       type: Date,
-      required: true,
       validate: {
         validator: (value) => value < new Date(),
         message: "Date of birth must be in the past.",
