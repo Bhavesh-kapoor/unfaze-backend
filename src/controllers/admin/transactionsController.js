@@ -606,7 +606,7 @@ const getTherapistSessions = async (req, res) => {
       { $unwind: "$category" },
       {
         $lookup: {
-          from: "users",
+          from: "specializations",
           localField: "category",
           foreignField: "_id",
           pipeline: [{ $project: { name: 1 } }],
