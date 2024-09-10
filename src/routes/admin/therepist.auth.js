@@ -9,6 +9,7 @@ import {
   getCurrentUser,
   updateTherapist,
   updateAvatar,
+  dashboard
 } from "../../controllers/admin/TherepistController.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { getTherepistById } from "../../controllers/admin/TherepistController.js";
@@ -38,11 +39,12 @@ router.post("/activate-or-deactive/:_id", activateOrDeactivate);
 
 router.post("/register", multipleImages, validateRegister, register);
 
-router.patch("/update-profile", multipleImages, updateTherapist);
+router.patch("/update-profile/:_id", multipleImages, updateTherapist);
 
 router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
 router.get("/get-therapist-revenue", getTherapistRevenue);
 router.get("/get-sessions", getTherapistSessions);
+router.get("/dashboard", dashboard);
 
 
 export default router;

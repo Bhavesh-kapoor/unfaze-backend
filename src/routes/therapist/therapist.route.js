@@ -6,12 +6,12 @@ import { getTherapistSessions, getTherapistRevenue, getUserSessions } from "../.
 
 const router = Router();
 
-router.use("/auth", therepistAuth);
-
+router.use("/", therepistAuth);
 // router.use("/course", courseRouter);
 
 router.post("/email-verify", therapistEmailVerify);
 router.get("/get-sessions", getTherapistSessions);
 router.get("/get-revenue", getTherapistRevenue);
-router.get("/get-sessions", getUserSessions)
+
+
 export default router;
