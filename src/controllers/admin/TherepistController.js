@@ -9,7 +9,7 @@ import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { loginCredentialEmail } from "../../static/emailcontent.js";
 import { generateTempPassword } from "../../utils/tempPasswordGenerator.js";
 import { Session } from "../../models/sessionsModel.js";
-import { isAfter, isBefore } from 'date-fns';
+import { isAfter, isBefore } from "date-fns";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -391,16 +391,17 @@ export const getTherapistSpecialization = asyncHandler(
       }
       const therapist = await Therapist.findById(therapist_id, {
         _id: 1,
-        email: 1,
-        mobile: 1,
-        gender: 1,
-        address: 1,
+        ratings: 1,
+        sessionCount: 1,
+        bio: 1,
+        educationDetails: 1,
         lastName: 1,
-        language: 1,
+        languages: 1,
         firstName: 1,
-        isActive: 1,
-        profileImage: 1,
-        approvedPrice: 1,
+        addressDetails: 1,
+        profileImageUrl: 1,
+        inrPrice: 1,
+        usdPrice: 1,
       }).populate({
         path: "specialization",
         select: "name",
@@ -471,11 +472,11 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
   if (!therapist) {
     return res.status(400).json(new ApiError(400, "Therapist not found!"));
   }
-  const password = generateTempPassword()
+  const password = generateTempPassword();
   console.log("temp password: " + password);
-  const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
-  const htmlContent = loginCredentialEmail(therapist.email, password)
-  const EmailOptions = mailOptions(therapist.email, subject, htmlContent)
+  const subject = "Your Unfazed Account is Ready: Login Information Enclosed";
+  const htmlContent = loginCredentialEmail(therapist.email, password);
+  const EmailOptions = mailOptions(therapist.email, subject, htmlContent);
   transporter.sendMail(EmailOptions, (error, info) => {
     if (error) {
       console.log("Error while sending email:", error);
@@ -805,23 +806,27 @@ const updateTherapist = asyncHandler(async (req, res) => {
       graduation,
       postGraduation,
       additional,
-    }
-  }
+    },
+  };
   if (req.files?.profileImage) {
     therapistData.profileImageUrl = req.files.profileImage[0]?.path;
   }
   if (req.files?.highschoolImg) {
-    therapistData.educationDetails.highSchool.certificateImageUrl = req.files.highschoolImg[0]?.path;
+    therapistData.educationDetails.highSchool.certificateImageUrl =
+      req.files.highschoolImg[0]?.path;
   }
   if (req.files?.intermediateImg) {
-    therapistData.educationDetails.intermediate.certificateImageUrl = req.files.intermediateImg[0]?.path;
+    therapistData.educationDetails.intermediate.certificateImageUrl =
+      req.files.intermediateImg[0]?.path;
   }
   if (req.files?.graduationImg) {
-    therapistData.educationDetails.graduation.certificateImageUrl = req.files.graduationImg[0]?.path;
+    therapistData.educationDetails.graduation.certificateImageUrl =
+      req.files.graduationImg[0]?.path;
   }
   if (req.files?.postGraduationImgs) {
     console.log("test", req.files);
-    therapistData.educationDetails.postGraduation.certificateImageUrl = req.files.postGraduationImgs[0]?.path;
+    therapistData.educationDetails.postGraduation.certificateImageUrl =
+      req.files.postGraduationImgs[0]?.path;
   }
   // if (admin) {
   //   const password = generateTempPassword()
@@ -851,7 +856,6 @@ const updateTherapist = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(200, updateTherepist, "profile updated Successfully")
       );
-
   } catch (err) {
     console.log(err);
     res.status(500).json(new ApiError(500, "", err));
@@ -876,8 +880,8 @@ const updateAvatar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "", "profile image uploaded successfully!"));
 });
 const dashboard = asyncHandler(async (req, res) => {
-  const therapist = req.user
-  console.log(therapist)
+  const therapist = req.user;
+  console.log(therapist);
   const currentDate = new Date();
   const sessions = await Session.aggregate([
     {
@@ -945,12 +949,14 @@ const dashboard = asyncHandler(async (req, res) => {
     //   },
     // },
   ]);
-  console.log(sessions)
+  console.log(sessions);
   if (!sessions.length) {
-    return res.status(404).json({ message: "No sessions found for the given therapist." });
+    return res
+      .status(404)
+      .json({ message: "No sessions found for the given therapist." });
   }
   return res.status(200).json({ sessions });
-})
+});
 
 export {
   register,
@@ -963,5 +969,5 @@ export {
   updateTherapist,
   updateAvatar,
   getTherepistById,
-  dashboard
+  dashboard,
 };

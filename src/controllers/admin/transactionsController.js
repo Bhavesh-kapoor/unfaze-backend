@@ -637,11 +637,11 @@ const getTherapistSessions = async (req, res) => {
         .json(new ApiResponse(200, [], "No transactions found for this user"));
     }
 
-    if (sessions.length === 0) {
+    if (userTransactions.length === 0) {
       return res.status(404).json({ message: "No sessions found" });
     }
 
-    res.status(200).json(sessions);
+    res.status(200).json(userTransactions);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });

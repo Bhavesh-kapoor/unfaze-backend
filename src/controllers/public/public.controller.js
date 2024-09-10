@@ -218,7 +218,8 @@ const findBolgbySlug = asyncHandler(async (req, res) => {
 });
 
 const therapistDetails = asyncHandler(async (req, res) => {
-  const { slug } = req.params;
+  let { slug } = req.params;
+  slug = `${slug}@`;
   console.log(slug);
   if (!slug) {
     throw new ApiError(400, "", "slug is required!");
