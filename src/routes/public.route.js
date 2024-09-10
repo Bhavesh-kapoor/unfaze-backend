@@ -28,12 +28,13 @@ import {
 const router = express.Router();
 
 const multipleImages = upload.fields([
-  { name: "passport", maxCount: 1 },
-  { name: "adharcard", maxCount: 1 },
-  { name: "pancard", maxCount: 1 },
+  { name: "highschoolImg", maxCount: 1 },
+  { name: "intermediateImg", maxCount: 1 },
+  { name: "graduationImg", maxCount: 1 },
+  { name: "postGraduationImg", maxCount: 1 },
   { name: "profileImage", maxCount: 1 },
-]);
 
+]);
 const handleAuthRedirect = (req, res) => {
   if (req.user) {
     const { accessToken, user } = req.user;

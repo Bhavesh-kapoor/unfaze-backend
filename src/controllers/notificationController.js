@@ -14,6 +14,4 @@ const sendNotification = async (receiverId, receiverType, message, payload) => {
   return newNotification;
 };
 
-
-
 export { sendNotification };
