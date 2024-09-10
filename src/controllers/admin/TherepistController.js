@@ -898,36 +898,46 @@ const dashboard = asyncHandler(async (req, res) => {
         from: "users",
         localField: "user_id",
         foreignField: "_id",
+        pipeline: [{ $project: { firstName: 1, lastName: 1, email: 1 } }],
         as: "user_details",
       },
     },
     { $unwind: "$user_details" },
     {
       $lookup: {
-        from: "specializations",
-        localField: "category",
+        from: "transactions",
+        localField: "transaction_id",
         foreignField: "_id",
-        pipeline: [{ $project: { name: 1 } }],
-        as: "category",
+        as: "transaction_Details",
       },
     },
-    // { $unwind: "$category" },
+    { $unwind: "$transaction_Details" },
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "transaction_Details.category",
+        foreignField: "_id",
+        pipeline: [{ $project: { name: 1 } }],
+        as: "category_details",
+      },
+    },
+    {
+      $unwind: {
+        path: "$category_details",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
     // {
     //   $project: {
     //     transactionId: 1,
     //     createdAt: 1,
-    //     therapist_Name: {
-    //       $concat: [
-    //         "$therapist_details.firstName",
-    //         " ",
-    //         "$therapist_details.lastName",
-    //       ],
+    //     userName: {
+    //       $concat: ["$user_details.firstName", " ", "$user_details.lastName"],
     //     },
-    //     userName: "$user_details.name",
     //     userEmail: "$user_details.email",
-    //     category: "$category.name",
+    //     category: "$category_details.name",
     //     amount: {
-    //       $ifNull: ["$amount_USD", "$amount_INR"],
+    //       $ifNull: ["$transaction_Details.amount_USD", "$transaction_Details.amount_INR"],
     //     },
     //     start_time: 1,
     //     end_time: 1,

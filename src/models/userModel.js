@@ -15,8 +15,8 @@ const userSchema = new Schema(
     isMobileVerified: { type: Boolean, default: false },
     lastName: { type: String, required: true, trim: true },
     firstName: { type: String, required: true, trim: true },
-    role: { type: String, default: "user", trim: true }, // e.g., "superadmin", "admin", "user"
-    permissions: { type: [String], default: [] }, // List of allowed tabs/features for each admin
+    role: { type: String, default: "user", trim: true },
+    permissions: { type: [String], default: [] },
     email: {
       type: String,
       required: true,

@@ -82,7 +82,6 @@ export async function processPayment(req, res) {
 
     try {
       const response = await axios.request(options);
-      console.log("response->", response.data);
       console.log(
         "redirect",
         response.data.data.instrumentResponse.redirectInfo.url
