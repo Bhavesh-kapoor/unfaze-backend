@@ -126,7 +126,7 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       const session = new Session({
         transaction_id: transaction._id,
         therapist_id: transaction.therapist_id,
-        user_id: user._id,
+        user_id: transaction.user_id,
         start_time: transaction.start_time,
         end_time: transaction.end_time,
       });
