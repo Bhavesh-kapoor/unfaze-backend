@@ -9,7 +9,7 @@ import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { loginCredentialEmail } from "../../static/emailcontent.js";
 import { generateTempPassword } from "../../utils/tempPasswordGenerator.js";
 import { Session } from "../../models/sessionsModel.js";
-import { isAfter, isBefore } from "date-fns";
+import { startOfMonth, endOfMonth, min } from 'date-fns';
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -609,7 +609,6 @@ const getTherepistById = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, Therepist, "Therepist found Successfully!"));
 });
-// fetch current user
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
@@ -881,92 +880,172 @@ const updateAvatar = asyncHandler(async (req, res) => {
 });
 const dashboard = asyncHandler(async (req, res) => {
   const therapist = req.user;
-  console.log(therapist);
-  const currentDate = new Date();
-  const sessions = await Session.aggregate([
-    {
-      $match: {
-        therapist_id: therapist?._id,
-        $or: [
-          { status: "upcoming", start_time: { $gte: currentDate } },
-          { status: "completed", end_time: { $lte: currentDate } },
-        ],
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "user_id",
-        foreignField: "_id",
-        pipeline: [{ $project: { firstName: 1, lastName: 1, email: 1 } }],
-        as: "user_details",
-      },
-    },
-    { $unwind: "$user_details" },
-    {
-      $lookup: {
-        from: "transactions",
-        localField: "transaction_id",
-        foreignField: "_id",
-        as: "transaction_Details",
-      },
-    },
-    { $unwind: "$transaction_Details" },
-    {
-      $lookup: {
-        from: "specializations",
-        localField: "transaction_Details.category",
-        foreignField: "_id",
-        pipeline: [{ $project: { name: 1 } }],
-        as: "category_details",
-      },
-    },
-    {
-      $unwind: {
-        path: "$category_details",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $project: {
-        transactionId: 1,
-        createdAt: 1,
-        userName: {
-          $concat: ["$user_details.firstName", " ", "$user_details.lastName"],
-        },
-        userEmail: "$user_details.email",
-        category: "$category_details.name",
-        amount: {
-          $ifNull: ["$transaction_Details.amount_USD", "$transaction_Details.amount_INR"],
-        },
-        start_time: 1,
-        end_time: 1,
-        status: 1,
-        isUpcoming: {
-          $cond: [{ $eq: ["$status", "upcoming"] }, 1, 0],
-        },
-        isCompleted: {
-          $cond: [{ $eq: ["$status", "completed"] }, 1, 0],
-        },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        sessions: { $push: "$$ROOT" },
-        totalUpcoming: { $sum: "$isUpcoming" },
-        totalCompleted: { $sum: "$isCompleted" },
-      },
-    },
-  ]);
-  console.log(sessions);
-  if (!sessions.length) {
-    return res
-      .status(404)
-      .json({ message: "No sessions found for the given therapist." });
+  if (!therapist?._id) {
+    return res.status(400).json({ message: "Therapist ID is required." });
   }
-  return res.status(200).json({ sessions });
+
+  try {
+    const currentDate = new Date();
+    console.log(currentDate)
+    const firstDayOfMonth = startOfMonth(currentDate);
+    const lastDayOfMonth = min([endOfMonth(currentDate), currentDate]);
+    const [result] = await Session.aggregate([
+      {
+        $match: { therapist_id: therapist._id },
+      },
+      {
+        $lookup: {
+          from: "transactions",
+          localField: "transaction_id",
+          foreignField: "_id",
+          as: "transactions_details",
+        },
+      },
+      {
+        $unwind: "$transactions_details",
+      },
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "transactions_details.therapist_id",
+          foreignField: "_id",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "therapist_details",
+        },
+      },
+      { $unwind: "$therapist_details" },
+      {
+        $lookup: {
+          from: "specializations",
+          localField: "transactions_details.category",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "category",
+        },
+      },
+      { $unwind: "$category" },
+      {
+        $lookup: {
+          from: "users",
+          localField: "transactions_details.user_id",
+          foreignField: "_id",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "user_details",
+        },
+      },
+      { $unwind: "$user_details" },
+      {
+        $facet: {
+          earnings: [
+            {
+              $group: {
+                _id: null,
+                amount_USD: { $sum: "$transactions_details.amount_USD" },
+                amount_INR: { $sum: "$transactions_details.amount_INR" },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+              },
+            },
+          ],
+          currentMonthEarnings: [
+            {
+              $match: {
+                createdAt: {
+                  $gte: firstDayOfMonth,
+                  $lte: lastDayOfMonth,
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                amount_USD: { $sum: "$transactions_details.amount_USD" },
+                amount_INR: { $sum: "$transactions_details.amount_INR" },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+              },
+            },
+          ],
+          upcomingSessionCount: [
+            {
+              $match: { status: "upcoming" },
+            },
+            {
+              $count: "count",
+            },
+          ],
+          completedSessionCount: [
+            {
+              $match: { status: "completed" },
+            },
+            {
+              $count: "count",
+            },
+          ],
+          sessions: [
+            {
+              $match: { status: "upcoming" },
+            },
+            {
+              $sort: { start_time: 1 },
+            },
+            { $limit: 5 },
+            {
+              $project: {
+                transactionId: 1,
+                createdAt: 1,
+                userName: {
+                  $concat: [
+                    "$user_details.firstName",
+                    " ",
+                    "$user_details.lastName",
+                  ],
+                },
+                therapistName: {
+                  $concat: [
+                    "$therapist_details.firstName",
+                    " ",
+                    "$therapist_details.lastName",
+                  ],
+                },
+                category: "$category.name",
+                amount_USD: "$transactions_details.amount_USD",
+                amount_INR: "$transactions_details.amount_INR",
+                start_time: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+    const amount = result.earnings[0] || { amount_USD: 0, amount_INR: 0 };
+    const currentMonthEarnings = result.currentMonthEarnings[0] || { amount_USD: 0, amount_INR: 0 };
+    const upcomingSessionCount = result.upcomingSessionCount[0]?.count || 0;
+    const completedSessionCount = result.completedSessionCount[0]?.count || 0;
+    const sessions = result.sessions;
+
+    if (!sessions.length) {
+      return res
+        .status(404)
+        .json({ message: "No sessions found for the given therapist." });
+    }
+
+    return res
+      .status(200)
+      .json({ amount, currentMonthEarnings, completedSessionCount, upcomingSessionCount, sessions });
+  } catch (error) {
+    console.error("Error fetching therapist dashboard data:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
+
+
 
 export {
   register,

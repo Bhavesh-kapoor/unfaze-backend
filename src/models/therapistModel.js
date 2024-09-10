@@ -183,30 +183,28 @@ import mongoose, { Schema } from "mongoose";
 // Education Detail Schema
 const educationDetailSchema = new Schema(
   {
-    courseName: { type: String, trim: true, Default: "" }, // Name of the institution
-    institutionName: { type: String, required: true, trim: true }, // Name of the institution
+    courseName: { type: String, trim: true, Default: "" },
+    institutionName: { type: String, required: true, trim: true },
     completionYear: {
       type: Number,
       min: 1900,
       max: new Date().getFullYear(),
-    }, // Year of completion
-    certificateImageUrl: { type: String, trim: true }, // URL of the certificate image
+    },
+    certificateImageUrl: { type: String, trim: true }, 
   },
   { _id: false }
 );
 
-// Education Schema
 const educationSchema = new Schema(
   {
-    highSchool: { type: educationDetailSchema, required: true }, // High School Details
-    intermediate: { type: educationDetailSchema, required: true }, // Intermediate Details
-    graduation: { type: educationDetailSchema, required: false }, // Graduation Details
-    postGraduation: { type: educationDetailSchema, required: false }, // Post Graduation Details
+    highSchool: { type: educationDetailSchema, required: true }, 
+    intermediate: { type: educationDetailSchema, required: true }, 
+    graduation: { type: educationDetailSchema, required: false }, 
+    postGraduation: { type: educationDetailSchema, required: false },
   },
   { _id: false }
 );
 
-// Address Schema
 const addressSchema = new Schema(
   {
     country: { type: String, trim: true, required: true },
