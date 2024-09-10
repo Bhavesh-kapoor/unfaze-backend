@@ -565,24 +565,31 @@ const ListByCategory = asyncHandler(async (req, res) => {
 
 const getTherapistSessions = async (req, res) => {
   try {
-
     const user = req.user;
-    console.log(user)
     let therapistId;
+
     if (user.role === "admin") {
       therapistId = req.query.therapistId;
     } else {
-      therapistId = req.user?._id;
+      therapistId = user?._id;
     }
-    const { status = "upcoming" } = req.query;
-    if (!therapistId || !status) {
+    const { status = "upcoming", page = 1, limit = 10 } = req.query;
+
+    if (!therapistId) {
       return res
         .status(400)
-        .json(new ApiError(400, null, "therapistID is required!"));
+        .json(new ApiError(400, null, "Therapist ID is required!"));
     }
-    const userTransactions = await Transaction.aggregate([
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const sessions = await Transaction.aggregate([
       {
-        $match: { therapist_id: therapistId },
+        $match: {
+          therapist_id: therapistId,
+          "payment_details.payment_status": "successful"
+        },
       },
       {
         $lookup: {
@@ -606,18 +613,26 @@ const getTherapistSessions = async (req, res) => {
       { $unwind: "$category" },
       {
         $lookup: {
-          from: "specializations",
-          localField: "category",
+          from: "users",
+          localField: "user_id",
           foreignField: "_id",
-          pipeline: [{ $project: { name: 1 } }],
-          as: "category",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "user_details",
         },
       },
+      { $unwind: "$user_details" },
       {
         $project: {
           transactionId: 1,
           createdAt: 1,
-          therapist_Name: {
+          userName: {
+            $concat: [
+              "$user_details.firstName",
+              " ",
+              "$user_details.lastName",
+            ],
+          },
+          therapistName: {
             $concat: [
               "$therapist_details.firstName",
               " ",
@@ -625,29 +640,35 @@ const getTherapistSessions = async (req, res) => {
             ],
           },
           category: "$category.name",
-          amount: {
-            $ifNull: ["$amount_USD", "$amount_INR"],
-          },
+          amount_USD: 1,
+          amount_INR: 1,
         },
       },
+      { $skip: skip },
+      { $limit: limitNumber },
     ]);
-    if (!userTransactions.length) {
+
+    if (!sessions.length) {
       return res
         .status(404)
         .json(new ApiResponse(200, [], "No transactions found for this user"));
     }
 
-    if (sessions.length === 0) {
+    if (!sessions.length) {
       return res.status(404).json({ message: "No sessions found" });
     }
 
-    res.status(200).json(sessions);
+    res.status(200).json({
+      sessions,
+      page: pageNumber,
+      limit: limitNumber,
+      totalResults: sessions.length,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 const getTherapistRevenue = async (req, res) => {
   try {
     const { therapistId } = req.params;
@@ -739,50 +760,118 @@ const getTherapistRevenue = async (req, res) => {
 const getUserSessions = async (req, res) => {
   try {
     const user = req.user;
-    console.log(user);
-    console.log(user);
-    if (!user) {
+    let userId;
+
+    if (user.role === "admin") {
+      userId = req.query.userId;
+    } else {
+      userId = user?._id;
+    }
+    const { status = "upcoming", page = 1, limit = 10 } = req.query;
+
+    if (!userId) {
       return res
         .status(400)
-        .json(new ApiError(400, null, "User ID is required!"));
+        .json(new ApiError(400, null, "Therapist ID is required!"));
     }
-    const sessions = await Session.find({ user_id: user._id })
-      .populate({
-        path: "therapist_id",
-        select: "firstName lastName email mobile",
-      })
-      .populate({
-        path: "transaction_id",
-        populate: {
-          path: "category",
-          select: "name ",
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const sessions = await Session.aggregate([
+      {
+        $match: {
+          therapist_id: userId,
+          "payment_details.payment_status": "successful"
         },
-      })
-      .lean()
-      .then((sessions) => {
-        console.log(sessions)
-        return sessions.map((session) => ({
-          _id: session._id,
-          therapistName: `${session.therapist_id?.firstName} ${session.therapist_id?.lastName}`,
-          categoryName: session.transaction_id.category?.name || "",
-          startTime: session.start_time,
-          status: session.status,
-          channelName: session.channelName,
-        }));
-      });
+      },
+      {
+        $lookup: {
+          from: "transactions",
+          localField: "transaction_id",
+          foreignField: "_id",
+          as: "transactions_details",
+        },
+      },
+      {
+        $unwind: "$transactions_details"
+      },
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "therapist_id",
+          foreignField: "_id",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "therapist_details",
+        },
+      },
+      { $unwind: "$therapist_details" },
+      {
+        $lookup: {
+          from: "specializations",
+          localField: "category",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "category",
+        },
+      },
+      { $unwind: "$category" },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user_id",
+          foreignField: "_id",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "user_details",
+        },
+      },
+      { $unwind: "$user_details" },
+      {
+        $project: {
+          transactionId: 1,
+          createdAt: 1,
+          userName: {
+            $concat: [
+              "$user_details.firstName",
+              " ",
+              "$user_details.lastName",
+            ],
+          },
+          therapistName: {
+            $concat: [
+              "$therapist_details.firstName",
+              " ",
+              "$therapist_details.lastName",
+            ],
+          },
+          category: "$category.name",
+          amount_USD: 1,
+          amount_INR: 1,
+        },
+      },
+      { $skip: skip },
+      { $limit: limitNumber },
+    ]);
+
     if (!sessions.length) {
       return res
         .status(404)
-        .json(
-          new ApiResponse(200, [], "You are not enrolled in any sessions!")
-        );
+        .json(new ApiResponse(200, [], "No transactions found for this user"));
     }
-    return res
-      .status(200)
-      .json(new ApiResponse(200, sessions, "Sessions fetched successfully!"));
+
+    if (!sessions.length) {
+      return res.status(404).json({ message: "No sessions found" });
+    }
+
+    res.status(200).json({
+      sessions,
+      page: pageNumber,
+      limit: limitNumber,
+      totalResults: sessions.length,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
