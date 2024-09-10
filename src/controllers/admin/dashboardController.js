@@ -8,6 +8,7 @@ import { Session } from "../../models/sessionsModel.js";
 import { Transaction } from "../../models/transactionModel.js";
 
 export const getOverview = asyncHandler(async (req, res) => {
+    const user = req.user
     const now = new Date()
     const notifications = await Notification.find({
         status: "unread",
@@ -15,10 +16,10 @@ export const getOverview = asyncHandler(async (req, res) => {
     const therapists = await Session.aggregate([
         {
             $match: {
+                therapist_id: user._id,
                 startTime: { $gte: now }
             }
         },
-        
         {
             $lookup: {
                 from: "therapists",

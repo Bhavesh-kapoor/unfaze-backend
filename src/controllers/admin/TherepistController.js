@@ -927,37 +927,37 @@ const dashboard = asyncHandler(async (req, res) => {
         preserveNullAndEmptyArrays: true,
       },
     },
-    // {
-    //   $project: {
-    //     transactionId: 1,
-    //     createdAt: 1,
-    //     userName: {
-    //       $concat: ["$user_details.firstName", " ", "$user_details.lastName"],
-    //     },
-    //     userEmail: "$user_details.email",
-    //     category: "$category_details.name",
-    //     amount: {
-    //       $ifNull: ["$transaction_Details.amount_USD", "$transaction_Details.amount_INR"],
-    //     },
-    //     start_time: 1,
-    //     end_time: 1,
-    //     status: 1,
-    //     isUpcoming: {
-    //       $cond: [{ $eq: ["$status", "upcoming"] }, 1, 0],
-    //     },
-    //     isCompleted: {
-    //       $cond: [{ $eq: ["$status", "completed"] }, 1, 0],
-    //     },
-    //   },
-    // },
-    // {
-    //   $group: {
-    //     _id: null,
-    //     sessions: { $push: "$$ROOT" },
-    //     totalUpcoming: { $sum: "$isUpcoming" },
-    //     totalCompleted: { $sum: "$isCompleted" },
-    //   },
-    // },
+    {
+      $project: {
+        transactionId: 1,
+        createdAt: 1,
+        userName: {
+          $concat: ["$user_details.firstName", " ", "$user_details.lastName"],
+        },
+        userEmail: "$user_details.email",
+        category: "$category_details.name",
+        amount: {
+          $ifNull: ["$transaction_Details.amount_USD", "$transaction_Details.amount_INR"],
+        },
+        start_time: 1,
+        end_time: 1,
+        status: 1,
+        isUpcoming: {
+          $cond: [{ $eq: ["$status", "upcoming"] }, 1, 0],
+        },
+        isCompleted: {
+          $cond: [{ $eq: ["$status", "completed"] }, 1, 0],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        sessions: { $push: "$$ROOT" },
+        totalUpcoming: { $sum: "$isUpcoming" },
+        totalCompleted: { $sum: "$isCompleted" },
+      },
+    },
   ]);
   console.log(sessions);
   if (!sessions.length) {
