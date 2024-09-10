@@ -37,14 +37,6 @@ const slotSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    startDate: {
-      type: Date,
-      required: true,
-    },
-    endDate: {
-      type: Date,
-      required: true,
-    },
     timeslots: [timeslotSchema], // Embed the timeslot schema
   },
   { timestamps: true }
