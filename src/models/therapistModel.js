@@ -183,6 +183,7 @@ import mongoose, { Schema } from "mongoose";
 // Education Detail Schema
 const educationDetailSchema = new Schema(
   {
+    courseName: { type: String, trim: true, Default: "" }, // Name of the institution
     institutionName: { type: String, required: true, trim: true }, // Name of the institution
     completionYear: {
       type: Number,
@@ -201,7 +202,6 @@ const educationSchema = new Schema(
     intermediate: { type: educationDetailSchema, required: true }, // Intermediate Details
     graduation: { type: educationDetailSchema, required: false }, // Graduation Details
     postGraduation: { type: educationDetailSchema, required: false }, // Post Graduation Details
-    additional: { type: educationDetailSchema, required: false }, // Additional Education (if any)
   },
   { _id: false }
 );
@@ -270,9 +270,7 @@ const TherapistSchema = new Schema(
     gender: {
       type: String,
       trim: true,
-      enum: [
-        "male", "female", "non-binary", "other"
-      ],
+      enum: ["male", "female", "non-binary", "other"],
       required: true,
     },
     refreshToken: { type: String },
