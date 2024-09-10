@@ -2,10 +2,12 @@ import ApiError from "../utils/ApiError.js";
 import { Slot, TimeSlot } from "../models/slotModal.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { Therapist } from "../models/therapistModel.js";
+import { addDays, startOfDay } from "date-fns";
 
 export const createSlots = async (request, response) => {
-  const { startDate, endDate, therapist_id, timeslots } = request.body;
-  if (!startDate || !endDate || !therapist_id || !timeslots) {
+  const therapist_id = request?.user?._id;
+  const { startDate, endDate, dates, timeslots } = request.body;
+  if (!dates || !therapist_id || !timeslots) {
     return response
       .status(400)
       .json(new ApiError(400, null, "All fields are required"));
@@ -19,51 +21,95 @@ export const createSlots = async (request, response) => {
 
   const timeslotsArray = [];
 
-  // Loop through each date in the range
-  let currentDate = new Date(startDate);
-  let endDatecmp = new Date(endDate);
-  while (currentDate <= endDatecmp) {
+  dates.forEach((date) => {
     timeslots.forEach((slot) => {
       timeslotsArray.push(
         new TimeSlot({
-          date: currentDate.toISOString().split("T")[0], // Just the date part
+          date: date,
           startTime: slot.startTime,
           endTime: slot.endTime,
-          isBooked: false,
-          bookedBy: null,
+          isBooked: slot.isBooked,
+          bookedBy: slot.bookedBy,
         })
       );
     });
+  });
 
-    // Move to the next day
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
+  const slotDocument = new Slot({
+    timeslots: timeslotsArray,
+    therapist_id: therapist_id,
+  });
+  const slot = new Slot(slotDocument);
+  const savedSlots = await slot.save();
 
-  let savedSlots;
-  const slotExists = await Slot.findOne({ therapist_id: therapist_id });
-
-  if (slotExists) {
-    if (slotExists.endDate.toString() === new Date(endDate).toString()) {
-      return response
-        .status(400)
-        .json(new ApiError(400, "Slots already exist"));
-    }
-    slotExists.endDate = endDate;
-    slotExists.timeslots.push(...timeslotsArray);
-    savedSlots = await slotExists.save();
-  } else {
-    const slotDocument = new Slot({
-      endDate: endDate,
-      startDate: startDate,
-      timeslots: timeslotsArray,
-      therapist_id: therapist_id,
-    });
-    const slot = new Slot(slotDocument);
-    savedSlots = await slot.save();
-  }
   return response
     .status(200)
     .json(new ApiResponse(200, savedSlots, "Slots created successfully"));
+};
+
+export const getNext10DaysSlots = async (request, response) => {
+  try {
+    const therapist_id = request?.user?._id;
+
+    if (!therapist_id) {
+      return response
+        .status(400)
+        .json(new ApiError(400, null, "Therapist ID is required"));
+    }
+
+    // Check if therapist exists
+    const therapist = await Therapist.findById(therapist_id);
+    if (!therapist) {
+      return response
+        .status(400)
+        .json(new ApiError(400, null, "Invalid therapist"));
+    }
+
+    const today = startOfDay(new Date());
+    const next10Days = addDays(today, 14);
+    const slots = await Slot.aggregate([
+      {
+        $match: {
+          therapist_id: therapist_id,
+          "timeslots.date": {
+            $gte: today,
+            $lte: next10Days,
+          },
+        },
+      },
+      { $unwind: "$timeslots" },
+      {
+        $match: {
+          "timeslots.date": {
+            $gte: today,
+            $lte: next10Days,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          timeslots: { $push: "$timeslots" }, // Reassemble the timeslots array
+        },
+      },
+    ]);
+
+    if (!slots[0]?.timeslots.length) {
+      return response
+        .status(404)
+        .json(
+          new ApiResponse(404, null, "No slots available for the next 10 days")
+        );
+    }
+
+    return response
+      .status(200)
+      .json(new ApiResponse(200, slots[0], "Slots fetched successfully"));
+  } catch (error) {
+    return response
+      .status(500)
+      .json(new ApiError(500, error.message, "Failed to fetch slots"));
+  }
 };
 
 export const updateSlot = async (request, response) => {
