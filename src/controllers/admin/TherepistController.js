@@ -5,7 +5,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import mongoose from "mongoose";
 import { sendNotification } from "../notificationController.js";
-import { transporter, mailOptions } from "../../config/nodeMailer.js"
+import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { loginCredentialEmail } from "../../static/emailcontent.js";
 import { generateTempPassword } from "../../utils/tempPasswordGenerator.js";
 
@@ -27,8 +27,6 @@ const validateRegister = [
   check("adharNumber", "Adhar Number is required").notEmpty(),
   check("panNumber", "Pan Number is required").notEmpty(),
   check("dateOfBirth", "Date Of Birth is required").notEmpty(),
-  check("usdPrice", "USD Price is required").notEmpty(),
-  check("inrPrice", "INR Price is required").notEmpty(),
   check("experience", "Experience is required").notEmpty(),
   check("gender", "Gender is required").notEmpty(),
 ];
@@ -223,21 +221,19 @@ const register = asyncHandler(async (req, res) => {
       socialMedia,
     } = req.body;
     const existingTherapist = await Therapist.findOne({
-      $or: [
-        { email },
-        { mobile },
-        { adharNumber },
-        { panNumber },
-      ],
+      $or: [{ email }, { mobile }, { adharNumber }, { panNumber }],
     });
     if (existingTherapist) {
       let duplicateField = "";
 
       // Determine which field is duplicated
       if (existingTherapist.email === email) duplicateField = "Email";
-      else if (existingTherapist.mobile === mobile) duplicateField = "Phone Number";
-      else if (existingTherapist.adharNumber === adharNumber) duplicateField = "Aadhar Number";
-      else if (existingTherapist.panNumber === panNumber) duplicateField = "PAN Number";
+      else if (existingTherapist.mobile === mobile)
+        duplicateField = "Phone Number";
+      else if (existingTherapist.adharNumber === adharNumber)
+        duplicateField = "Aadhar Number";
+      else if (existingTherapist.panNumber === panNumber)
+        duplicateField = "PAN Number";
 
       return res.status(400).json({
         message: `${duplicateField} already exists.`,
@@ -278,32 +274,37 @@ const register = asyncHandler(async (req, res) => {
         graduation,
         postGraduation,
         additional,
-      }
-    }
+      },
+    };
     if (req.files?.profileImage) {
       therapistData.profileImageUrl = req.files.profileImage[0]?.path;
     }
     if (req.files?.highschoolImg) {
-      therapistData.educationDetails.highSchool.certificateImageUrl = req.files.highschoolImg[0]?.path;
+      therapistData.educationDetails.highSchool.certificateImageUrl =
+        req.files.highschoolImg[0]?.path;
     }
     if (req.files?.intermediateImg) {
-      therapistData.educationDetails.intermediate.certificateImageUrl = req.files.intermediateImg[0]?.path;
+      therapistData.educationDetails.intermediate.certificateImageUrl =
+        req.files.intermediateImg[0]?.path;
     }
     if (req.files?.graduationImg) {
-      therapistData.educationDetails.graduation.certificateImageUrl = req.files.graduationImg[0]?.path;
+      therapistData.educationDetails.graduation.certificateImageUrl =
+        req.files.graduationImg[0]?.path;
     }
     if (req.files?.postGraduationImgs) {
       console.log("test", req.files);
-      therapistData.educationDetails.postGraduation.certificateImageUrl = req.files.postGraduationImgs[0]?.path;
+      therapistData.educationDetails.postGraduation.certificateImageUrl =
+        req.files.postGraduationImgs[0]?.path;
     }
     let createTherepist = new Therapist(therapistData);
     await createTherepist.save();
     if (admin) {
-      const password = generateTempPassword()
-      console.log("temp password: " + password)
-      const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
-      const htmlContent = loginCredentialEmail(email, password)
-      const EmailOptions = mailOptions(email, subject, htmlContent)
+      const password = generateTempPassword();
+      console.log("temp password: " + password);
+      const subject =
+        "Your Unfazed Account is Ready: Login Information Enclosed";
+      const htmlContent = loginCredentialEmail(email, password);
+      const EmailOptions = mailOptions(email, subject, htmlContent);
       transporter.sendMail(EmailOptions, (error, info) => {
         if (error) {
           console.log("Error while sending email:", error);
@@ -335,7 +336,15 @@ const login = asyncHandler(async (req, res) => {
   if (!existUser)
     return res.status(404).json(new ApiError(400, "", "user not found"));
   if (!existUser.isActive) {
-    return res.status(200).json(new ApiResponse(200, null, "Your account is inactive pleae contact to admin."))
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          null,
+          "Your account is inactive pleae contact to admin."
+        )
+      );
   }
 
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
@@ -460,10 +469,10 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
   if (!therapist) {
     return res.status(400).json(new ApiError(400, "Therapist not found!"));
   }
-  const password = generateTempPassword()
-  const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
-  const htmlContent = loginCredentialEmail(email, password)
-  const EmailOptions = mailOptions(email, subject, htmlContent)
+  const password = generateTempPassword();
+  const subject = "Your Unfazed Account is Ready: Login Information Enclosed";
+  const htmlContent = loginCredentialEmail(email, password);
+  const EmailOptions = mailOptions(email, subject, htmlContent);
   transporter.sendMail(EmailOptions, (error, info) => {
     if (error) {
       console.log("Error while sending email:", error);
