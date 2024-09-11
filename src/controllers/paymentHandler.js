@@ -188,7 +188,9 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
         start_time: transaction.start_time,
         end_time: transaction.end_time,
       });
-      const channelName = `session_${session._id}`;
+    
+      const channelName=session._id.toString().slice(-10)
+       channelName = `session_${channelName}`;
       session.channelName = channelName;
       await session.save();
       await sendNotificationsAndEmails(transaction, user);

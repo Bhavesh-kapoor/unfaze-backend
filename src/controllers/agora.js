@@ -26,9 +26,9 @@ const generateAgoraToken = (channelName, uid, role, expireTimeInSeconds) => {
 };
 
 const generateSessionToken = asyncHandler(async (req, res) => {
-    const { session_id } = req.body;
+    const { session_id } = req.query;
     const user = req.user;
-
+    console.log(user)
     const session = await Session.findById(session_id);
     if (!session) {
         return res.status(404).json(new ApiError(404, "", "Session not found!"));
@@ -43,34 +43,31 @@ const generateSessionToken = asyncHandler(async (req, res) => {
     if (currentTime > sessionEndTime) {
         return res.status(400).json(new ApiError(400, "", "Session has expired. Token cannot be generated."));
     }
-    const timeDifferenceInMilliseconds = sessionStartTime - currentTime;
-    console.log("timeDifferenceInMilliseconds", timeDifferenceInMilliseconds)
-    // if (timeDifferenceInMilliseconds > 10 * 60 * 1000) {
-    //     // Calculate remaining waiting time in mm:ss format
-    //     const hoursRemaining = Math.floor(timeDifferenceInMilliseconds / (1000 * 60 * 60));
-    //     const minutesRemaining = Math.floor((timeDifferenceInMilliseconds % (1000 * 60 * 60)) / (1000 * 60));
-    //     const secondsRemaining = Math.floor((timeDifferenceInMilliseconds % (1000 * 60)) / 1000);
+    if (process.env.DEV_MODE == "production") {
+        const timeDifferenceInMilliseconds = sessionStartTime - currentTime;
+        console.log("timeDifferenceInMilliseconds", timeDifferenceInMilliseconds)
+        if (timeDifferenceInMilliseconds > 15 * 60 * 1000) {
+            // Calculate remaining waiting time in mm:ss format
+            const hoursRemaining = Math.floor(timeDifferenceInMilliseconds / (1000 * 60 * 60));
+            const minutesRemaining = Math.floor((timeDifferenceInMilliseconds % (1000 * 60 * 60)) / (1000 * 60));
+            const secondsRemaining = Math.floor((timeDifferenceInMilliseconds % (1000 * 60)) / 1000);
 
-    //     // Format the waiting time into HH:MM:SS format
-    //     const formattedWaitingTime = `${String(hoursRemaining).padStart(2, '0')}:${String(minutesRemaining).padStart(2, '0')}:${String(secondsRemaining).padStart(2, '0')}`;
+            // Format the waiting time into HH:MM:SS format
+            const formattedWaitingTime = `${String(hoursRemaining).padStart(2, '0')}:${String(minutesRemaining).padStart(2, '0')}:${String(secondsRemaining).padStart(2, '0')}`;
 
-    //     return res.status(400).json(new ApiError(400, "", `Please wait for ${formattedWaitingTime}.`));
-    // }
-    const uid = session.uid;
+            return res.status(400).json(new ApiError(400, "", `Please wait for ${formattedWaitingTime}.`));
+        }
+    }
+    const uid = Math.floor(100000 + Math.random() * 900000);
     const channelName = session.channelName;
-
     const role = user.role;
-    const expireTimeInSeconds = 1800; // Token valid for 30 minutes
+    const expireTimeInSeconds = 1800 + 900;
 
     const token = generateAgoraToken(channelName, uid, role, expireTimeInSeconds);
     if (!token) {
         return res.status(500).json(new ApiError(500, "", "Something went wrong while generating the token!"));
     }
-
-    res.status(200).json(new ApiResponse(200, {
-        token,
-        uid,
-        channelName,
-    }, "Token generated successfully"));
+    const join_url = `/session/${uid}?channel=${channelName}&token=${token}`
+    res.status(200).json({ join_url: join_url });
 });
 export { generateSessionToken };

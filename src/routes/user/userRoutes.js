@@ -9,6 +9,7 @@ import {
   updateAvatar,
   updateProfile,
 } from "../../controllers/admin/user.controller.js";
+import { generateSessionToken } from "../../controllers/agora.js";
 
 const router = Router();
 
@@ -32,4 +33,6 @@ router.patch("/update-avatar", upload.single("userAvetar"), updateAvatar);
 
 router.get("/get-sessions", getUserSessions);
 router.get("/get-transactions", UserTransactions);
+router.get("/joining-token", generateSessionToken);
+
 export default router;
