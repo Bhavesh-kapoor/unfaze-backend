@@ -7,8 +7,6 @@ const authKey = process.env.AUTH_KEY;
 const templateId = process.env.TEMPLATE_ID;
 const otpExpiry = 10;
 
-console.log(authKey);
-
 function sendOtpMessage(mobile, otp) {
   return new Promise((resolve, reject) => {
     const options = {
@@ -22,7 +20,7 @@ function sendOtpMessage(mobile, otp) {
     };
 
     const req = https.request(options, (res) => {
-      let data = '';
+      let data = "";
 
       res.on("data", (chunk) => {
         data += chunk;
@@ -34,10 +32,14 @@ function sendOtpMessage(mobile, otp) {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             resolve(response);
           } else {
-            reject(new Error(`Request failed with status code ${res.statusCode}: ${response.message}`));
+            reject(
+              new Error(
+                `Request failed with status code ${res.statusCode}: ${response.message}`
+              )
+            );
           }
         } catch (error) {
-          reject(new Error('Failed to parse response'));
+          reject(new Error("Failed to parse response"));
         }
       });
     });
