@@ -4,10 +4,9 @@ import { Session } from '../models/sessionsModel.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import { differenceInMinutes, differenceInSeconds, format } from 'date-fns';
+import dotenv from "dotenv"
+dotenv.config();
 const { RtcTokenBuilder, RtcRole } = AgoraToken;
-
-
-
 const generateAgoraToken = (channelName, uid, role, expireTimeInSeconds) => {
     const appID = process.env.AGORA_APP_ID;
     const appCertificate = process.env.AGORA_APP_CERTIFICATE;
