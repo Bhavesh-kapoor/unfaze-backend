@@ -1,12 +1,12 @@
 import ApiError from "../utils/ApiError.js";
-import { Slot, TimeSlot } from "../models/slotModal.js";
-import ApiResponse from "../utils/ApiResponse.js";
-import { Therapist } from "../models/therapistModel.js";
 import { addDays, startOfDay } from "date-fns";
+import ApiResponse from "../utils/ApiResponse.js";
+import { Slot, TimeSlot } from "../models/slotModal.js";
+import { Therapist } from "../models/therapistModel.js";
 
 export const createSlots = async (request, response) => {
   const therapist_id = request?.user?._id;
-  const { startDate, endDate, dates, timeslots } = request.body;
+  const { dates, timeslots } = request.body;
   if (!dates || !therapist_id || !timeslots) {
     return response
       .status(400)
@@ -35,12 +35,21 @@ export const createSlots = async (request, response) => {
     });
   });
 
-  const slotDocument = new Slot({
-    timeslots: timeslotsArray,
-    therapist_id: therapist_id,
-  });
-  const slot = new Slot(slotDocument);
-  const savedSlots = await slot.save();
+  let savedSlots;
+  const therapistExist = await Slot.findOne({ therapist_id: therapist_id });
+  if (therapistExist) {
+    savedSlots = await Slot.updateOne(
+      { therapist_id: therapist_id },
+      { $push: { timeslots: { $each: timeslotsArray } } }
+    );
+  } else {
+    const slotDocument = new Slot({
+      timeslots: timeslotsArray,
+      therapist_id: therapist_id,
+    });
+    const slot = new Slot(slotDocument);
+    savedSlots = await slot.save();
+  }
 
   return response
     .status(200)
