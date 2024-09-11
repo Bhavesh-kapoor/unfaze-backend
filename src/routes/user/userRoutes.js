@@ -13,7 +13,7 @@ import {
 const router = Router();
 
 // Update user profile
-router.put("/update-user", updateProfile);
+router.put("/update-user", upload.single("userAvetar"), updateProfile);
 
 // to create slots
 router.use("/slot", slotRoutes);
@@ -28,9 +28,8 @@ router.post("/email-verify", userEmailVerify);
 router.use("/sessions", sessionRouter);
 
 // Update user avatar
-router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
+router.patch("/update-avatar", upload.single("userAvetar"), updateAvatar);
 
 router.get("/get-sessions", getUserSessions);
 router.get("/get-transactions", UserTransactions);
-
 export default router;

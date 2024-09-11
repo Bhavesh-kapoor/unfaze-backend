@@ -24,6 +24,8 @@ import {
   getTherapistSpecialization,
   validateRegister as therapistValidateRegister,
 } from "../controllers/admin/TherepistController.js";
+import { sendMobileOtp } from "../controllers/otpController.js";
+import { forgotPassword } from "../controllers/admin/user.controller.js";
 
 const router = express.Router();
 
@@ -58,6 +60,8 @@ router.post(
   upload.single("profileImage"),
   validateRegister,
   register
+);
+router.post("/send-mobile-otp", sendMobileOtp
 );
 
 // User login
@@ -118,5 +122,6 @@ router.get(
   }),
   handleAuthRedirect
 );
+router.get("/forget-password", forgotPassword)
 
 export default router;

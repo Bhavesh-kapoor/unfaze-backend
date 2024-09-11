@@ -742,9 +742,9 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 //     res.status(500).send(new ApiError(500, "", err.message));
 //   }
 // });
+
 const updateTherapist = asyncHandler(async (req, res) => {
   const _id = req.user?._id; // Therapist ID from the authenticated user
-  console.log("check", _id);
 
   const {
     firstName,
@@ -768,15 +768,16 @@ const updateTherapist = asyncHandler(async (req, res) => {
     intermediate,
     graduation,
     postGraduation,
-    additional,
     socialMedia,
   } = req.body;
-console.log("check-----",req.body)
+
   try {
     const existingTherapist = await Therapist.findById(_id);
     if (!existingTherapist) {
       return res.status(404).json(new ApiError(404, "", "Therapist not found"));
     }
+
+    // Create a new object with updated fields or use existing ones
     const therapistData = {
       firstName: firstName || existingTherapist.firstName,
       lastName: lastName || existingTherapist.lastName,
@@ -797,53 +798,66 @@ console.log("check-----",req.body)
       addressDetails: addressDetails || existingTherapist.addressDetails,
       socialMedia: socialMedia || existingTherapist.socialMedia,
       educationDetails: {
-        highSchool:highSchool,
-        intermediate: intermediate ,
-        graduation: graduation,
-        postGraduation: postGraduation,
+        highSchool: highSchool || existingTherapist.educationDetails.highSchool,
+        intermediate: intermediate || existingTherapist.educationDetails.intermediate,
+        graduation: graduation || existingTherapist.educationDetails.graduation,
+        postGraduation: postGraduation || existingTherapist.educationDetails.postGraduation,
       },
     };
+
+    // Function to delete a file safely
     const deleteFile = (filePath) => {
       if (filePath && fs.existsSync(filePath)) {
         try {
-          fs.unlinkSync(filePath); 
+          fs.unlinkSync(filePath);
+          console.log(`Deleted file: ${filePath}`);
         } catch (err) {
           console.error(`Error deleting file: ${filePath}`, err);
         }
       }
     };
 
+    // Handle profile image upload
     if (req.files?.profileImage) {
       deleteFile(existingTherapist.profileImageUrl);
       therapistData.profileImageUrl = req.files.profileImage[0]?.path;
     }
 
+    // Handle educational document uploads
     if (req.files?.highschoolImg) {
-      deleteFile(existingTherapist.educationDetails?.highSchool?.certificateImageUrl); 
-      therapistData.educationDetails.highSchool.certificateImageUrl =
-        req.files.highschoolImg[0]?.path;
+      deleteFile(existingTherapist.educationDetails?.highSchool?.certificateImageUrl);
+      therapistData.educationDetails.highSchool = {
+        ...existingTherapist.educationDetails.highSchool,
+        certificateImageUrl: req.files.highschoolImg[0]?.path,
+      };
     }
 
     if (req.files?.intermediateImg) {
       deleteFile(existingTherapist.educationDetails?.intermediate?.certificateImageUrl);
-      therapistData.educationDetails.intermediate.certificateImageUrl =
-        req.files.intermediateImg[0]?.path;
+      therapistData.educationDetails.intermediate = {
+        ...existingTherapist.educationDetails.intermediate,
+        certificateImageUrl: req.files.intermediateImg[0]?.path,
+      };
     }
 
     if (req.files?.graduationImg) {
       deleteFile(existingTherapist.educationDetails?.graduation?.certificateImageUrl);
-      therapistData.educationDetails.graduation.certificateImageUrl =
-        req.files.graduationImg[0]?.path;
+      therapistData.educationDetails.graduation = {
+        ...existingTherapist.educationDetails.graduation,
+        certificateImageUrl: req.files.graduationImg[0]?.path,
+      };
     }
 
-    if (req.files?.postGraduationImgs) {
-      deleteFile(existingTherapist.educationDetails?.postGraduation?.certificateImageUrl); 
-      therapistData.educationDetails.postGraduation.certificateImageUrl =
-        req.files.postGraduationImgs[0]?.path;
+    if (req.files?.postGraduationImg) {
+      deleteFile(existingTherapist.educationDetails?.postGraduation?.certificateImageUrl);
+      therapistData.educationDetails.postGraduation = {
+        ...existingTherapist.educationDetails.postGraduation,
+        certificateImageUrl: req.files.postGraduationImg[0]?.path,
+      };
     }
 
     // Update therapist details
-    let updatedTherapist = await Therapist.findByIdAndUpdate(_id, therapistData, {
+    const updatedTherapist = await Therapist.findByIdAndUpdate(_id, therapistData, {
       new: true,
       select: "-password -refreshToken",
     });
@@ -851,9 +865,12 @@ console.log("check-----",req.body)
     res.status(200).json(new ApiResponse(200, updatedTherapist, "Profile updated successfully"));
   } catch (err) {
     console.error(err);
-    res.status(500).json(new ApiError(500, "", err));
+    res.status(500).json(new ApiError(500, "", "Server error"));
   }
 });
+
+export default updateTherapist;
+
 const updateAvatar = asyncHandler(async (req, res) => {
   const user_id = req.user?._id;
   if (!req.file) {

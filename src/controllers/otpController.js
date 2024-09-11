@@ -8,12 +8,18 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { otpContent } from "../static/emailcontent.js";
 import { Therapist } from "../models/therapistModel.js";
 import { transporter, mailOptions } from "../config/nodeMailer.js";
+import { sendOtpMessage } from "../config/msg91.config.js";
 
 dotenv.config();
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-
 async function verifyOTP(email, otp) {
+  const otpDoc = await OTP.findOne({ email, otp });
+  if (otpDoc) {
+    await OTP.deleteOne({ _id: otpDoc._id });
+    return true;
+  }
+  return false;
+}
+async function verifyMobileOTP(mobile, otp) {
   const otpDoc = await OTP.findOne({ email, otp });
   if (otpDoc) {
     await OTP.deleteOne({ _id: otpDoc._id });
@@ -24,13 +30,27 @@ async function verifyOTP(email, otp) {
 }
 
 const createAndStoreOTP = async (email) => {
-  // const otp = otpGenerator.generate(6, {
-  //   lowerCaseAlphabets: false,
-  //   upperCaseAlphabets: false,
-  //   specialChars: false,
-  // });
-  const otp = 123456;
+  const otp = otpGenerator.generate(6, {
+    lowerCaseAlphabets: false,
+    upperCaseAlphabets: false,
+    specialChars: false,
+  });
   const otpDoc = new OTP({ email, otp });
+  if (!otpDoc) {
+    return res
+      .status(500)
+      .json(new ApiError(500, "", "failed to generate otp"));
+  }
+  await otpDoc.save();
+  return otp;
+};
+export const createAndStoreMobileOTP = async (mobile) => {
+  const otp = otpGenerator.generate(6, {
+    lowerCaseAlphabets: false,
+    upperCaseAlphabets: false,
+    specialChars: false,
+  });
+  const otpDoc = new OTP({ mobile, otp });
   if (!otpDoc) {
     return res
       .status(500)
@@ -96,7 +116,6 @@ const userEmailVerify = async (req, res) => {
     res.status(400).json(new ApiError(400, null, "invalid otp"));
   }
 };
-
 // user email verify
 const therapistEmailVerify = async (req, res) => {
   const { email, otp } = req.body;
@@ -119,28 +138,66 @@ const therapistEmailVerify = async (req, res) => {
     res.status(400).json(new ApiError(400, null, "invalid otp"));
   }
 };
+const sendMobileOtp = asyncHandler(async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    const otp = await createAndStoreMobileOTP(mobile);
+    const result = await sendOtpMessage(mobile, otp);
+    console.log('OTP sent successfully:', result);
+    return res.status(200).json(new ApiResponse(200, null, "OTP sent successfully"))
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error, "Error sending OTP"))
+  }
+})
+const mobileVerify = async (req, res) => {
+  const user = req.user
+  const { mobile, otp } = req.body;
 
-const gmailSend = asyncHandler(async (req, res) => {
-  const { name, email, message } = req.body;
-  const htmlContent = contactUsContent(name, email, message);
-  const options = mailOptions(email, "Query raised from unfazed", htmlContent);
-  // const sendMail=async()=>{
-  //   const mail = await transporter.sendMail(mailOptions)
-  //   console.log("mailsend",mail)
-  //   res.status(200).json(new ApiResponse(200,mail,"mail send success"))
-  // }
-  // sendMail().catch(console.error)
-  transporter.sendMail(options, (error, info) => {
-    if (error) {
-      console.log(error);
-      return res
-        .status(500)
-        .json(new ApiError(500, "", "Failed to send email!"));
+  if (!mobile || !otp) {
+    return res
+      .status(500)
+      .json(new ApiError(500, "", "email and otp are required!"));
+  }
+  const isValid = await verifyMobileOTP(email, otp);
+
+  if (isValid) {
+    if (user.role === "therapist") {
+      const user = await Therapist.findOne({ email: email });
+      user.isEmailVerified = true;
+      await user.save();
+    } else {
+      const user = await User.findOne({ email: email });
+      user.isEmailVerified = true;
+      await user.save();
     }
-    console.log("Message sent: %s", info);
     res
       .status(200)
-      .json(new ApiResponse(200, info, "message sent successfully!"));
-  });
-});
-export { sendOtp, userEmailVerify, therapistEmailVerify, verifyOTP };
+      .json(new ApiResponse(200, null, "mobile verification success!"));
+  } else {
+    res.status(400).json(new ApiError(400, null, "invalid otp"));
+  }
+};
+// const gmailSend = asyncHandler(async (req, res) => {
+//   const { name, email, message } = req.body;
+//   const htmlContent = contactUsContent(name, email, message);
+//   const options = mailOptions(email, "Query raised from unfazed", htmlContent);
+//   // const sendMail=async()=>{
+//   //   const mail = await transporter.sendMail(mailOptions)
+//   //   console.log("mailsend",mail)
+//   //   res.status(200).json(new ApiResponse(200,mail,"mail send success"))
+//   // }
+//   // sendMail().catch(console.error)
+//   transporter.sendMail(options, (error, info) => {
+//     if (error) {
+//       console.log(error);
+//       return res
+//         .status(500)
+//         .json(new ApiError(500, "", "Failed to send email!"));
+//     }
+//     console.log("Message sent: %s", info);
+//     res
+//       .status(200)
+//       .json(new ApiResponse(200, info, "message sent successfully!"));
+//   });
+// });
+export { sendOtp, userEmailVerify, therapistEmailVerify, verifyOTP, mobileVerify, sendMobileOtp };

@@ -109,11 +109,8 @@ app.get("/images/uploads/:folder/:image", (req, res) => {
     res.sendFile(imagePath);
   });
 });
-
 // Use grouped routes
 app.use("/api", routes);
-sendOtpMessage("9770821586", "1234");
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   logger.error(`Error: ${err.message}`);

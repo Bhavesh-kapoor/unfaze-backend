@@ -76,22 +76,25 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
 
     console.log("Received file field: ", file.fieldname);
-    const emailPrefix = getEmailPrefix(req.body.email||req.user.email);
+    const emailPrefix = getEmailPrefix(req.body.email || req.user.email);
     let folder;
     if (file.fieldname === "profileImage") {
-      folder = `src/images/uploads/therapists/${emailPrefix}/profileImage`;
+      folder = `src/images/therapists/${emailPrefix}/profileImage`;
     } else if (file.fieldname === "highschoolImg") {
-      folder = `src/images/uploads/therapists/${emailPrefix}/highschool`;
+      folder = `src/images/therapists/${emailPrefix}/highschool`;
     } else if (file.fieldname === "intermediateImg") {
-      folder = `src/images/uploads/therapists/${emailPrefix}/intermediate`;
+      folder = `src/images/therapists/${emailPrefix}/intermediate`;
     } else if (file.fieldname === "graduationImg") {
-      folder = `src/images/uploads/therapists/${emailPrefix}/graduation`;
+      folder = `src/images/therapists/${emailPrefix}/graduation`;
     } else if (file.fieldname === "postGraduationImg") {
-      folder = `src/images/uploads/therapists/${emailPrefix}/postGraduation`;
+      folder = `src/images/therapists/${emailPrefix}/postGraduation`;
     } else if (file.fieldname === "blog") {
-      folder = "src/images/uploads/blogs";
-    } else {
-      folder = `src/images/uploads/other`;
+      folder = "src/images/blogs";
+    } else if (file.fieldname === "userAvetar") {
+      folder = "src/images/users";
+    }
+    else {
+      folder = `src/images/other`;
     }
 
     // Create folder if it doesn't exist
