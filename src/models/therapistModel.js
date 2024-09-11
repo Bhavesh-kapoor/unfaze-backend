@@ -190,16 +190,16 @@ const educationDetailSchema = new Schema(
       min: 1900,
       max: new Date().getFullYear(),
     },
-    certificateImageUrl: { type: String, trim: true }, 
+    certificateImageUrl: { type: String, trim: true },
   },
   { _id: false }
 );
 
 const educationSchema = new Schema(
   {
-    highSchool: { type: educationDetailSchema, required: true }, 
-    intermediate: { type: educationDetailSchema, required: true }, 
-    graduation: { type: educationDetailSchema, required: false }, 
+    highSchool: { type: educationDetailSchema, required: true },
+    intermediate: { type: educationDetailSchema, required: true },
+    graduation: { type: educationDetailSchema, required: false },
     postGraduation: { type: educationDetailSchema, required: false },
   },
   { _id: false }

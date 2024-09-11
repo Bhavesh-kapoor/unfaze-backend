@@ -13,7 +13,7 @@ import {
 } from "../../controllers/admin/TherepistController.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { getTherepistById } from "../../controllers/admin/TherepistController.js";
-import { getTherapistRevenue, getTherapistSessions } from "../../controllers/admin/transactionsController.js";
+import { getTherapistRevenue, getTherapistSessions, therapistTransactions } from "../../controllers/admin/transactionsController.js";
 
 const router = Router();
 const multipleImages = upload.fields([
@@ -22,9 +22,7 @@ const multipleImages = upload.fields([
   { name: "graduationImg", maxCount: 1 },
   { name: "postGraduationImg", maxCount: 1 },
   { name: "profileImage", maxCount: 1 },
-
 ]);
-
 router.post("/logout", logout);
 
 router.get("/current-user", getCurrentUser);
@@ -39,11 +37,13 @@ router.post("/activate-or-deactive/:_id", activateOrDeactivate);
 
 router.post("/register", multipleImages, validateRegister, register);
 
-router.patch("/update-profile/:_id", multipleImages, updateTherapist);
+router.put("/update-profile", multipleImages, updateTherapist);
 
 router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
 router.get("/get-therapist-revenue", getTherapistRevenue);
 router.get("/get-sessions", getTherapistSessions);
+router.get("/get-transactions", therapistTransactions);
+
 router.get("/dashboard", dashboard);
 
 

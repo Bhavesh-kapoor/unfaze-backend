@@ -155,7 +155,7 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       REFUNDED: "refunded",
       CANCELLED: "cancelled",
     };
-    return statusMap[responseCode] || "pending"; // Default for unknown status
+    return statusMap[responseCode] || "pending";
   };
   try {
     const { paymentDetails, transaction } = req;

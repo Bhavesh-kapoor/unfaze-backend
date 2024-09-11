@@ -11,6 +11,7 @@ import session from "express-session";
 import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
+import { sendOtpMessage } from "./config/msg91.config.js";
 import crypto from 'crypto';
 
 // Load environment variables
@@ -66,18 +67,14 @@ app.use(
   })
 );
 
-// Initialize Passport.js
 app.use(passport.initialize());
 app.use(passport.session());
-// Middleware to log request details
 app.use((req, res, next) => {
   const startTime = process.hrtime();
   res.on("finish", () => {
-    // Calculate response time
     const diff = process.hrtime(startTime);
     const responseTime = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2); // In milliseconds
 
-    // Status code color logic
     const statusColor =
       res.statusCode >= 500
         ? chalk.red
@@ -89,7 +86,6 @@ app.use((req, res, next) => {
               ? chalk.green
               : chalk.white;
 
-    // Logging the request
     logger.info(
       `${chalk.blue("METHOD:")} ${chalk.yellow(req.method)} - ${chalk.blue(
         "URL:"
@@ -116,6 +112,7 @@ app.get("/images/uploads/:folder/:image", (req, res) => {
 
 // Use grouped routes
 app.use("/api", routes);
+sendOtpMessage("9770821586", "1234");
 
 // Error handling middleware
 app.use((err, req, res, next) => {

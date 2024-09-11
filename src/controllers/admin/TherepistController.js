@@ -10,6 +10,7 @@ import { loginCredentialEmail } from "../../static/emailcontent.js";
 import { generateTempPassword } from "../../utils/tempPasswordGenerator.js";
 import { Session } from "../../models/sessionsModel.js";
 import { startOfMonth, endOfMonth, min } from 'date-fns';
+import fs from "fs"
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -742,8 +743,9 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 //   }
 // });
 const updateTherapist = asyncHandler(async (req, res) => {
-  const { _id } = req.user?._id;
-  const admin = req.user || "";
+  const _id = req.user?._id; // Therapist ID from the authenticated user
+  console.log("check", _id);
+
   const {
     firstName,
     lastName,
@@ -769,94 +771,86 @@ const updateTherapist = asyncHandler(async (req, res) => {
     additional,
     socialMedia,
   } = req.body;
-
-  // if (!Array.isArray(specialization)) {
-  //   return res
-  //     .status(400)
-  //     .json(new ApiError(400, "", "specialization Should be array!"));
-  // }
-  // if (!Array.isArray(languages)) {
-  //   return res
-  //     .status(400)
-  //     .json(new ApiError(400, "", "Language should be array!"));
-  // }
-  const therapistData = {
-    firstName,
-    lastName,
-    email,
-    mobile,
-    adharNumber,
-    panNumber,
-    dateOfBirth,
-    gender,
-    specialization,
-    usdPrice,
-    inrPrice,
-    license,
-    experience,
-    bio,
-    languages,
-    bankDetails,
-    addressDetails,
-    socialMedia,
-    educationDetails: {
-      highSchool,
-      intermediate,
-      graduation,
-      postGraduation,
-      additional,
-    },
-  };
-  if (req.files?.profileImage) {
-    therapistData.profileImageUrl = req.files.profileImage[0]?.path;
-  }
-  if (req.files?.highschoolImg) {
-    therapistData.educationDetails.highSchool.certificateImageUrl =
-      req.files.highschoolImg[0]?.path;
-  }
-  if (req.files?.intermediateImg) {
-    therapistData.educationDetails.intermediate.certificateImageUrl =
-      req.files.intermediateImg[0]?.path;
-  }
-  if (req.files?.graduationImg) {
-    therapistData.educationDetails.graduation.certificateImageUrl =
-      req.files.graduationImg[0]?.path;
-  }
-  if (req.files?.postGraduationImgs) {
-    console.log("test", req.files);
-    therapistData.educationDetails.postGraduation.certificateImageUrl =
-      req.files.postGraduationImgs[0]?.path;
-  }
-  // if (admin) {
-  //   const password = generateTempPassword()
-  //   console.log("temp password: " + password)
-  //   const subject = "Your Unfazed Account is Ready: Login Information Enclosed"
-  //   const htmlContent = loginCredentialEmail(email, password)
-  //   const EmailOptions = mailOptions(email, subject, htmlContent)
-  //   transporter.sendMail(EmailOptions, (error, info) => {
-  //     if (error) {
-  //       console.log("Error while sending email:", error);
-  //     } else {
-  //       console.log("Email sent successfully:", info.response);
-  //     }
-  //   });
-  // }
+console.log("check-----",req.body)
   try {
-    let updateTherepist = await Therapist.findByIdAndUpdate(
-      _id,
-      therapistData,
-      {
-        new: true,
-        select: "-password -refreshToken",
+    const existingTherapist = await Therapist.findById(_id);
+    if (!existingTherapist) {
+      return res.status(404).json(new ApiError(404, "", "Therapist not found"));
+    }
+    const therapistData = {
+      firstName: firstName || existingTherapist.firstName,
+      lastName: lastName || existingTherapist.lastName,
+      email: email || existingTherapist.email,
+      mobile: mobile || existingTherapist.mobile,
+      adharNumber: adharNumber || existingTherapist.adharNumber,
+      panNumber: panNumber || existingTherapist.panNumber,
+      dateOfBirth: dateOfBirth || existingTherapist.dateOfBirth,
+      gender: gender || existingTherapist.gender,
+      specialization: specialization || existingTherapist.specialization,
+      usdPrice: usdPrice || existingTherapist.usdPrice,
+      inrPrice: inrPrice || existingTherapist.inrPrice,
+      license: license || existingTherapist.license,
+      experience: experience || existingTherapist.experience,
+      bio: bio || existingTherapist.bio,
+      languages: languages || existingTherapist.languages,
+      bankDetails: bankDetails || existingTherapist.bankDetails,
+      addressDetails: addressDetails || existingTherapist.addressDetails,
+      socialMedia: socialMedia || existingTherapist.socialMedia,
+      educationDetails: {
+        highSchool:highSchool,
+        intermediate: intermediate ,
+        graduation: graduation,
+        postGraduation: postGraduation,
+      },
+    };
+    const deleteFile = (filePath) => {
+      if (filePath && fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath); 
+        } catch (err) {
+          console.error(`Error deleting file: ${filePath}`, err);
+        }
       }
-    );
-    res
-      .status(200)
-      .json(
-        new ApiResponse(200, updateTherepist, "profile updated Successfully")
-      );
+    };
+
+    if (req.files?.profileImage) {
+      deleteFile(existingTherapist.profileImageUrl);
+      therapistData.profileImageUrl = req.files.profileImage[0]?.path;
+    }
+
+    if (req.files?.highschoolImg) {
+      deleteFile(existingTherapist.educationDetails?.highSchool?.certificateImageUrl); 
+      therapistData.educationDetails.highSchool.certificateImageUrl =
+        req.files.highschoolImg[0]?.path;
+    }
+
+    if (req.files?.intermediateImg) {
+      deleteFile(existingTherapist.educationDetails?.intermediate?.certificateImageUrl);
+      therapistData.educationDetails.intermediate.certificateImageUrl =
+        req.files.intermediateImg[0]?.path;
+    }
+
+    if (req.files?.graduationImg) {
+      deleteFile(existingTherapist.educationDetails?.graduation?.certificateImageUrl);
+      therapistData.educationDetails.graduation.certificateImageUrl =
+        req.files.graduationImg[0]?.path;
+    }
+
+    if (req.files?.postGraduationImgs) {
+      deleteFile(existingTherapist.educationDetails?.postGraduation?.certificateImageUrl); 
+      therapistData.educationDetails.postGraduation.certificateImageUrl =
+        req.files.postGraduationImgs[0]?.path;
+    }
+
+    // Update therapist details
+    let updatedTherapist = await Therapist.findByIdAndUpdate(_id, therapistData, {
+      new: true,
+      select: "-password -refreshToken",
+    });
+
+    res.status(200).json(new ApiResponse(200, updatedTherapist, "Profile updated successfully"));
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.status(500).json(new ApiError(500, "", err));
   }
 });
@@ -1044,8 +1038,6 @@ const dashboard = asyncHandler(async (req, res) => {
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
-
-
 
 export {
   register,

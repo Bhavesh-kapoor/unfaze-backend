@@ -845,7 +845,8 @@ const getTherapistSessions = async (req, res) => {
           category: "$category.name",
           amount_USD: "$transactions_details.amount_USD",
           amount_INR: "$transactions_details.amount_INR",
-          start_time: 1
+          start_time: 1,
+          status: 1
         },
       },
       { $skip: skip },
@@ -962,13 +963,13 @@ const getUserSessions = async (req, res) => {
           category: "$category.name",
           amount_USD: "$transactions_details.amount_USD",
           amount_INR: "$transactions_details.amount_INR",
-          start_time: 1
+          start_time: 1,
+          status: 1
         },
       },
       { $skip: skip },
       { $limit: limitNumber },
     ]);
-    console.log(sessions)
     if (!sessions.length) {
       return res
         .status(404)
@@ -1055,7 +1056,70 @@ const UserTransactions = asyncHandler(async (req, res) => {
     )
   );
 });
+const therapistTransactions = asyncHandler(async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "User ID is required!"));
+  }
 
+  const transactions = await Transaction.aggregate([
+    {
+      $match: { therapist_id: user._id },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user_id",
+        foreignField: "_id",
+        pipeline: [{ $project: { firstName: 1, lastName: 1, email: 1 } }],
+        as: "user_details",
+      },
+    },
+    { $unwind: "$user_details" },
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "category",
+        foreignField: "_id",
+        pipeline: [{ $project: { name: 1 } }],
+        as: "category",
+      },
+    },
+    { $unwind: "$category" },
+    {
+      $project: {
+        transactionId: 1,
+        createdAt: 1,
+        userName: {
+          $concat: [
+            "$user_details.firstName",
+            " ",
+            "$user_details.lastName",
+          ],
+        },
+        userEmail: "$user_details.email",
+        category: "$category.name",
+        amount_USD: 1,
+        amount_INR: 1,
+        payment_status: "$payment_details.payment_status"
+      },
+    },
+  ]);
+  if (!transactions.length) {
+    return res
+      .status(404)
+      .json(new ApiResponse(200, [], "No transactions found for this user"));
+  }
+  return res.json(
+    new ApiResponse(
+      200,
+      transactions,
+      "Transactions retrieved successfully."
+    )
+  );
+});
 
 export {
   calculateTotalSales,
@@ -1066,4 +1130,5 @@ export {
   getTherapistRevenue,
   getUserSessions,
   UserTransactions,
+  therapistTransactions
 };

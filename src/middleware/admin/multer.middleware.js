@@ -76,7 +76,7 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
 
     console.log("Received file field: ", file.fieldname);
-    const emailPrefix = getEmailPrefix(req.body.email);
+    const emailPrefix = getEmailPrefix(req.body.email||req.user.email);
     let folder;
     if (file.fieldname === "profileImage") {
       folder = `src/images/uploads/therapists/${emailPrefix}/profileImage`;
