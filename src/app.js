@@ -12,7 +12,7 @@ import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
 import { sendOtpMessage } from "./config/msg91.config.js";
-import crypto from 'crypto';
+import crypto from "crypto";
 
 // Load environment variables
 dotenv.config();
@@ -79,12 +79,12 @@ app.use((req, res, next) => {
       res.statusCode >= 500
         ? chalk.red
         : res.statusCode >= 400
-          ? chalk.yellow
-          : res.statusCode >= 300
-            ? chalk.cyan
-            : res.statusCode >= 200
-              ? chalk.green
-              : chalk.white;
+        ? chalk.yellow
+        : res.statusCode >= 300
+        ? chalk.cyan
+        : res.statusCode >= 200
+        ? chalk.green
+        : chalk.white;
 
     logger.info(
       `${chalk.blue("METHOD:")} ${chalk.yellow(req.method)} - ${chalk.blue(
@@ -101,7 +101,16 @@ app.use((req, res, next) => {
 });
 
 // Dynamic image serving endpoint
-app.get("/images/uploads/:folder/:image", (req, res) => {
+app.get("/images/:folder/:image", (req, res) => {
+  const { folder, image } = req.params;
+  const imagePath = path.join(__dirname, "images/uploads", folder, image);
+  fs.access(imagePath, fs.constants.F_OK, (err) => {
+    if (err) return res.status(404).json({ message: "Image not found" });
+    res.sendFile(imagePath);
+  });
+});
+
+app.get("/images/:folder/:subfolder/:image", (req, res) => {
   const { folder, image } = req.params;
   const imagePath = path.join(__dirname, "images/uploads", folder, image);
   fs.access(imagePath, fs.constants.F_OK, (err) => {
