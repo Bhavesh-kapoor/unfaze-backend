@@ -1,20 +1,19 @@
+import fs from "fs";
 import jwt from "jsonwebtoken";
+import PDFDocument from "pdfkit";
 import { process } from "uniqid";
 import ApiError from "../../utils/ApiError.js";
 import { verifyOTP } from "../otpController.js";
 import { User } from "../../models/userModel.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { check, validationResult } from "express-validator";
-import { parseISO, addDays, startOfDay, endOfDay } from "date-fns";
-import path from "path";
-import fs from "fs";
-import { sendMobileOtp } from "../otpController.js";
-import { sendOtpMessage } from "../../config/msg91.config.js";
-import { createAndStoreMobileOTP } from "../otpController.js";
 import { mailOptions } from "../../config/nodeMailer.js";
 import { transporter } from "../../config/nodeMailer.js";
 import { otpContent } from "../../static/emailcontent.js";
+import { check, validationResult } from "express-validator";
+import { sendOtpMessage } from "../../config/msg91.config.js";
+import { createAndStoreMobileOTP } from "../otpController.js";
+import { parseISO, addDays, startOfDay, endOfDay } from "date-fns";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
@@ -549,7 +548,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
         );
     }
     const otp = await createAndStoreMobileOTP(mobile);
-    const response = await sendOtpMessage(user.mobile, otp)
+    const response = await sendOtpMessage(user.mobile, otp);
     console.log(response);
     const htmlContent = otpContent(otp);
     const options = mailOptions(
@@ -573,6 +572,105 @@ const forgotPassword = asyncHandler(async (req, res) => {
     return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
   }
 });
+
+export const generateInvoice = asyncHandler(async (req, res) => {
+  const {
+    user,
+    date,
+    items,
+    total,
+    transactionId,
+    paymentMethod,
+    billingAddress,
+    shippingAddress,
+  } = req.body;
+
+  const doc = new PDFDocument();
+
+  let filename = `invoice_${transactionId}.pdf`;
+
+  // Response headers to download the PDF
+  res.setHeader("Content-disposition", `attachment; filename="${filename}"`);
+  res.setHeader("Content-type", "application/pdf");
+
+  // Company logo and title
+  doc.image("src/logo/logo.png", 50, 50, { width: 160 });
+  doc.fontSize(16).text("Transaction Invoice", 200, 50, { align: "right" });
+  doc.fontSize(14).text(`#${transactionId}`, 200, 75, { align: "right" });
+
+  // Horizontal line
+  doc.moveTo(50, 120).lineTo(550, 120).stroke();
+
+  // Company and Customer details
+  doc.fontSize(12).text("Company Name", 50, 140);
+  doc.text("123 Business Road, Suite 100", 50, 155);
+  doc.text("Business City, BC 54321", 50, 170);
+  doc.text("Email: contact@company.com", 50, 185);
+  doc.text("Phone: (123) 456-7890", 50, 200);
+
+  doc.text("Customer:", 350, 140);
+  doc.text(`${user.name}`, 350, 155);
+  doc.text(`${user.email}`, 350, 170);
+  doc.text(`${billingAddress}`, 350, 185);
+
+  // Invoice date and payment method
+  doc.text(`Invoice Date: ${date}`, 50, 220);
+  doc.text(`Payment Method: ${paymentMethod}`, 50, 235);
+
+  // Billing and Shipping Address
+  doc.text(`Billing Address: ${billingAddress}`, 50, 260);
+  doc.text(
+    `Shipping Address: ${shippingAddress || "Same as billing address"}`,
+    50,
+    280
+  );
+
+  // Horizontal line
+  doc.moveTo(50, 300).lineTo(550, 300).stroke();
+
+  // Table header
+  doc.moveDown().fontSize(14).text("Items:", 50, 320);
+  doc.fontSize(12);
+  doc.text("Item", 50, 350);
+  doc.text("Quantity", 300, 350);
+  doc.text("Unit Price", 400, 350);
+  doc.text("Subtotal", 500, 350);
+
+  // Horizontal line
+  doc.moveTo(50, 370).lineTo(550, 370).stroke();
+
+  // Table rows
+  let yPos = 390;
+  items.forEach((item) => {
+    const subtotal = (item.quantity * item.price).toFixed(2);
+    doc.text(item.name, 50, yPos);
+    doc.text(item.quantity, 300, yPos);
+    doc.text(`$${item.price.toFixed(2)}`, 400, yPos);
+    doc.text(`$${subtotal}`, 500, yPos);
+    yPos += 20;
+  });
+
+  // Total
+  doc
+    .moveTo(50, yPos + 10)
+    .lineTo(550, yPos + 10)
+    .stroke();
+  doc.fontSize(14).text(`Total: $${total}`, 500, yPos + 20);
+
+  // Horizontal line
+  doc
+    .moveTo(50, yPos + 40)
+    .lineTo(550, yPos + 40)
+    .stroke();
+
+  // Footer: Thank you note or additional information
+  // doc.fontSize(10).text("Thank you for your business!", 50, yPos + 60);
+
+  // Pipe the output to response
+  doc.pipe(res);
+  doc.end();
+});
+
 export {
   adminlogin,
   userlogin,

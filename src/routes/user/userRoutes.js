@@ -4,8 +4,13 @@ import feedbackRoute from "../feeback.route.js";
 import sessionRouter from "./session.routes.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { userEmailVerify } from "../../controllers/otpController.js";
-import { getUserSessions, UserTransactions, thankyou } from "../../controllers/admin/transactionsController.js";
 import {
+  getUserSessions,
+  UserTransactions,
+  thankyou,
+} from "../../controllers/admin/transactionsController.js";
+import {
+  generateInvoice,
   updateAvatar,
   updateProfile,
 } from "../../controllers/admin/user.controller.js";
@@ -18,6 +23,8 @@ router.put("/update-user", upload.single("userAvetar"), updateProfile);
 
 // to create slots
 router.use("/slot", slotRoutes);
+
+router.post("/generate-invoice", generateInvoice);
 
 // Routes for specialization and feedback
 router.use("/feedback", feedbackRoute);
@@ -35,6 +42,5 @@ router.get("/get-sessions", getUserSessions);
 router.get("/get-transactions", UserTransactions);
 router.get("/joining-token", generateSessionToken);
 router.get("/thankyou", thankyou);
-
 
 export default router;
