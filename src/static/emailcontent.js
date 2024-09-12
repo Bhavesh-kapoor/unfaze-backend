@@ -12,7 +12,6 @@ const contactUsContent = (name, email, message) => {
           </div>
       `)
 }
-
 const otpContent = (otp) => {
     return (`
           <div style="font-family: Arial, sans-serif; line-height: 1.6;">

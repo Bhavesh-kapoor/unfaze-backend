@@ -13,7 +13,7 @@ const userSchema = new Schema(
     profileImage: { type: String, default: "" },
     isEmailVerified: { type: Boolean, default: false },
     isMobileVerified: { type: Boolean, default: false },
-    lastName: { type: String, required: true, trim: true },
+    lastName: { type: String, trim: true },
     firstName: { type: String, required: true, trim: true },
     role: { type: String, default: "user", trim: true },
     permissions: { type: [String], default: [] },
@@ -31,10 +31,10 @@ const userSchema = new Schema(
     },
     dateOfBirth: {
       type: Date,
-      validate: {
-        validator: (value) => value < new Date(),
-        message: "Date of birth must be in the past.",
-      },
+      // validate: {
+      //   validator: (value) => value < new Date(),
+      //   message: "Date of birth must be in the past.",
+      // },
     },
   },
   { timestamps: true }
@@ -49,7 +49,6 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
-
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {

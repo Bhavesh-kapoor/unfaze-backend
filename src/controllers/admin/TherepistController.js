@@ -744,39 +744,17 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 // });
 
 const updateTherapist = asyncHandler(async (req, res) => {
-  const _id = req.user?._id; // Therapist ID from the authenticated user
-  console.log("check", _id);
+  // Therapist ID from the authenticated user
+  const _id = req.user?._id;
 
-  const {
-    firstName,
-    lastName,
-    email,
-    mobile,
-    adharNumber,
-    panNumber,
-    dateOfBirth,
-    gender,
-    specialization,
-    usdPrice,
-    inrPrice,
-    license,
-    experience,
-    bio,
-    languages,
-    addressDetails,
-    bankDetails,
-    highSchool,
-    intermediate,
-    graduation,
-    postGraduation,
-    socialMedia,
-  } = req.body;
-  console.log("check-----", req.body)
+  const { firstName, lastName, email, mobile, adharNumber, panNumber, dateOfBirth, gender, specialization, usdPrice, inrPrice, license, experience, bio, languages, addressDetails, bankDetails, highSchool, intermediate, graduation, postGraduation, socialMedia, } = req.body;
+
   try {
-    const existingTherapist = await Therapist.findById(_id);
+    const existingTherapist = await Therapist.findById(_id).lean();
     if (!existingTherapist) {
       return res.status(404).json(new ApiError(404, "", "Therapist not found"));
     }
+
     const therapistData = {
       firstName: firstName || existingTherapist.firstName,
       lastName: lastName || existingTherapist.lastName,
@@ -787,8 +765,8 @@ const updateTherapist = asyncHandler(async (req, res) => {
       dateOfBirth: dateOfBirth || existingTherapist.dateOfBirth,
       gender: gender || existingTherapist.gender,
       specialization: specialization || existingTherapist.specialization,
-      usdPrice: usdPrice || existingTherapist.usdPrice,
-      inrPrice: inrPrice || existingTherapist.inrPrice,
+      usdPrice: usdPrice !== undefined ? usdPrice : existingTherapist.usdPrice,
+      inrPrice: inrPrice !== undefined ? inrPrice : existingTherapist.inrPrice,
       license: license || existingTherapist.license,
       experience: experience || existingTherapist.experience,
       bio: bio || existingTherapist.bio,
@@ -797,19 +775,20 @@ const updateTherapist = asyncHandler(async (req, res) => {
       addressDetails: addressDetails || existingTherapist.addressDetails,
       socialMedia: socialMedia || existingTherapist.socialMedia,
       educationDetails: {
-        highSchool: highSchool,
-        intermediate: intermediate,
-        graduation: graduation,
-        postGraduation: postGraduation,
+        highSchool: { ...existingTherapist.educationDetails.highSchool, ...highSchool },
+        intermediate: { ...existingTherapist.educationDetails.intermediate, ...intermediate },
+        graduation: { ...existingTherapist.educationDetails.graduation, ...graduation },
+        postGraduation: { ...existingTherapist.educationDetails.postGraduation, ...postGraduation },
       },
     };
+
     const deleteFile = (filePath) => {
       if (filePath && fs.existsSync(filePath)) {
         try {
           fs.unlinkSync(filePath);
-          console.log(`Deleted file: ${filePath}`);
+          console.log(`Deleted file: ${ filePath }`);
         } catch (err) {
-          console.error(`Error deleting file: ${filePath}`, err);
+          console.error(`Error deleting file: ${ filePath }`, err);
         }
       }
     };
@@ -839,12 +818,10 @@ const updateTherapist = asyncHandler(async (req, res) => {
 
     if (req.files?.postGraduationImg) {
       deleteFile(existingTherapist.educationDetails?.postGraduation?.certificateImageUrl);
-      therapistData.educationDetails.postGraduation.certificateImageUrl =
-        req.files.postGraduationImgs[0]?.path;
+      therapistData.educationDetails.postGraduation.certificateImageUrl = req.files.postGraduationImg[0]?.path;
     }
-
-    // Update therapist details
-    let updatedTherapist = await Therapist.findByIdAndUpdate(_id, therapistData, {
+    console.log('therapistData.educationDetails.highSchool :>> ', therapistData.educationDetails.highSchool);
+    const updatedTherapist = await Therapist.findByIdAndUpdate(_id, therapistData, {
       new: true,
       select: "-password -refreshToken",
     });

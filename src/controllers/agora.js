@@ -6,11 +6,12 @@ import ApiResponse from '../utils/ApiResponse.js';
 import { differenceInMinutes, differenceInSeconds, format } from 'date-fns';
 import dotenv from "dotenv"
 dotenv.config();
+console.log("AGORA_APP_ID", process.env.AGORA_APP_ID)
+console.log("AGORA_APP_CERTIFICATE", process.env.AGORA_APP_CERTIFICATE)
 const { RtcTokenBuilder, RtcRole } = AgoraToken;
 const generateAgoraToken = (channelName, uid, role, expireTimeInSeconds) => {
     const appID = process.env.AGORA_APP_ID;
     const appCertificate = process.env.AGORA_APP_CERTIFICATE;
-
     if (!appID || !appCertificate) {
         throw new Error("AGORA_APP_ID and AGORA_APP_CERTIFICATE must be defined in environment variables");
     }
@@ -20,7 +21,6 @@ const generateAgoraToken = (channelName, uid, role, expireTimeInSeconds) => {
     const privilegeExpireTime = currentTimestamp + expireTimeInSeconds;
 
     const token = RtcTokenBuilder.buildTokenWithUid(appID, appCertificate, channelName, uid, rtcRole, privilegeExpireTime);
-
     return token;
 };
 
@@ -58,10 +58,13 @@ const generateSessionToken = asyncHandler(async (req, res) => {
         }
     }
     const uid = Math.floor(100000 + Math.random() * 900000);
+    console.log("uid", uid);
     const channelName = session.channelName;
+    console.log("channelName", channelName);
     const role = user.role;
-    const expireTimeInSeconds = 1800 + 900;
-
+    console.log("role", role);
+    const expireTimeInSeconds = 1800;
+    console.log("expireTimeInSeconds", expireTimeInSeconds)
     const token = generateAgoraToken(channelName, uid, role, expireTimeInSeconds);
     if (!token) {
         return res.status(500).json(new ApiError(500, "", "Something went wrong while generating the token!"));

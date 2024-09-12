@@ -13,6 +13,7 @@ export const getOverview = asyncHandler(async (req, res) => {
     const notifications = await Notification.find({
         status: "unread",
     }).sort({ createdAt: -1 }).limit(5);
+
     const therapists = await Session.aggregate([
         {
             $match: {
