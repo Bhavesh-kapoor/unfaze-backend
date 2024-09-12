@@ -5,7 +5,7 @@ const transactionSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    category:{
+    category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Specialization',
         required: true
@@ -24,11 +24,11 @@ const transactionSchema = new mongoose.Schema({
         type: Object,
         default: {}
     },
-    amount_USD:{
+    amount_USD: {
         type: Number,
         default: 0
     },
-    rate_USD:{
+    rate_USD: {
         type: Number,
         default: 0
     },
@@ -38,6 +38,11 @@ const transactionSchema = new mongoose.Schema({
     },
     payment_status: {
         type: String,
+    },
+    slotId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Slot',
+        required: true
     },
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },

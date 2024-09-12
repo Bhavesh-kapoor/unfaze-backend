@@ -5,6 +5,7 @@ import { sendNotification } from "./notificationController.js";
 import { transporter } from "../config/nodeMailer.js";
 import { Therapist } from "../models/therapistModel.js";
 import { Session } from "../models/sessionsModel.js";
+import { Slot } from "../models/slotModal.js";
 
 const sendNotificationsAndEmails = async (transaction, user) => {
   const receiverId = transaction.therapist_id;
@@ -97,7 +98,7 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       FAILED: "failed",
       REFUNDED: "refunded",
     };
-    return statusMap[responseCode] || "pending"; // Default for unknown status
+    return statusMap[responseCode] || "pending";
   };
   try {
     const { paymentDetails, transaction } = req;
@@ -113,6 +114,16 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
     paymentDetails.payment_status = order_status;
     transaction.payment_status = order_status;
     transaction.save();
+    if (order_status !== "successful") {
+      await Slot.updateOne({
+        therapist_id: transaction.therapist_id,
+        "timeslots._id": transaction.slotId,
+      }, {
+        $set: {
+          "timeslots.$.isBooked": false,
+        },
+      })
+    }
     if (order_status === "successful") {
       const existingSession = await Session.findOne({
         transaction_id: transaction._id,
@@ -171,7 +182,18 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
     transaction.payment_details = paymentDetails.data;
     paymentDetails.payment_status = order_status;
     transaction.payment_status = order_status;
+
     transaction.save();
+    if (order_status !== "successful") {
+      await Slot.updateOne({
+        therapist_id: transaction.therapist_id,
+        "timeslots._id": transaction.slotId,
+      }, {
+        $set: {
+          "timeslots.$.isBooked": false,
+        },
+      })
+    }
     if (order_status === "successful") {
       const existingSession = await Session.findOne({
         transaction_id: transaction._id,

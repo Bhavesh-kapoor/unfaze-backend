@@ -8,36 +8,87 @@ import uniqid from "uniqid";
 import Cashfree from "../../config/cashfree.config.js";
 import mongoose from "mongoose";
 import getExchangeRate from "../../utils/currencyConverter.js";
+import { Slot } from "../../models/slotModal.js";
 import axios from "axios";
+function convertTo24HourFormat(time12h) {
+  const [time, modifier] = time12h.split(' ');
+  let [hours, minutes] = time.split(':');
+  hours = parseInt(hours, 10);
+  if (modifier === 'AM' && hours === 12) {
+    hours = 0;
+  } 
+  if (modifier === 'PM' && hours !== 12) {
+    hours += 12;
+  }
+  const hours24 = hours.toString().padStart(2, '0');
+  const minutes24 = minutes.padStart(2, '0');
+
+  return `${hours24}:${minutes24}`;
+}
 
 const SESSION_DURATION_MINUTES = 30;
 const createOrder = asyncHandler(async (req, res) => {
-  const { therapist_id, specialization_id, date, time } = req.body;
+  const { therapist_id, specialization_id, slot_id } = req.body;
   const order_currency = "INR";
   const user = req.user;
-  const formattedDate = format(date, "yyyy-MM-dd");
-  console.log(formattedDate);
-  const startDateTime = parseISO(`${formattedDate}T${time}`);
-  if (!isValid(startDateTime)) {
-    console.error("Invalid date-time format:", startDateTime);
-    return res
-      .status(400)
-      .json(new ApiError(400, "", "Invalid date or time format"));
+  const timeSlots = await Slot.aggregate([
+    {
+      $match: {
+        therapist_id: new mongoose.Types.ObjectId(therapist_id),
+      },
+    },
+    {
+      $unwind: "$timeslots",
+    },
+    {
+      $match: {
+        "timeslots._id": new mongoose.Types.ObjectId(slot_id), 
+        "timeslots.isBooked": false,
+      },
+    },
+    {
+      $project: {
+        _id: "$timeslots._id",
+        therapist_id: 1,
+        date: "$timeslots.date",
+        startTime: "$timeslots.startTime",
+        endTime: "$timeslots.endTime",
+        isBooked: "$timeslots.isBooked",
+      },
+    },
+  ]);
+  console.log(timeSlots)
+  if (timeSlots.length === 0) {
+    return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
   }
-  const endDateTime = addMinutes(startDateTime, SESSION_DURATION_MINUTES);
+  const { date, startTime, endTime } = timeSlots[0];
+  const formattedDate = format(new Date(date), "yyyy-MM-dd");
+  console.log(formattedDate);
+  console.log(convertTo24HourFormat(startTime))
+  const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
+  const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+
+  if (!isValid(startDateTime) || !isValid(endDateTime)) {
+    console.error("Invalid date-time format:", startDateTime, endDateTime);
+    return res.status(400).json(new ApiError(400, "", "Invalid date or time format"));
+  }
+
   if (startDateTime >= endDateTime) {
     return res.status(400).send({ error: "End time must be after start time" });
   }
-  // Validate therapist_id
+
   if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
     return res
       .status(400)
       .json(new ApiError(400, "", "Invalid therapist id!!!"));
   }
-  // Find therapist
+
   const therapist = await Therapist.findOne({ _id: therapist_id });
+  console.log(therapist);
   if (!therapist) {
-    return res.status(404).json(new ApiError(404, "", "Invalid therapist !!!"));
+    return res
+      .status(404)
+      .json(new ApiError(404, "", "Invalid therapist !!!"));
   }
   let transactionId = uniqid();
   transactionId = `unfazed${transactionId}`;
@@ -57,15 +108,13 @@ const createOrder = asyncHandler(async (req, res) => {
     const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
-    // const return_url =
-    // const return url = response.data.
-
     const rate = await getExchangeRate("USD", "INR");
     let rate_USD = rate * 100;
     const initiatedTransaction = new Transaction({
       transactionId: order_id,
       user_id: user._id,
       therapist_id,
+      slotId:slot_id,
       category: specialization_id,
       amount_USD: therapist.usdPrice,
       rate_USD: rate_USD,
@@ -86,6 +135,14 @@ const createOrder = asyncHandler(async (req, res) => {
     //     },
     //   }
     // );
+    await Slot.updateOne({
+      therapist_id: new mongoose.Types.ObjectId(therapist_id),
+      "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+    },{
+      $set: {
+        "timeslots.$.isBooked": true,
+      },
+    })
     return res
       .status(200)
       .json(

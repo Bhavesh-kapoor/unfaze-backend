@@ -7,35 +7,43 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format } from "date-fns";
+import { Slot } from "../../models/slotModal.js";
 // import { Course } from "../../models/courseModel.js";
 // import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
-const convertTo24HourFormat = (timeStr) => {
-  const [time, modifier] = timeStr.split(' ');
-  let [hours, minutes] = time.split(':').map(Number);
-  if (modifier === 'PM' && hours < 12) hours += 12;
-  if (modifier === 'AM' && hours === 12) hours = 0;
+function convertTo24HourFormat(time12h) {
+  const [time, modifier] = time12h.split(' ');
+  let [hours, minutes] = time.split(':');
+  hours = parseInt(hours, 10);
+  if (modifier === 'AM' && hours === 12) {
+    hours = 0;
+  }
+  if (modifier === 'PM' && hours !== 12) {
+    hours += 12;
+  }
+  const hours24 = hours.toString().padStart(2, '0');
+  const minutes24 = minutes.padStart(2, '0');
 
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-};
+  return `${hours24}:${minutes24}`;
+}
 
 export async function processPayment(req, res) {
   try {
+    const user = req.user
     const { therapist_id, specialization_id, slot_id } = req.body;
-
     const timeSlots = await Slot.aggregate([
       {
         $match: {
-          therapist_id: therapist_id
-        }
+          therapist_id: new mongoose.Types.ObjectId(therapist_id),
+        },
       },
       {
-        $unwind: "$timeslots"
+        $unwind: "$timeslots",
       },
       {
         $match: {
           "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-          "timeslots.isBooked": false
-        }
+          "timeslots.isBooked": false, // Ensure the timeslot is not booked
+        },
       },
       {
         $project: {
@@ -44,19 +52,18 @@ export async function processPayment(req, res) {
           date: "$timeslots.date",
           startTime: "$timeslots.startTime",
           endTime: "$timeslots.endTime",
-          isBooked: "$timeslots.isBooked"
-        }
-      }
+          isBooked: "$timeslots.isBooked",
+        },
+      },
     ]);
-
+    console.log(timeSlots)
     if (timeSlots.length === 0) {
       return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
     }
-
     const { date, startTime, endTime } = timeSlots[0];
-
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
-
+    console.log(formattedDate);
+    console.log(convertTo24HourFormat(startTime))
     const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
     const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
 
@@ -107,7 +114,7 @@ export async function processPayment(req, res) {
 
     const options = {
       method: "post",
-      url: "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay",
+      url: `${}/pg/v1/pay`,
       headers: {
         "Content-Type": "application/json",
         "X-VERIFY": xVerifyChecksum,
@@ -128,6 +135,7 @@ export async function processPayment(req, res) {
         transactionId,
         user_id: user._id,
         therapist_id,
+        slotId: slot_id,
         category: specialization_id,
         amount_INR: therapist.inrPrice,
         payment_status: "PAYMENT_INITIATED",
@@ -141,8 +149,8 @@ export async function processPayment(req, res) {
         "timeslots._id": new mongoose.Types.ObjectId(slot_id),
       }, {
         $set: {
-          "timeslots.isBooked": true,
-        }
+          "timeslots.$.isBooked": true,
+        },
       })
       res.status(200).json(
         new ApiResponse(200, {
