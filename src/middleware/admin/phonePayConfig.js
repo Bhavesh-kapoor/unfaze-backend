@@ -8,6 +8,9 @@ import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format } from "date-fns";
 import { Slot } from "../../models/slotModal.js";
+import dotenv from "dotenv"
+dotenv.config()
+console.log(process.env.HOST_URL)
 // import { Course } from "../../models/courseModel.js";
 // import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 function convertTo24HourFormat(time12h) {
@@ -114,7 +117,7 @@ export async function processPayment(req, res) {
 
     const options = {
       method: "post",
-      url: `${}/pg/v1/pay`,
+      url: `${process.env.HOST_URL}/pg/v1/pay`,
       headers: {
         "Content-Type": "application/json",
         "X-VERIFY": xVerifyChecksum,

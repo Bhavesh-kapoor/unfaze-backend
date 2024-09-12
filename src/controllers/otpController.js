@@ -25,7 +25,6 @@ async function verifyMobileOTP(mobile, otp) {
     await OTP.deleteOne({ _id: otpDoc._id });
     return true;
   }
-
   return false;
 }
 
@@ -150,7 +149,7 @@ const sendMobileOtp = asyncHandler(async (req, res) => {
   }
 })
 const mobileVerify = async (req, res) => {
-  const user = req.user
+   const user = req.user 
   const { mobile, otp } = req.body;
 
   if (!mobile || !otp) {
@@ -161,7 +160,7 @@ const mobileVerify = async (req, res) => {
   const isValid = await verifyMobileOTP(email, otp);
 
   if (isValid) {
-    if (user.role === "therapist") {
+    if (user?.role === "therapist") {
       const user = await Therapist.findOne({ email: email });
       user.isEmailVerified = true;
       await user.save();
