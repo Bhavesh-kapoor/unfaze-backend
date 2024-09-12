@@ -7,26 +7,13 @@ import { verifyOTP } from "../otpController.js";
 import { User } from "../../models/userModel.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-<<<<<<< HEAD
-import { check, validationResult } from "express-validator";
 import { parseISO, addDays, startOfDay, endOfDay } from "date-fns";
-import path from "path";
-import fs from "fs";
-import { sendMobileOtp } from "../otpController.js";
 import { sendOtpMessage } from "../../config/msg91.config.js";
 import { createAndStoreMobileOTP } from "../otpController.js";
 import { otpContent } from "../../static/emailcontent.js";
 import { welcomeEmail } from "../../static/emailcontent.js";
 import { transporter, mailOptions } from "../../config/nodeMailer.js";
-=======
-import { mailOptions } from "../../config/nodeMailer.js";
-import { transporter } from "../../config/nodeMailer.js";
-import { otpContent } from "../../static/emailcontent.js";
 import { check, validationResult } from "express-validator";
-import { sendOtpMessage } from "../../config/msg91.config.js";
-import { createAndStoreMobileOTP } from "../otpController.js";
-import { parseISO, addDays, startOfDay, endOfDay } from "date-fns";
->>>>>>> a8980c8ee61ef6d3170d59894924df842b67ebd6
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
