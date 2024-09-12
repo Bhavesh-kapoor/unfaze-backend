@@ -3,6 +3,7 @@ import uniqid from "uniqid";
 import sha256 from "sha256";
 import mongoose from "mongoose";
 import ApiError from "../../utils/ApiError.js";
+import { Slot } from "../../models/slotModal.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
@@ -10,12 +11,14 @@ import { parseISO, isValid, addMinutes, format } from "date-fns";
 // import { Course } from "../../models/courseModel.js";
 // import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 const convertTo24HourFormat = (timeStr) => {
-  const [time, modifier] = timeStr.split(' ');
-  let [hours, minutes] = time.split(':').map(Number);
-  if (modifier === 'PM' && hours < 12) hours += 12;
-  if (modifier === 'AM' && hours === 12) hours = 0;
+  const [time, modifier] = timeStr.split(" ");
+  let [hours, minutes] = time.split(":").map(Number);
+  if (modifier === "PM" && hours < 12) hours += 12;
+  if (modifier === "AM" && hours === 12) hours = 0;
 
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}`;
 };
 
 export async function processPayment(req, res) {
@@ -25,17 +28,17 @@ export async function processPayment(req, res) {
     const timeSlots = await Slot.aggregate([
       {
         $match: {
-          therapist_id: therapist_id
-        }
+          therapist_id: therapist_id,
+        },
       },
       {
-        $unwind: "$timeslots"
+        $unwind: "$timeslots",
       },
       {
         $match: {
           "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-          "timeslots.isBooked": false
-        }
+          "timeslots.isBooked": false,
+        },
       },
       {
         $project: {
@@ -44,29 +47,39 @@ export async function processPayment(req, res) {
           date: "$timeslots.date",
           startTime: "$timeslots.startTime",
           endTime: "$timeslots.endTime",
-          isBooked: "$timeslots.isBooked"
-        }
-      }
+          isBooked: "$timeslots.isBooked",
+        },
+      },
     ]);
 
     if (timeSlots.length === 0) {
-      return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "Timeslot not found or already booked"));
     }
 
     const { date, startTime, endTime } = timeSlots[0];
 
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
 
-    const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
-    const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+    const startDateTime = new Date(
+      `${formattedDate}T${convertTo24HourFormat(startTime)}`
+    );
+    const endDateTime = new Date(
+      `${formattedDate}T${convertTo24HourFormat(endTime)}`
+    );
 
     if (!isValid(startDateTime) || !isValid(endDateTime)) {
       console.error("Invalid date-time format:", startDateTime, endDateTime);
-      return res.status(400).json(new ApiError(400, "", "Invalid date or time format"));
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Invalid date or time format"));
     }
 
     if (startDateTime >= endDateTime) {
-      return res.status(400).send({ error: "End time must be after start time" });
+      return res
+        .status(400)
+        .send({ error: "End time must be after start time" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
@@ -136,14 +149,17 @@ export async function processPayment(req, res) {
       });
 
       await initiatedTransaction.save();
-      await Slot.updateOne({
-        therapist_id: new mongoose.Types.ObjectId(therapist_id),
-        "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-      }, {
-        $set: {
-          "timeslots.isBooked": true,
+      await Slot.updateOne(
+        {
+          therapist_id: new mongoose.Types.ObjectId(therapist_id),
+          "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+        },
+        {
+          $set: {
+            "timeslots.isBooked": true,
+          },
         }
-      })
+      );
       res.status(200).json(
         new ApiResponse(200, {
           redirect_url: response.data.data.instrumentResponse.redirectInfo.url,
