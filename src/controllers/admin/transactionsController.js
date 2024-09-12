@@ -1066,7 +1066,9 @@ const therapistTransactions = asyncHandler(async (req, res) => {
 
   const transactions = await Transaction.aggregate([
     {
-      $match: { therapist_id: user._id },
+      $match: {
+        therapist_id: user._id,
+      }
     },
     {
       $lookup: {
@@ -1121,6 +1123,66 @@ const therapistTransactions = asyncHandler(async (req, res) => {
   );
 });
 
+const thankyou = asyncHandler(async (req, res) => {
+  const { transactionId } = req.query;
+  const data = await Transaction.findOne({ transactionId:transactionId})
+  console.log(data)
+  const transaction = await Transaction.aggregate([
+    {
+      $match: {
+        transactionId: transactionId,
+        payment_status: "successful"
+      }
+    },
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "therapist_id",
+          foreignField: "_id",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "therapist_details"
+        }
+      },
+      { $unwind: "$therapist_details" },
+      {
+        $lookup: {
+          from: "specializations",
+          localField: "category",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "category"
+        }
+      },
+      { $unwind: "$category" },
+      {
+        $project: {
+          transactionId: 1,
+          createdAt: 1,
+          therapistName: {
+            $concat: [
+              "$therapist_details.firstName",
+              " ",
+              "$therapist_details.lastName"
+            ]
+          },
+          category: "$category.name",
+          start_time: 1,
+          payment_status: "$payment_details.payment_status"
+        }
+      }
+  ]);
+  console.log("check", transaction)
+  if (!transaction.length) {
+    return res.status(404).json(new ApiResponse(404, [], "No transactions found for this user"));
+  }
+  return res.json(
+    new ApiResponse(
+      200,
+      transaction,
+      "Transactions retrieved successfully."
+    )
+  );
+});
 export {
   calculateTotalSales,
   TotalSalesList,
@@ -1130,5 +1192,6 @@ export {
   getTherapistRevenue,
   getUserSessions,
   UserTransactions,
-  therapistTransactions
+  therapistTransactions,
+  thankyou,
 };

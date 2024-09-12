@@ -111,6 +111,7 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
     const order_status = mapPaymentStatus(paymentDetails?.data?.responseCode);
     transaction.payment_details = paymentDetails;
     paymentDetails.payment_status = order_status;
+    transaction.payment_status = order_status;
     transaction.save();
     if (order_status === "successful") {
       const existingSession = await Session.findOne({
@@ -159,8 +160,8 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
   };
   try {
     const { paymentDetails, transaction } = req;
-    console.log("paymentDetails", paymentDetails);
-    console.log("paymentDetails", paymentDetails);
+    // console.log("paymentDetails", paymentDetails);
+    // console.log("paymentDetails", paymentDetails);
     const user = req.user;
     const therapist = await Therapist.findById(transaction.therapist_id);
     if (!therapist) {
@@ -169,6 +170,7 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
     const order_status = mapPaymentStatus(paymentDetails.order_status);
     transaction.payment_details = paymentDetails.data;
     paymentDetails.payment_status = order_status;
+    transaction.payment_status = order_status;
     transaction.save();
     if (order_status === "successful") {
       const existingSession = await Session.findOne({
@@ -188,9 +190,9 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
         start_time: transaction.start_time,
         end_time: transaction.end_time,
       });
-    
-      const channelName=session._id.toString().slice(-10)
-       channelName = `session_${channelName}`;
+
+      const channelName = session._id.toString().slice(-10)
+      channelName = `session_${channelName}`;
       session.channelName = channelName;
       await session.save();
       await sendNotificationsAndEmails(transaction, user);

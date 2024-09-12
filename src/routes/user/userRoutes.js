@@ -4,7 +4,7 @@ import feedbackRoute from "../feeback.route.js";
 import sessionRouter from "./session.routes.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { userEmailVerify } from "../../controllers/otpController.js";
-import { getUserSessions, UserTransactions } from "../../controllers/admin/transactionsController.js";
+import { getUserSessions, UserTransactions, thankyou } from "../../controllers/admin/transactionsController.js";
 import {
   updateAvatar,
   updateProfile,
@@ -34,5 +34,7 @@ router.patch("/update-avatar", upload.single("userAvetar"), updateAvatar);
 router.get("/get-sessions", getUserSessions);
 router.get("/get-transactions", UserTransactions);
 router.get("/joining-token", generateSessionToken);
+router.get("/thankyou", thankyou);
+
 
 export default router;

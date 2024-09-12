@@ -1,6 +1,5 @@
 import https from "https";
 import dotenv from "dotenv";
-
 dotenv.config();
 
 const authKey = process.env.AUTH_KEY;
@@ -9,6 +8,10 @@ const otpExpiry = 10;
 
 function sendOtpMessage(mobile, otp) {
   return new Promise((resolve, reject) => {
+    // Prepend country code to mobile number
+    mobile = `91${mobile}`;
+    console.log("Sending OTP to mobile:", mobile);
+
     const options = {
       method: "POST",
       hostname: "control.msg91.com",
@@ -27,24 +30,32 @@ function sendOtpMessage(mobile, otp) {
       });
 
       res.on("end", () => {
+        console.log("Response from Msg91:", data); // Log the raw response data
         try {
           const response = JSON.parse(data);
-          if (res.statusCode >= 200 && res.statusCode < 300) {
+
+          if (res.statusCode >= 200 && res.statusCode < 300 && response.type === "success") {
+            console.log("OTP sent successfully:", response);
             resolve(response);
           } else {
+            console.error(
+              `Failed to send OTP. Status Code: ${res.statusCode}, Response: ${JSON.stringify(response)}`
+            );
             reject(
               new Error(
-                `Request failed with status code ${res.statusCode}: ${response.message}`
+                `Request failed with status code ${res.statusCode}: ${response.message || 'OTP sending failed'}`
               )
             );
           }
         } catch (error) {
+          console.error("Error parsing response:", error.message);
           reject(new Error("Failed to parse response"));
         }
       });
     });
 
     req.on("error", (error) => {
+      console.error("Request error:", error.message); // Log the actual error
       reject(error);
     });
 

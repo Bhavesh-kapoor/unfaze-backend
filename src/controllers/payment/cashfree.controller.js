@@ -69,7 +69,7 @@ const createOrder = asyncHandler(async (req, res) => {
       category: specialization_id,
       amount_USD: therapist.usdPrice,
       rate_USD: rate_USD,
-      status: "PAYMENT_INITIATED",
+      payment_status: "PAYMENT_INITIATED",
       start_time: startDateTime,
       end_time: endDateTime,
     });

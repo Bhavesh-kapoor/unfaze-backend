@@ -143,8 +143,8 @@ const sendMobileOtp = asyncHandler(async (req, res) => {
     const { mobile } = req.body;
     const otp = await createAndStoreMobileOTP(mobile);
     const result = await sendOtpMessage(mobile, otp);
-    console.log('OTP sent successfully:', result);
-    return res.status(200).json(new ApiResponse(200, null, "OTP sent successfully"))
+    console.log(result);
+    return res.status(200).json(new ApiResponse(200, result,))
   } catch (error) {
     return res.status(500).json(new ApiError(500, error, "Error sending OTP"))
   }

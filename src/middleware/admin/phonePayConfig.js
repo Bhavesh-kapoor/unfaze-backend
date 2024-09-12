@@ -9,7 +9,6 @@ import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format } from "date-fns";
 // import { Course } from "../../models/courseModel.js";
 // import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
-const SESSION_DURATION_MINUTES = 30;
 const convertTo24HourFormat = (timeStr) => {
   const [time, modifier] = timeStr.split(' ');
   let [hours, minutes] = time.split(':').map(Number);
@@ -21,7 +20,7 @@ const convertTo24HourFormat = (timeStr) => {
 
 export async function processPayment(req, res) {
   try {
-    const { therapist_id, specialization_id, time_slot_id } = req.body;
+    const { therapist_id, specialization_id, slot_id } = req.body;
 
     const timeSlots = await Slot.aggregate([
       {
@@ -34,7 +33,7 @@ export async function processPayment(req, res) {
       },
       {
         $match: {
-          "timeslots._id": new mongoose.Types.ObjectId(time_slot_id),
+          "timeslots._id": new mongoose.Types.ObjectId(slot_id),
           "timeslots.isBooked": false
         }
       },
@@ -131,12 +130,20 @@ export async function processPayment(req, res) {
         therapist_id,
         category: specialization_id,
         amount_INR: therapist.inrPrice,
-        status: "PAYMENT_INITIATED",
+        payment_status: "PAYMENT_INITIATED",
         start_time: startDateTime,
         end_time: endDateTime,
       });
 
       await initiatedTransaction.save();
+      await Slot.updateOne({
+        therapist_id: new mongoose.Types.ObjectId(therapist_id),
+        "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+      }, {
+        $set: {
+          "timeslots.isBooked": true,
+        }
+      })
       res.status(200).json(
         new ApiResponse(200, {
           redirect_url: response.data.data.instrumentResponse.redirectInfo.url,

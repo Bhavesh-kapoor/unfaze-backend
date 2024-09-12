@@ -548,7 +548,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
     const otp = await createAndStoreMobileOTP(mobile);
     const response = await sendOtpMessage(user.mobile, otp)
-    console.log('OTP sent on mobile successfully:', response);
+    console.log(response);
     const htmlContent = otpContent(otp);
     const options = mailOptions(
       user.email,
