@@ -8,7 +8,6 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format } from "date-fns";
-import { Slot } from "../../models/slotModal.js";
 import dotenv from "dotenv"
 dotenv.config()
 console.log(process.env.HOST_URL)
