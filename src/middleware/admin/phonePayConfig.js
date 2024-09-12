@@ -3,6 +3,7 @@ import uniqid from "uniqid";
 import sha256 from "sha256";
 import mongoose from "mongoose";
 import ApiError from "../../utils/ApiError.js";
+import { Slot } from "../../models/slotModal.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
@@ -61,7 +62,9 @@ export async function processPayment(req, res) {
     ]);
     console.log(timeSlots)
     if (timeSlots.length === 0) {
-      return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "Timeslot not found or already booked"));
     }
     const { date, startTime, endTime } = timeSlots[0];
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
@@ -72,11 +75,15 @@ export async function processPayment(req, res) {
 
     if (!isValid(startDateTime) || !isValid(endDateTime)) {
       console.error("Invalid date-time format:", startDateTime, endDateTime);
-      return res.status(400).json(new ApiError(400, "", "Invalid date or time format"));
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Invalid date or time format"));
     }
 
     if (startDateTime >= endDateTime) {
-      return res.status(400).send({ error: "End time must be after start time" });
+      return res
+        .status(400)
+        .send({ error: "End time must be after start time" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
