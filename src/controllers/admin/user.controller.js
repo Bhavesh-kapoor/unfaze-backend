@@ -7,8 +7,8 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
 import { parseISO, addDays, startOfDay, endOfDay } from "date-fns";
-import path from 'path';
-import fs from "fs"
+import path from "path";
+import fs from "fs";
 import { sendMobileOtp } from "../otpController.js";
 import { sendOtpMessage } from "../../config/msg91.config.js";
 import { createAndStoreMobileOTP } from "../otpController.js";
@@ -127,8 +127,7 @@ const userlogin = asyncHandler(async (req, res) => {
 });
 
 const register = asyncHandler(async (req, res) => {
-  const { email, firstName, lastName, password, mobile, dateOfBirth, gender, otp } =
-    req.body;
+  const { email, otp } = req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res
@@ -143,21 +142,12 @@ const register = asyncHandler(async (req, res) => {
   const exist = await User.findOne({ email });
   if (exist) {
     return res
-      .status(409)
-      .json(
-        new ApiError(409, "", "User with username or email is already exsist")
-      );
+      .status(200)
+      .json(new ApiResponse(200, {}, "Email_already_exist"));
   }
 
   const newUser = await User.create({
-    email,
-    firstName,
-    lastName,
-    password,
-    mobile,
-    gender,
-    dateOfBirth,
-    profileImage,
+    ...req.body,
     isEmailVerified: true,
   });
 
@@ -190,9 +180,11 @@ const register = asyncHandler(async (req, res) => {
 
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
-  console.log(req.user)
+  console.log(req.user);
   if (!userId) {
-    return res.status(401).json(new ApiError(401, '', 'User not authenticated'));
+    return res
+      .status(401)
+      .json(new ApiError(401, "", "User not authenticated"));
   }
 
   const user = req.body;
@@ -203,24 +195,30 @@ const updateProfile = asyncHandler(async (req, res) => {
     const existingUser = await User.findById(userId);
 
     if (!existingUser) {
-      return res.status(404).json(new ApiError(404, '', 'User not found'));
+      return res.status(404).json(new ApiError(404, "", "User not found"));
     }
     if (existingUser.profileImage && profileImage) {
       if (fs.existsSync(existingUser.profileImage)) {
         fs.unlinkSync(existingUser.profileImage);
       }
     }
-    const updatedUser = await User.findByIdAndUpdate(userId, { ...user, profileImage }, {
-      new: true,
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { ...user, profileImage },
+      {
+        new: true,
+      }
+    );
 
     if (!updatedUser) {
-      return res.status(404).json(new ApiError(404, '', 'User not found'));
+      return res.status(404).json(new ApiError(404, "", "User not found"));
     }
-    return res.status(200).json(new ApiResponse(200, updatedUser, 'User updated successfully'));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedUser, "User updated successfully"));
   } catch (error) {
     console.error(error);
-    return res.status(500).json(new ApiError(500, '', 'Server error'));
+    return res.status(500).json(new ApiError(500, "", "Server error"));
   }
 });
 
@@ -541,14 +539,18 @@ export const createAdmin = asyncHandler(async (req, res) => {
 
 const forgotPassword = asyncHandler(async (req, res) => {
   try {
-    const { email, mobile } = req.body
-    const user = await User.findOne({ $or: [{ email }, { mobile }] })
+    const { email, mobile } = req.body;
+    const user = await User.findOne({ $or: [{ email }, { mobile }] });
     if (!user) {
-      return res.status(404).json(new ApiResponse(404, null, "You are not associated with any Account!"))
+      return res
+        .status(404)
+        .json(
+          new ApiResponse(404, null, "You are not associated with any Account!")
+        );
     }
     const otp = await createAndStoreMobileOTP(mobile);
-    const response = await sendOtpMessage(user.mobile, otp)
-    console.log('OTP sent on mobile successfully:', response);
+    const response = await sendOtpMessage(user.mobile, otp);
+    console.log("OTP sent on mobile successfully:", response);
     const htmlContent = otpContent(otp);
     const options = mailOptions(
       user.email,
@@ -561,14 +563,16 @@ const forgotPassword = asyncHandler(async (req, res) => {
       }
       console.log("Email Otp sent: %s", info.messageId);
     });
-    return res.status(200).json(new ApiResponse(200, null, "OTP sent on your registered mobile number"))
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, null, "OTP sent on your registered mobile number")
+      );
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
   }
-  catch (error) {
-    console.log(error)
-    return res.status(500).json(new ApiError(500, error, "Error sending OTP"))
-  }
-}
-)
+});
 export {
   adminlogin,
   userlogin,
@@ -580,5 +584,5 @@ export {
   allUser,
   getCurrentUser,
   changeCurrentPassword,
-  forgotPassword
+  forgotPassword,
 };
