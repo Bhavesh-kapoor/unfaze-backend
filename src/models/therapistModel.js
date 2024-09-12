@@ -184,7 +184,7 @@ import mongoose, { Schema } from "mongoose";
 const educationDetailSchema = new Schema(
   {
     courseName: { type: String, trim: true, Default: "" },
-    institutionName: { type: String, required: true, trim: true },
+    institutionName: { type: String, trim: true },
     completionYear: {
       type: Number,
       min: 1900,
@@ -207,11 +207,11 @@ const educationSchema = new Schema(
 
 const addressSchema = new Schema(
   {
-    country: { type: String, trim: true, required: true },
-    state: { type: String, trim: true, required: true },
-    city: { type: String, trim: true, required: true },
-    pincode: { type: String, trim: true, required: true },
-    addressLine1: { type: String, trim: true, required: true },
+    country: { type: String, trim: true },
+    state: { type: String, trim: true },
+    city: { type: String, trim: true },
+    pincode: { type: String, trim: true },
+    addressLine1: { type: String, trim: true },
     addressLine2: { type: String, trim: true },
     landmark: { type: String, trim: true },
     latitude: { type: Number, min: -90, max: 90 },
@@ -248,7 +248,7 @@ const bankSchema = new Schema(
 // Therapist Schema
 const TherapistSchema = new Schema(
   {
-    mobile: { type: String, unique: true, trim: true },
+    mobile: { type: String, trim: true },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     role: { type: String, default: "therapist", trim: true },
@@ -281,16 +281,8 @@ const TherapistSchema = new Schema(
     bio: { type: String, trim: true },
     languages: [{ type: String, trim: true }],
     dateOfBirth: { type: Date, required: true },
-    adharNumber: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    panNumber: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+    adharNumber: { type: String, default: "" },
+    panNumber: { type: String, default: "" },
     isActive: { type: Boolean, default: false },
     usdPrice: { type: Number, default: 0 },
     inrPrice: { type: Number, default: 0 },
@@ -301,7 +293,6 @@ const TherapistSchema = new Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Specialization",
-        required: true,
       },
     ],
   },
