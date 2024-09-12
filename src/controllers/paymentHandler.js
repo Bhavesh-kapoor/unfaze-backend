@@ -16,7 +16,6 @@ const sendNotificationsAndEmails = async (transaction, user) => {
     email: user.email,
     mobile: user.mobile,
   };
-
   try {
     const notification = await sendNotification(
       receiverId,

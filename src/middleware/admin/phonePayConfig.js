@@ -10,7 +10,6 @@ import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format } from "date-fns";
 import dotenv from "dotenv"
 dotenv.config()
-console.log(process.env.HOST_URL)
 // import { Course } from "../../models/courseModel.js";
 // import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 function convertTo24HourFormat(time12h) {

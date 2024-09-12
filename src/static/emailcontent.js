@@ -44,4 +44,28 @@ const loginCredentialEmail = (username, tempPassword) => {
     `);
 };
 
-export { contactUsContent,otpContent,loginCredentialEmail }
+const welcomeEmail = (name) => {
+    return (
+        `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h2 style="color: #555;">Hi ${name},</h2>
+        <p>Welcome to Unfazed! We're thrilled to have you on board. You&apos;ve just taken the first step towards prioritizing your mental well-being, and we’re here to support you every step of the way.</p>
+        <p>At Unfazed, we believe in creating a safe, judgment-free space where you can explore, heal, and grow. Whether you're looking for therapy, personal development, or simply a space to unwind and reconnect, we've got you covered.</p>
+        <h3 style="color: #444;">Here's what you can expect moving forward:</h3>
+        <ul>
+            <li><strong>Custom Therapy Sessions</strong> &ndash; Personalized to your unique needs.</li>
+            <li><strong>Flexible Formats</strong> &ndash; Choose between audio, video, or chat based on your comfort.</li>
+            <li><strong>Holistic Wellness</strong> &ndash; Access additional resources to enhance your mental health journey.</li>
+        </ul>
+        <p>If you&apos;re ready, you can <a href="[Insert link]" style="color: #0066cc; text-decoration: none;">book your first session here</a> and get started. Should you have any questions or need assistance, feel free to reach out. We're always here to help.</p>
+        <p>Thank you for trusting Unfazed with your mental health. We&apos;re excited to be a part of your journey!</p>
+        <br>
+        <p style="color: #888;">Warm regards,</p>
+        <p>Team Unfazed</p>
+        <p><strong>Whatsapp:</strong> +91-6392-975-097</p>
+        <p><strong>Email:</strong> <a href="mailto:contact@unfazed.in" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
+        <p><strong>Website:</strong> <a href="http://www.unfazed.in" target="_blank" style="color: #0066cc; text-decoration: none;">www.unfazed.in</a></p>
+    </div>`
+    )
+}
+
+export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail }

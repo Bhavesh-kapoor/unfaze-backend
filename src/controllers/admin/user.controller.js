@@ -12,9 +12,9 @@ import fs from "fs";
 import { sendMobileOtp } from "../otpController.js";
 import { sendOtpMessage } from "../../config/msg91.config.js";
 import { createAndStoreMobileOTP } from "../otpController.js";
-import { mailOptions } from "../../config/nodeMailer.js";
-import { transporter } from "../../config/nodeMailer.js";
 import { otpContent } from "../../static/emailcontent.js";
+import { welcomeEmail } from "../../static/emailcontent.js";
+import { transporter, mailOptions } from "../../config/nodeMailer.js";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
@@ -138,7 +138,7 @@ const register = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiError(201, "", "Invalid OTP"));
   }
 
-  let profileImage = req.file ? req.file.path : "";
+  // let profileImage = req.file ? req.file.path : "";
   const exist = await User.findOne({ email });
   if (exist) {
     return res
@@ -160,7 +160,18 @@ const register = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
   };
-
+  const htmlContent = welcomeEmail(`${req.body.firstName} ${req.body.lastName}`);
+  const Emailoptions = mailOptions(
+    email,
+    "Welcome to Unfazed!",
+    htmlContent
+  );
+  transporter.sendMail(Emailoptions, (error, info) => {
+    if (error) {
+      console.log(error);
+    }
+    console.log("welcome mail sent: %s", info.messageId);
+  })
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)

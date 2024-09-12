@@ -48,10 +48,8 @@ const generateSessionToken = asyncHandler(async (req, res) => {
             const hoursRemaining = Math.floor(timeDifferenceInMilliseconds / (1000 * 60 * 60));
             const minutesRemaining = Math.floor((timeDifferenceInMilliseconds % (1000 * 60 * 60)) / (1000 * 60));
             const secondsRemaining = Math.floor((timeDifferenceInMilliseconds % (1000 * 60)) / 1000);
-
             // Format the waiting time into HH:MM:SS format
             const formattedWaitingTime = `${String(hoursRemaining).padStart(2, '0')}:${String(minutesRemaining).padStart(2, '0')}:${String(secondsRemaining).padStart(2, '0')}`;
-
             return res.status(400).json(new ApiError(400, "", `Please wait for ${formattedWaitingTime}.`));
         }
     }
@@ -67,7 +65,7 @@ const generateSessionToken = asyncHandler(async (req, res) => {
     if (!token) {
         return res.status(500).json(new ApiError(500, "", "Something went wrong while generating the token!"));
     }
-    const join_url = `/session/${uid}?channel=${channelName}&token=${token}`
+    const join_url = `/session/${uid}?channel=${channelName}`
     res.status(200).json({ join_url: join_url });
 });
 export { generateSessionToken };
