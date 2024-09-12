@@ -229,7 +229,6 @@ const register = asyncHandler(async (req, res) => {
     if (existingTherapist) {
       let duplicateField = "";
 
-      // Determine which field is duplicated
       if (existingTherapist.email === email) duplicateField = "Email";
       else if (existingTherapist.mobile === mobile)
         duplicateField = "Phone Number";
@@ -294,10 +293,10 @@ const register = asyncHandler(async (req, res) => {
       therapistData.educationDetails.graduation.certificateImageUrl =
         req.files.graduationImg[0]?.path;
     }
-    if (req.files?.postGraduationImgs) {
+    if (req.files?.postGraduationImg) {
       console.log("test", req.files);
       therapistData.educationDetails.postGraduation.certificateImageUrl =
-        req.files.postGraduationImgs[0]?.path;
+        req.files.postGraduationImg[0]?.path;
     }
     let createTherepist = new Therapist(therapistData);
     await createTherepist.save();
@@ -742,7 +741,6 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 //     res.status(500).send(new ApiError(500, "", err.message));
 //   }
 // });
-
 const updateTherapist = asyncHandler(async (req, res) => {
   // Therapist ID from the authenticated user
   const _id = req.user?._id;

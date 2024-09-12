@@ -79,15 +79,15 @@ const storage = multer.diskStorage({
     const emailPrefix = getEmailPrefix(req.body.email || req.user.email);
     let folder;
     if (file.fieldname === "profileImage") {
-      folder = `src/images/therapists/${emailPrefix}/profileImage`;
+      folder = `src/images/therapists/${emailPrefix}`;
     } else if (file.fieldname === "highschoolImg") {
-      folder = `src/images/therapists/${emailPrefix}/highschool`;
+      folder = `src/images/therapists/${emailPrefix}`;
     } else if (file.fieldname === "intermediateImg") {
-      folder = `src/images/therapists/${emailPrefix}/intermediate`;
+      folder = `src/images/therapists/${emailPrefix}`;
     } else if (file.fieldname === "graduationImg") {
-      folder = `src/images/therapists/${emailPrefix}/graduation`;
+      folder = `src/images/therapists/${emailPrefix}`;
     } else if (file.fieldname === "postGraduationImg") {
-      folder = `src/images/therapists/${emailPrefix}/postGraduation`;
+      folder = `src/images/therapists/${emailPrefix}`;
     } else if (file.fieldname === "blog") {
       folder = "src/images/blogs";
     } else if (file.fieldname === "userAvetar") {
