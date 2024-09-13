@@ -83,46 +83,52 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const userlogin = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  if (!email && !password) {
-    return res
-      .status(409)
-      .json(new ApiError(400, "", "Please pass username or email"));
-  }
+    if (!email && !password) {
+      return res
+        .status(409)
+        .json(new ApiError(400, "", "Please pass username or email"));
+    }
 
-  let existUser = await User.findOne({ $and: [{ email }, { role: "user" }] });
-  if (!existUser)
-    return res.status(400).json(new ApiError(400, "", "Email Not Found!"));
+    let existUser = await User.findOne({ $and: [{ email }, { role: "user" }] });
+    if (!existUser)
+      return res.status(400).json(new ApiError(400, "", "Email Not Found!"));
 
-  // now check password is correct  or not
-  const isPasswordCorrect = await existUser.isPasswordCorrect(password);
-  if (!isPasswordCorrect)
-    return res.status(401).json(new ApiError(401, "", "Invalid Credentials!"));
+    // now check password is correct  or not
+    const isPasswordCorrect = await existUser.isPasswordCorrect(password);
+    if (!isPasswordCorrect)
+      return res
+        .status(401)
+        .json(new ApiError(401, "", "Invalid Credentials!"));
 
-  // generate token
-  let { accessToken, refreshToken } = await createAccessOrRefreshToken(
-    existUser._id
-  );
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
-
-  const LoggedInUser = await User.findById(existUser._id).select(
-    "-password -refreshToken"
-  );
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(200, {
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        user: LoggedInUser,
-      })
+    // generate token
+    let { accessToken, refreshToken } = await createAccessOrRefreshToken(
+      existUser._id
     );
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    const LoggedInUser = await User.findById(existUser._id).select(
+      "-password -refreshToken"
+    );
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(200, {
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          user: LoggedInUser,
+        })
+      );
+  } catch (error) {
+    return res.status(401).json(new ApiError(401, "", "Invalid Credentials!"));
+  }
 });
 
 const register = asyncHandler(async (req, res) => {
@@ -159,18 +165,16 @@ const register = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
   };
-  const htmlContent = welcomeEmail(`${req.body.firstName} ${req.body.lastName}`);
-  const Emailoptions = mailOptions(
-    email,
-    "Welcome to Unfazed!",
-    htmlContent
+  const htmlContent = welcomeEmail(
+    `${req.body.firstName} ${req.body.lastName}`
   );
+  const Emailoptions = mailOptions(email, "Welcome to Unfazed!", htmlContent);
   transporter.sendMail(Emailoptions, (error, info) => {
     if (error) {
       console.log(error);
     }
     console.log("welcome mail sent: %s", info.messageId);
-  })
+  });
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
