@@ -59,9 +59,14 @@ passport.use(
       scope: ["email"],
     },
     async (accessToken, refreshToken, profile, done) => {
+      console.log(profile)
       try {
-        let user = await User.findOne({ facebookId: profile.id });
-
+        let user = await User.findOne({ $or: [{ facebookId: profile.id }, { email: profile.emails[0].value }] });
+        if (user && !user?.facebookId) {
+          user.facebookId = profile.id,
+            user.profileImage = profile?.photos[0].value || "",
+            user.save();
+        }
         if (!user) {
           user = new User({
             facebookId: profile.id,
