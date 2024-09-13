@@ -30,7 +30,7 @@ function sendOtpMessage(mobile, otp) {
       });
 
       res.on("end", () => {
-        console.log("Response from Msg91:", data); // Log the raw response data
+        console.log("Response from Msg91:", data); 
         try {
           const response = JSON.parse(data);
 
