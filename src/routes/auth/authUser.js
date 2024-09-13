@@ -19,7 +19,6 @@ const handleAuthRedirect = (req, res) => {
     res.redirect(`${process.env.FRONTEND_URL}/login`);
   }
 };
-
 router.get(
   "/user/google",
   passport.authenticate("google-user", { scope: ["profile", "email"] })
