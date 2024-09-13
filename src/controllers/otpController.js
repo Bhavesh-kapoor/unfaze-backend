@@ -20,7 +20,7 @@ async function verifyOTP(email, otp) {
   return false;
 }
 async function verifyMobileOTP(mobile, otp) {
-  const otpDoc = await OTP.findOne({ email, otp });
+  const otpDoc = await OTP.findOne({ mobile, otp });
   if (otpDoc) {
     await OTP.deleteOne({ _id: otpDoc._id });
     return true;
@@ -149,29 +149,32 @@ const sendMobileOtp = asyncHandler(async (req, res) => {
   }
 })
 const mobileVerify = async (req, res) => {
-   const user = req.user 
+  const user = req.user
   const { mobile, otp } = req.body;
+  console.log(req.body)
 
   if (!mobile || !otp) {
     return res
       .status(500)
       .json(new ApiError(500, "", "email and otp are required!"));
   }
-  const isValid = await verifyMobileOTP(email, otp);
-
+  const isValid = await verifyMobileOTP(mobile, otp);
   if (isValid) {
-    if (user?.role === "therapist") {
-      const user = await Therapist.findOne({ email: email });
-      user.isEmailVerified = true;
-      await user.save();
-    } else {
-      const user = await User.findOne({ email: email });
-      user.isEmailVerified = true;
-      await user.save();
-    }
+    user.isMobileVerified = true;
+    const updatedUser = await user.save();
+
+    // if (user?.role === "therapist") {
+    //   const user = await Therapist.findOne({ email: email });
+    //   user.isEmailVerified = true;
+    //   await user.save();
+    // } else {
+    //   const user = await User.findOne({ email: email });
+    //   user.isEmailVerified = true;
+    //   await user.save();
+    // }
     res
       .status(200)
-      .json(new ApiResponse(200, null, "mobile verification success!"));
+      .json(new ApiResponse(200, updatedUser, "mobile verification success!"));
   } else {
     res.status(400).json(new ApiError(400, null, "invalid otp"));
   }

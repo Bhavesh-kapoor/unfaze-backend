@@ -5,7 +5,6 @@ import { therapistEmailVerify } from "../../controllers/otpController.js";
 import { getTherapistSessions, getTherapistRevenue, getUserSessions } from "../../controllers/admin/transactionsController.js";
 
 const router = Router();
-
 router.use("/", therepistAuth);
 // router.use("/course", courseRouter);
 

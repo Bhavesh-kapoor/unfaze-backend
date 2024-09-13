@@ -15,6 +15,7 @@ import {
   updateProfile,
 } from "../../controllers/admin/user.controller.js";
 import { generateSessionToken } from "../../controllers/agora.js";
+import { sendMobileOtp,mobileVerify } from "../../controllers/otpController.js";
 
 const router = Router();
 
@@ -42,5 +43,8 @@ router.get("/get-sessions", getUserSessions);
 router.get("/get-transactions", UserTransactions);
 router.get("/joining-token", generateSessionToken);
 router.get("/thankyou", thankyou);
+router.post("/send-mobile-otp", sendMobileOtp);
+router.post("/verify-mobile-otp", mobileVerify);
+
 
 export default router;
