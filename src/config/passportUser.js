@@ -13,10 +13,11 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/api/public/user/google/callback",
+      callbackURL: `${process.env.APP_BASE_URL}/api/public/user/google/callback`,
       scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
+
       try {
         let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }] });
         if (!user.googleId) {
