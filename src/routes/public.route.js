@@ -27,6 +27,7 @@ import {
 } from "../controllers/admin/TherepistController.js";
 import { sendMobileOtp } from "../controllers/otpController.js";
 import { forgotPassword } from "../controllers/admin/user.controller.js";
+import { userEmailVerify } from "../controllers/otpController.js";
 import { getSlotsByDate } from "../controllers/slotController.js";
 
 const router = express.Router();
@@ -128,5 +129,5 @@ router.get(
   handleAuthRedirect
 );
 router.get("/forget-password", forgotPassword);
-
+router.get("/mail-otp-verify", userEmailVerify);
 export default router;
