@@ -4,7 +4,6 @@ import passport from "passport";
 import { User } from "../models/userModel.js";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
-
 dotenv.config();
 
 // google strategy
@@ -18,13 +17,12 @@ passport.use(
       scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
-      console.log(profile);
       try {
         let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }] });
         if (!user.googleId) {
           user.googleId = profile.id,
-          user.profileImage = profile.photos[0].value,
-          user.save();
+            user.profileImage = profile.photos[0].value,
+            user.save();
         }
         if (!user) {
           user = new User({
@@ -55,7 +53,7 @@ passport.use(
     {
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: "/api/public/user/facebook/callback",
+      callbackURL: `${process.env.APP_BASE_URL}/api/public/user/facebook/callback`,
       profileFields: ["id", "emails", "name"],
       scope: ["email"],
     },
