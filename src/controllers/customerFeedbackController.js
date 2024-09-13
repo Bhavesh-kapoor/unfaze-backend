@@ -1,4 +1,4 @@
-import { CustomerFeedback } from "../models/reviewsModal";
+import { CustomerFeedback } from "../models/reviewsModal.js";
 
 export const createFeedback = async (req, res) => {
   try {
