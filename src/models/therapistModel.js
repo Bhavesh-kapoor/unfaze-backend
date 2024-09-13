@@ -253,7 +253,7 @@ const TherapistSchema = new Schema(
     lastName: { type: String, required: true, trim: true },
     role: { type: String, default: "therapist", trim: true },
     ratings: { type: String, trim: true, default: "4.5" },
-    sessionCount: { type: Number, default: "100" },
+    sessionCount: { type: Number },
     license: { type: String, trim: true },
     password: { type: String, trim: true },
     experience: { type: String, trim: true },

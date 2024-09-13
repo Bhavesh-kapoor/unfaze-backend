@@ -17,6 +17,7 @@ import {
 } from "../controllers/admin/user.controller.js";
 import upload from "../middleware/admin/multer.middleware.js";
 import specializationRoutes from "./admin/specilization.route.js";
+import customerFeedbackRoutes from "./customerFeedbackRoutes.js";
 import { raiseQuery } from "../controllers/admin/contactUsController.js";
 import {
   register as therapistRegister,
@@ -35,7 +36,6 @@ const multipleImages = upload.fields([
   { name: "graduationImg", maxCount: 1 },
   { name: "postGraduationImg", maxCount: 1 },
   { name: "profileImage", maxCount: 1 },
-
 ]);
 const handleAuthRedirect = (req, res) => {
   if (req.user) {
@@ -61,11 +61,13 @@ router.post(
   validateRegister,
   register
 );
-router.post("/send-mobile-otp", sendMobileOtp
-);
+router.post("/send-mobile-otp", sendMobileOtp);
 
 // User login
 router.post("/login", userlogin);
+
+router.post("/reviews", customerFeedbackRoutes);
+
 router.post("/therapist/login", therapistLogin);
 
 router.use("/specialization", specializationRoutes);
@@ -122,6 +124,6 @@ router.get(
   }),
   handleAuthRedirect
 );
-router.get("/forget-password", forgotPassword)
+router.get("/forget-password", forgotPassword);
 
 export default router;
