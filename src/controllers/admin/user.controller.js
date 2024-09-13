@@ -133,13 +133,16 @@ const userlogin = asyncHandler(async (req, res) => {
 
 const register = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
+  console.log(req.body)
   const errors = validationResult(req);
+
   if (!errors.isEmpty()) {
     return res
       .status(400)
       .json(new ApiError(400, "Validation Error", errors.array()));
   }
-  if (!verifyOTP(email, otp)) {
+  const verify = await verifyOTP(email, otp)
+  if (!verify) {
     return res.status(201).json(new ApiError(201, "", "Invalid OTP"));
   }
 
@@ -150,7 +153,6 @@ const register = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, {}, "Email_already_exist"));
   }
-
   const newUser = await User.create({
     ...req.body,
     isEmailVerified: true,
@@ -587,7 +589,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
     return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
   }
 });
-
 export const generateInvoice = asyncHandler(async (req, res) => {
   const {
     user,

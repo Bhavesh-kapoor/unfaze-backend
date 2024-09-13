@@ -14,6 +14,10 @@ export const getOverview = asyncHandler(async (req, res) => {
         status: "unread",
     }).sort({ createdAt: -1 }).limit(5);
 
+    const therapist = asyncHandler(async(req,res)=>{
+const therapists = await therapists.find({isActive: true})
+    })
+
     const therapists = await Session.aggregate([
         {
             $match: {
