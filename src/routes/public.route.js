@@ -28,6 +28,7 @@ import {
 import { sendMobileOtp } from "../controllers/otpController.js";
 import { forgotPassword } from "../controllers/admin/user.controller.js";
 import { userEmailVerify } from "../controllers/otpController.js";
+import { getSlotsByDate } from "../controllers/slotController.js";
 
 const router = express.Router();
 
@@ -78,6 +79,8 @@ router.post("/refreshToken", refreshToken);
 router.get("/get-blog-list", getAllBlogs);
 
 router.use("/email/send-otp", sendOtp);
+
+router.get("/slot/list/:therapist_id/:date", getSlotsByDate);
 
 router.get("/get-blog-details", findBolgbySlug);
 
