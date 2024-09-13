@@ -4,13 +4,10 @@ import {
   updateSlot,
   deleteSlot,
   addMoreSlots,
-  getSlotsByDate,
   getNext10DaysSlots,
 } from "../controllers/slotController.js";
 
 const router = Router();
-
-router.get("/list/:therapist_id/:date", getSlotsByDate);
 
 router.get("/list", getNext10DaysSlots);
 
