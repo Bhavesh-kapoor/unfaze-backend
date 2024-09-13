@@ -96,17 +96,25 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/images/:folder/:image", (req, res) => {
-  const { folder, image } = req.params;
-  const imagePath = path.join(__dirname, "images/uploads", folder, image);
-  fs.access(imagePath, fs.constants.F_OK, (err) => {
-    if (err) return res.status(404).json({ message: "Image not found" });
-    res.sendFile(imagePath);
-  });
-});
+// Dynamic image serving endpoint
+// app.get("/images/:folder/:image", (req, res) => {
+//   const { folder, image } = req.params;
+//   const imagePath = path.join(__dirname, "images/uploads", folder, image);
+//   fs.access(imagePath, fs.constants.F_OK, (err) => {
+//     if (err) return res.status(404).json({ message: "Image not found" });
+//     res.sendFile(imagePath);
+//   });
+// });
+
 app.get("/images/:folder/:subfolder/:image", (req, res) => {
-  const { folder, image } = req.params;
-  const imagePath = path.join(__dirname, "images/uploads", folder, image);
+  const { folder, subfolder, image } = req.params;
+  const imagePath = path.join(
+    __dirname,
+    "images",
+    folder,
+    subfolder,
+    image
+  );
   fs.access(imagePath, fs.constants.F_OK, (err) => {
     if (err) return res.status(404).json({ message: "Image not found" });
     res.sendFile(imagePath);
