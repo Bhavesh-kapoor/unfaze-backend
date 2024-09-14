@@ -675,7 +675,7 @@ export const generateInvoice = asyncHandler(async (req, res) => {
 
   // Add logo and Invoice header
   doc.image("src/logo/logo.png", 50, 50, { width: 120 });
-  doc.fontSize(26).text("Invoice", 450, 60, { align: "right" }).fontSize(12);
+  doc.fontSize(26).text("Invoice", 450, 65, { align: "right" }).fontSize(12);
 
   // Horizontal line
   doc.moveTo(50, 100).lineTo(550, 100).stroke();
@@ -702,9 +702,9 @@ export const generateInvoice = asyncHandler(async (req, res) => {
     .text(
       `${data?.user?.city}, ${data?.user?.state}, ${data?.user?.country}`,
       50,
-      265
+      250
     )
-    .text(`${data?.user?.email}`, 50, 250);
+    .text(`Email-ID: ${data?.user?.email}`, 50, 265);
 
   const formattedDate = format(data?.updatedAt, "MMM dd, yyyy HH:mm a");
   const formattedStartDate = format(data?.start_time, "MMM dd, yyyy HH:mm a");
