@@ -7,13 +7,14 @@ import { verifyOTP } from "../otpController.js";
 import { User } from "../../models/userModel.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { parseISO, addDays, startOfDay, endOfDay } from "date-fns";
+import { parseISO, addDays, startOfDay, endOfDay, format } from "date-fns";
 import { sendOtpMessage } from "../../config/msg91.config.js";
 import { createAndStoreMobileOTP } from "../otpController.js";
 import { otpContent } from "../../static/emailcontent.js";
 import { welcomeEmail } from "../../static/emailcontent.js";
 import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { check, validationResult } from "express-validator";
+import { Transaction } from "../../models/transactionModel.js";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
@@ -140,7 +141,7 @@ const register = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiError(400, "Validation Error", errors.array()));
   }
-  const verify = await verifyOTP(email, otp)
+  const verify = await verifyOTP(email, otp);
   if (!verify) {
     return res.status(201).json(new ApiError(201, "", "Invalid OTP"));
   }
@@ -586,98 +587,178 @@ const forgotPassword = asyncHandler(async (req, res) => {
     return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
   }
 });
+
 export const generateInvoice = asyncHandler(async (req, res) => {
-  const {
-    user,
-    date,
-    items,
-    total,
-    transactionId,
-    paymentMethod,
-    billingAddress,
-    shippingAddress,
-  } = req.body;
+  const { transactionId } = req.body;
 
-  const doc = new PDFDocument();
+  const projectedFields = {
+    user: 1,
+    rate_USD: 1,
+    updatedAt: 1,
+    amount_USD: 1,
+    start_time: 1,
+    amount_INR: 1,
+    transactionId: 1,
+  };
+  const projectedUserFields = {
+    _id: 0,
+    city: 1,
+    email: 1,
+    state: 1,
+    gender: 1,
+    country: 1,
+    lastName: 1,
+    firstName: 1,
+  };
 
-  let filename = `invoice_${transactionId}.pdf`;
+  let data = await Transaction.aggregate([
+    { $match: { transactionId: transactionId } },
+    {
+      $lookup: {
+        from: "therapists",
+        localField: "therapist_id",
+        foreignField: "_id",
+        pipeline: [{ $project: { firstName: 1, lastName: 1, _id: 0 } }],
+        as: "therapist_details",
+      },
+    },
+    { $unwind: "$therapist_details" },
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "category",
+        foreignField: "_id",
+        pipeline: [{ $project: { name: 1, _id: 0 } }],
+        as: "category",
+      },
+    },
+    { $unwind: "$category" },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user_id",
+        foreignField: "_id",
+        pipeline: [{ $project: { ...projectedUserFields } }],
+        as: "user",
+      },
+    },
+    { $unwind: "$user" },
+    {
+      $project: {
+        ...projectedFields,
+        category: "$category.name",
+        therapistName: {
+          $concat: [
+            "$therapist_details.firstName",
+            " ",
+            "$therapist_details.lastName",
+          ],
+        },
+      },
+    },
+  ]);
+
+  if (!data) return response.json({ message: "Something is wrong!" });
+
+  data = data[0];
+
+  const doc = new PDFDocument({
+    size: "A4",
+    margin: 50,
+  });
+
+  let filename = `invoice_${data?.transactionId}.pdf`;
 
   // Response headers to download the PDF
   res.setHeader("Content-disposition", `attachment; filename="${filename}"`);
   res.setHeader("Content-type", "application/pdf");
 
-  // Company logo and title
-  doc.image("src/logo/logo.png", 50, 50, { width: 160 });
-  doc.fontSize(16).text("Transaction Invoice", 200, 50, { align: "right" });
-  doc.fontSize(14).text(`#${transactionId}`, 200, 75, { align: "right" });
+  // Add logo and Invoice header
+  doc.image("src/logo/logo.png", 50, 50, { width: 120 });
+  doc.fontSize(26).text("Invoice", 450, 60, { align: "right" }).fontSize(12);
 
   // Horizontal line
-  doc.moveTo(50, 120).lineTo(550, 120).stroke();
+  doc.moveTo(50, 100).lineTo(550, 100).stroke();
 
-  // Company and Customer details
-  doc.fontSize(12).text("Company Name", 50, 140);
-  doc.text("123 Business Road, Suite 100", 50, 155);
-  doc.text("Business City, BC 54321", 50, 170);
-  doc.text("Email: contact@company.com", 50, 185);
-  doc.text("Phone: (123) 456-7890", 50, 200);
-
-  doc.text("Customer:", 350, 140);
-  doc.text(`${user.name}`, 350, 155);
-  doc.text(`${user.email}`, 350, 170);
-  doc.text(`${billingAddress}`, 350, 185);
-
-  // Invoice date and payment method
-  doc.text(`Invoice Date: ${date}`, 50, 220);
-  doc.text(`Payment Method: ${paymentMethod}`, 50, 235);
-
-  // Billing and Shipping Address
-  doc.text(`Billing Address: ${billingAddress}`, 50, 260);
-  doc.text(
-    `Shipping Address: ${shippingAddress || "Same as billing address"}`,
-    50,
-    280
-  );
-
-  // Horizontal line
-  doc.moveTo(50, 300).lineTo(550, 300).stroke();
-
-  // Table header
-  doc.moveDown().fontSize(14).text("Items:", 50, 320);
-  doc.fontSize(12);
-  doc.text("Item", 50, 350);
-  doc.text("Quantity", 300, 350);
-  doc.text("Unit Price", 400, 350);
-  doc.text("Subtotal", 500, 350);
-
-  // Horizontal line
-  doc.moveTo(50, 370).lineTo(550, 370).stroke();
-
-  // Table rows
-  let yPos = 390;
-  items.forEach((item) => {
-    const subtotal = (item.quantity * item.price).toFixed(2);
-    doc.text(item.name, 50, yPos);
-    doc.text(item.quantity, 300, yPos);
-    doc.text(`$${item.price.toFixed(2)}`, 400, yPos);
-    doc.text(`$${subtotal}`, 500, yPos);
-    yPos += 20;
-  });
-
-  // Total
+  // Company Details
   doc
-    .moveTo(50, yPos + 10)
-    .lineTo(550, yPos + 10)
-    .stroke();
-  doc.fontSize(14).text(`Total: $${total}`, 500, yPos + 20);
+    .fontSize(10)
+    .text("From", 50, 110)
+    .fontSize(12)
+    .text("UNFAZED THERAPY SOLUTIONS", 50, 125)
+    .fontSize(10)
+    .text("PRIVATE LIMITED", 50, 140)
+    .text("E-514, Nri City Township,", 50, 155)
+    .text("Kanpur Nagar, Uttar Pradesh,", 50, 170)
+    .text("India - 208002", 50, 185);
+
+  // Client (Customer) Details
+  doc
+    .fontSize(10)
+    .text("To", 50, 220)
+    .fontSize(12)
+    .text(`${data?.user?.firstName} ${data?.user?.lastName}`, 50, 235)
+    .fontSize(10)
+    .text(
+      `${data?.user?.city}, ${data?.user?.state}, ${data?.user?.country}`,
+      50,
+      265
+    )
+    .text(`${data?.user?.email}`, 50, 250);
+
+  const formattedDate = format(data?.updatedAt, "MMM dd, yyyy HH:mm a");
+  const formattedStartDate = format(data?.start_time, "MMM dd, yyyy HH:mm a");
+
+  doc
+    .fontSize(14)
+    .text(`Invoice No.: #${data?.transactionId.slice(-8)}`, 350, 120, {
+      align: "right",
+    })
+    .text(`Invoice Date: ${formattedDate}`, 350, 140, {
+      align: "right",
+    });
+  // .text(`Payment Mode: ${paymentMethod}`, 350, 160, { align: "right" });
+
+  // Product/Service Details Header
+  doc
+    .fontSize(12)
+    .fillColor("#000000")
+    .text("Product Details", 50, 300)
+    .moveDown();
+
+  // Table Headers
+  doc
+    .fontSize(12)
+    .rect(50, 320, 500, 60)
+    .fill("#FFE5D3")
+    .fillColor("black")
+    .text("Name", 70, 330)
+    .text("Therapist Name", 200, 330)
+    .text("Time Slot", 350, 330)
+    .text("Price", 480, 330);
 
   // Horizontal line
-  doc
-    .moveTo(50, yPos + 40)
-    .lineTo(550, yPos + 40)
-    .stroke();
+  doc.moveTo(50, 320).lineTo(550, 320).stroke();
 
-  // Footer: Thank you note or additional information
-  // doc.fontSize(10).text("Thank you for your business!", 50, yPos + 60);
+  // Product/Service Details
+  const amount = data?.amount_INR ? data.amount_INR : data?.amount_USD;
+  doc
+    .fontSize(10)
+    .text(`${data?.category}`, 70, 360)
+    .text(`${data?.therapistName}`, 200, 360)
+    .text(`${formattedStartDate}`, 350, 360)
+    .text(`Rs. ${amount}`, 480, 360);
+
+  // Horizontal line
+  doc.moveTo(50, 350).lineTo(550, 350).stroke();
+
+  // Horizontal line
+  doc.moveTo(50, 380).lineTo(550, 380).stroke();
+
+  // Pricing Details
+  doc
+    .fontSize(16)
+    .text(`Total: ${data?.amount_USD ? "$" : "Rs."} ${amount}/-`, 400, 400);
 
   // Pipe the output to response
   doc.pipe(res);
@@ -685,15 +766,15 @@ export const generateInvoice = asyncHandler(async (req, res) => {
 });
 
 export {
-  adminlogin,
-  userlogin,
+  allUser,
   register,
+  userlogin,
+  adminlogin,
   refreshToken,
-  validateRegister,
   updateAvatar,
   updateProfile,
-  allUser,
-  getCurrentUser,
-  changeCurrentPassword,
   forgotPassword,
+  getCurrentUser,
+  validateRegister,
+  changeCurrentPassword,
 };
