@@ -294,7 +294,7 @@ const register = asyncHandler(async (req, res) => {
         req.files.graduationImg[0]?.path;
     }
     if (req.files?.postGraduationImg) {
-      console.log("test", req.files);
+      // console.log("test", req.files);
       therapistData.educationDetails.postGraduation.certificateImageUrl =
         req.files.postGraduationImg[0]?.path;
     }
@@ -302,7 +302,7 @@ const register = asyncHandler(async (req, res) => {
     await createTherepist.save();
     if (admin) {
       const password = generateTempPassword();
-      console.log("temp password: " + password);
+      // console.log("temp password: " + password);
       const subject =
         "Your Unfazed Account is Ready: Login Information Enclosed";
       const htmlContent = loginCredentialEmail(email, password);
@@ -321,7 +321,7 @@ const register = asyncHandler(async (req, res) => {
         new ApiResponse(200, createTherepist, "Therepist created Successfully")
       );
   } catch (err) {
-    console.log("else");
+    // console.log("else");
     console.log(err);
     res.status(500).json(new ApiError(500, "", err));
   }
@@ -432,7 +432,6 @@ export const getTherapistSpecialization = asyncHandler(
 );
 
 const logout = asyncHandler(async (req, res) => {
-  console.log("console.log", req.user);
   await Therapist.findByIdAndUpdate(
     req.user._id,
     {
@@ -473,7 +472,6 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "Therapist not found!"));
   }
   const password = generateTempPassword();
-  console.log("temp password: " + password);
   const subject = "Your Unfazed Account is Ready: Login Information Enclosed";
   const htmlContent = loginCredentialEmail(therapist.email, password);
   const EmailOptions = mailOptions(therapist.email, subject, htmlContent);
@@ -818,7 +816,7 @@ const updateTherapist = asyncHandler(async (req, res) => {
       deleteFile(existingTherapist.educationDetails?.postGraduation?.certificateImageUrl);
       therapistData.educationDetails.postGraduation.certificateImageUrl = req.files.postGraduationImg[0]?.path;
     }
-    console.log('therapistData.educationDetails.highSchool :>> ', therapistData.educationDetails.highSchool);
+    // console.log('therapistData.educationDetails.highSchool :>> ', therapistData.educationDetails.highSchool);
     const updatedTherapist = await Therapist.findByIdAndUpdate(_id, therapistData, {
       new: true,
       select: "-password -refreshToken",
@@ -856,7 +854,6 @@ const dashboard = asyncHandler(async (req, res) => {
 
   try {
     const currentDate = new Date();
-    console.log(currentDate)
     const firstDayOfMonth = startOfMonth(currentDate);
     const lastDayOfMonth = min([endOfMonth(currentDate), currentDate]);
     const [result] = await Session.aggregate([

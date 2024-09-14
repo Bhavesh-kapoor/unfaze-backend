@@ -58,7 +58,6 @@ export async function processPayment(req, res) {
         },
       },
     ]);
-    console.log(timeSlots)
     if (timeSlots.length === 0) {
       return res
         .status(404)
@@ -66,8 +65,6 @@ export async function processPayment(req, res) {
     }
     const { date, startTime, endTime } = timeSlots[0];
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
-    console.log(formattedDate);
-    console.log(convertTo24HourFormat(startTime))
     const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
     const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
 
@@ -92,7 +89,7 @@ export async function processPayment(req, res) {
 
     // Find therapist
     const therapist = await Therapist.findOne({ _id: therapist_id });
-    console.log(therapist);
+    // console.log(therapist);
     if (!therapist) {
       return res
         .status(404)
@@ -135,10 +132,6 @@ export async function processPayment(req, res) {
 
     try {
       const response = await axios.request(options);
-      console.log(
-        "redirect",
-        response.data.data.instrumentResponse.redirectInfo.url
-      );
       const initiatedTransaction = new Transaction({
         transactionId,
         user_id: user._id,

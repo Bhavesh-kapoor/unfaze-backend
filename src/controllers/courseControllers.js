@@ -23,7 +23,6 @@ const createCourse = asyncHandler(async (req, res) => {
       session_count,
       cost,
     });
-    console.log("checkk", existingCourse);
     if (existingCourse) {
       res
         .status(403)

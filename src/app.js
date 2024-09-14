@@ -20,7 +20,6 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
 const logger = winston.createLogger({
   level: "info",
   format: winston.format.combine(
@@ -34,11 +33,18 @@ const logger = winston.createLogger({
 });
 const app = express();
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS;
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) callback(null, true);
+    else callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true, // Enable this if you need to pass cookies or authorization headers
+};
+
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
-}))
+app.use(cors(corsOptions));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -75,12 +81,12 @@ app.use((req, res, next) => {
       res.statusCode >= 500
         ? chalk.red
         : res.statusCode >= 400
-          ? chalk.yellow
-          : res.statusCode >= 300
-            ? chalk.cyan
-            : res.statusCode >= 200
-              ? chalk.green
-              : chalk.white;
+        ? chalk.yellow
+        : res.statusCode >= 300
+        ? chalk.cyan
+        : res.statusCode >= 200
+        ? chalk.green
+        : chalk.white;
 
     logger.info(
       `${chalk.blue("METHOD:")} ${chalk.yellow(req.method)} - ${chalk.blue(
@@ -108,13 +114,7 @@ app.use((req, res, next) => {
 
 app.get("/images/:folder/:subfolder/:image", (req, res) => {
   const { folder, subfolder, image } = req.params;
-  const imagePath = path.join(
-    __dirname,
-    "images",
-    folder,
-    subfolder,
-    image
-  );
+  const imagePath = path.join(__dirname, "images", folder, subfolder, image);
   fs.access(imagePath, fs.constants.F_OK, (err) => {
     if (err) return res.status(404).json({ message: "Image not found" });
     res.sendFile(imagePath);

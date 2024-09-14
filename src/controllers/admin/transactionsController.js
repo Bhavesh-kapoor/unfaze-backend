@@ -456,7 +456,7 @@ const TotalSalesList = asyncHandler(async (req, res) => {
       },
     ]);
 
-    console.log("totalSales", totalSales);
+    // console.log("totalSales", totalSales);
     if (totalSales.length === 0) {
       return res.status(404).json(new ApiError(404, "", "No.records found!"));
     }
@@ -559,7 +559,6 @@ const ListByCategory = asyncHandler(async (req, res) => {
   ];
 
   const data = await EnrolledCourse.aggregate(pipeline);
-  console.log(data);
   return res.status(200).json({ data });
 });
 
@@ -742,11 +741,11 @@ const getTherapistRevenue = async (req, res) => {
       return result.length > 0
         ? result[0]
         : {
-          totalUSDSales: 0,
-          totalINRSales: 0,
-          countUSDSales: 0,
-          countINRSales: 0,
-        };
+            totalUSDSales: 0,
+            totalINRSales: 0,
+            countUSDSales: 0,
+            countINRSales: 0,
+          };
     };
     const revenue = await calculateRevenue(start, end);
     res
@@ -829,11 +828,7 @@ const getTherapistSessions = async (req, res) => {
           transactionId: 1,
           createdAt: 1,
           userName: {
-            $concat: [
-              "$user_details.firstName",
-              " ",
-              "$user_details.lastName",
-            ],
+            $concat: ["$user_details.firstName", " ", "$user_details.lastName"],
           },
           therapistName: {
             $concat: [
@@ -846,13 +841,12 @@ const getTherapistSessions = async (req, res) => {
           amount_USD: "$transactions_details.amount_USD",
           amount_INR: "$transactions_details.amount_INR",
           start_time: 1,
-          status: 1
+          status: 1,
         },
       },
       { $skip: skip },
       { $limit: limitNumber },
     ]);
-    console.log(sessions)
     if (!sessions.length) {
       return res
         .status(404)
@@ -947,11 +941,7 @@ const getUserSessions = async (req, res) => {
           transactionId: 1,
           createdAt: 1,
           userName: {
-            $concat: [
-              "$user_details.firstName",
-              " ",
-              "$user_details.lastName",
-            ],
+            $concat: ["$user_details.firstName", " ", "$user_details.lastName"],
           },
           therapistName: {
             $concat: [
@@ -964,7 +954,7 @@ const getUserSessions = async (req, res) => {
           amount_USD: "$transactions_details.amount_USD",
           amount_INR: "$transactions_details.amount_INR",
           start_time: 1,
-          status: 1
+          status: 1,
         },
       },
       { $skip: skip },
@@ -1039,7 +1029,7 @@ const UserTransactions = asyncHandler(async (req, res) => {
         amount_USD: 1,
         amount_INR: 1,
         start_time: 1,
-        payment_status: "$payment_details.payment_status"
+        payment_status: "$payment_details.payment_status",
       },
     },
   ]);
@@ -1068,7 +1058,7 @@ const therapistTransactions = asyncHandler(async (req, res) => {
     {
       $match: {
         therapist_id: user._id,
-      }
+      },
     },
     {
       $lookup: {
@@ -1095,17 +1085,13 @@ const therapistTransactions = asyncHandler(async (req, res) => {
         transactionId: 1,
         createdAt: 1,
         userName: {
-          $concat: [
-            "$user_details.firstName",
-            " ",
-            "$user_details.lastName",
-          ],
+          $concat: ["$user_details.firstName", " ", "$user_details.lastName"],
         },
         userEmail: "$user_details.email",
         category: "$category.name",
         amount_USD: 1,
         amount_INR: 1,
-        payment_status: "$payment_details.payment_status"
+        payment_status: "$payment_details.payment_status",
       },
     },
   ]);
@@ -1115,72 +1101,64 @@ const therapistTransactions = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, [], "No transactions found for this user"));
   }
   return res.json(
-    new ApiResponse(
-      200,
-      transactions,
-      "Transactions retrieved successfully."
-    )
+    new ApiResponse(200, transactions, "Transactions retrieved successfully.")
   );
 });
 
 const thankyou = asyncHandler(async (req, res) => {
   const { transactionId } = req.query;
-  const data = await Transaction.findOne({ transactionId:transactionId})
-  console.log(data)
+  const data = await Transaction.findOne({ transactionId: transactionId });
   const transaction = await Transaction.aggregate([
     {
       $match: {
         transactionId: transactionId,
-        payment_status: "successful"
-      }
+        payment_status: "successful",
+      },
     },
-      {
-        $lookup: {
-          from: "therapists",
-          localField: "therapist_id",
-          foreignField: "_id",
-          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
-          as: "therapist_details"
-        }
+    {
+      $lookup: {
+        from: "therapists",
+        localField: "therapist_id",
+        foreignField: "_id",
+        pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+        as: "therapist_details",
       },
-      { $unwind: "$therapist_details" },
-      {
-        $lookup: {
-          from: "specializations",
-          localField: "category",
-          foreignField: "_id",
-          pipeline: [{ $project: { name: 1 } }],
-          as: "category"
-        }
+    },
+    { $unwind: "$therapist_details" },
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "category",
+        foreignField: "_id",
+        pipeline: [{ $project: { name: 1 } }],
+        as: "category",
       },
-      { $unwind: "$category" },
-      {
-        $project: {
-          transactionId: 1,
-          createdAt: 1,
-          therapistName: {
-            $concat: [
-              "$therapist_details.firstName",
-              " ",
-              "$therapist_details.lastName"
-            ]
-          },
-          category: "$category.name",
-          start_time: 1,
-          payment_status: "$payment_details.payment_status"
-        }
-      }
+    },
+    { $unwind: "$category" },
+    {
+      $project: {
+        transactionId: 1,
+        createdAt: 1,
+        therapistName: {
+          $concat: [
+            "$therapist_details.firstName",
+            " ",
+            "$therapist_details.lastName",
+          ],
+        },
+        category: "$category.name",
+        start_time: 1,
+        payment_status: "$payment_details.payment_status",
+      },
+    },
   ]);
-  console.log("check", transaction)
   if (!transaction.length) {
-    return res.status(404).json(new ApiResponse(404, [], "No transactions found for this user"));
+    return res
+      .status(404)
+      .json(new ApiResponse(404, [], "No transactions found for this user"));
   }
   return res.json(
-    new ApiResponse(
-      200,
-      transaction,
-      "Transactions retrieved successfully."
-    )
+    new ApiResponse(200, transaction, "Transactions retrieved successfully.")
   );
 });
 export {

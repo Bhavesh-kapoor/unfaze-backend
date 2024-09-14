@@ -133,7 +133,6 @@ const userlogin = asyncHandler(async (req, res) => {
 
 const register = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
-  console.log(req.body)
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -196,7 +195,6 @@ const register = asyncHandler(async (req, res) => {
 
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
-  console.log(req.user);
   if (!userId) {
     return res
       .status(401)
@@ -566,7 +564,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
     const otp = await createAndStoreMobileOTP(mobile);
     const response = await sendOtpMessage(user.mobile, otp);
-    console.log(response);
     const htmlContent = otpContent(otp);
     const options = mailOptions(
       user.email,

@@ -53,7 +53,6 @@ const createFolder = (folderPath) => {
   try {
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
-      console.log(`Directory created successfully: ${folderPath}`);
     }
   } catch (error) {
     console.error(`Error creating directory ${folderPath}:`, error);
@@ -75,7 +74,6 @@ const getEmailPrefix = (email) => {
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
 
-    console.log("Received file field: ", file.fieldname);
     const emailPrefix = getEmailPrefix(req.body.email || req.user.email);
     let folder;
     if (file.fieldname === "profileImage") {

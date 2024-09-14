@@ -147,7 +147,6 @@ if (!mongoose.Types.ObjectId.isValid(blogId)) {
     return res.status(400).json(new ApiError(400, "", "Invalid BlogId id"));
   }
   const deletedBlog = await Blog.findByIdAndDelete(blogId);
-  console.log(deletedBlog);
   if(!deletedBlog){
     return res.status(200).json(new ApiError(404,"","error while deleting the Blog"))
   }

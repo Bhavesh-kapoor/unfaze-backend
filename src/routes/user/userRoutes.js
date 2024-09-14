@@ -15,7 +15,10 @@ import {
   updateProfile,
 } from "../../controllers/admin/user.controller.js";
 import { generateSessionToken } from "../../controllers/agora.js";
-import { sendMobileOtp,mobileVerify } from "../../controllers/otpController.js";
+import {
+  sendMobileOtp,
+  mobileVerify,
+} from "../../controllers/otpController.js";
 
 const router = Router();
 
@@ -40,11 +43,15 @@ router.use("/sessions", sessionRouter);
 router.patch("/update-avatar", upload.single("userAvetar"), updateAvatar);
 
 router.get("/get-sessions", getUserSessions);
-router.get("/get-transactions", UserTransactions);
-router.get("/joining-token", generateSessionToken);
-router.get("/thankyou", thankyou);
-router.post("/send-mobile-otp", sendMobileOtp);
-router.post("/verify-mobile-otp", mobileVerify);
 
+router.get("/get-transactions", UserTransactions);
+
+router.get("/joining-token", generateSessionToken);
+
+router.get("/thankyou", thankyou);
+
+router.post("/send-mobile-otp", sendMobileOtp);
+
+router.post("/verify-mobile-otp", mobileVerify);
 
 export default router;

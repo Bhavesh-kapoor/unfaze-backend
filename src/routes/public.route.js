@@ -68,7 +68,7 @@ router.post("/send-mobile-otp", sendMobileOtp);
 // User login
 router.post("/login", userlogin);
 
-router.post("/reviews", customerFeedbackRoutes);
+router.use("/reviews", customerFeedbackRoutes);
 
 router.post("/therapist/login", therapistLogin);
 

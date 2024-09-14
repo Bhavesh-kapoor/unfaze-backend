@@ -1,4 +1,7 @@
+import Feedback from "../models/feedbackModel.js";
 import { CustomerFeedback } from "../models/reviewsModal.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
 
 export const createFeedback = async (req, res) => {
   try {
@@ -61,5 +64,44 @@ export const deleteFeedbackById = async (req, res) => {
     res.status(204).send(); // No content
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+export const createSessionFeedback = async (req, res) => {
+  try {
+    const { session_id, star, feedback } = req.body;
+    if (!feedback) {
+      throw new ApiError(400, "Feedback are required");
+    }
+
+    const feedbackInstance = new Feedback({
+      session_id,
+      star: star || 0,
+      feedback,
+    });
+
+    await feedbackInstance.save();
+
+    res
+      .status(201)
+      .json(
+        new ApiResponse(201, feedbackInstance, "Feedback created successfully")
+      );
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Validation Error: " + error.message));
+    }
+    if (error.code && error.code === 11000) {
+      return res
+        .status(409)
+        .json(new ApiResponse(409, null, "Duplicate entry: " + error.message));
+    }
+    res
+      .status(500)
+      .json(
+        new ApiResponse(500, null, "Internal server error: " + error.message)
+      );
   }
 };

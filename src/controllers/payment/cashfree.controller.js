@@ -57,14 +57,14 @@ const createOrder = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  console.log(timeSlots)
+  // console.log(timeSlots)
   if (timeSlots.length === 0) {
     return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
   }
   const { date, startTime, endTime } = timeSlots[0];
   const formattedDate = format(new Date(date), "yyyy-MM-dd");
-  console.log(formattedDate);
-  console.log(convertTo24HourFormat(startTime))
+  // console.log(formattedDate);
+  // console.log(convertTo24HourFormat(startTime))
   const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
   const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
 
@@ -84,7 +84,7 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 
   const therapist = await Therapist.findOne({ _id: therapist_id });
-  console.log(therapist);
+  // console.log(therapist);
   if (!therapist) {
     return res
       .status(404)

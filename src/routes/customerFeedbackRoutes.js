@@ -5,13 +5,17 @@ import {
   getFeedbackById,
   updateFeedbackById,
   deleteFeedbackById,
-} from "../controllers/customerFeedbackController.js"; // Adjust the import path as needed
+  createSessionFeedback,
+} from "../controllers/customerFeedbackController.js";
 import verifyJwtToken from "../middleware/admin/verifyJwtToken.js";
 
 const router = express.Router();
 
 // Create a new feedback
 router.post("/create", verifyJwtToken, createFeedback);
+
+// to submit the feedback of session
+router.post("/submit-review", verifyJwtToken, createSessionFeedback);
 
 // Get all feedbacks
 router.get("/all", getAllFeedbacks);

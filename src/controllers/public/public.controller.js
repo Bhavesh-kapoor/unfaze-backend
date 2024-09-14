@@ -220,7 +220,7 @@ const findBolgbySlug = asyncHandler(async (req, res) => {
 const therapistDetails = asyncHandler(async (req, res) => {
   let { slug } = req.params;
   slug = `${slug}@`;
-  console.log(slug);
+  // console.log(slug);
   if (!slug) {
     throw new ApiError(400, "", "slug is required!");
   }
@@ -232,7 +232,7 @@ const therapistDetails = asyncHandler(async (req, res) => {
       select: "name",
     })
     .select("-password -refreshToken");
-  console.log(therapist);
+  // console.log(therapist);
   if (!therapist) {
     return res
       .status(404)
