@@ -27,6 +27,7 @@ build/Release
 node_modules
 todo.txt
 .env
+src/images
 # Debug log from npm
 npm-debug.log
 
