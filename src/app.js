@@ -11,8 +11,6 @@ import session from "express-session";
 import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
-import { sendOtpMessage } from "./config/msg91.config.js";
-import crypto from "crypto";
 
 // Load environment variables
 dotenv.config();
@@ -40,11 +38,12 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) callback(null, true);
     else callback(new Error("Not allowed by CORS"));
   },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Add any HTTP methods you need
   credentials: true, // Enable this if you need to pass cookies or authorization headers
 };
 
 app.use(helmet());
-app.use(cors(corsOptions));
+app.use(cors());
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -103,23 +102,24 @@ app.use((req, res, next) => {
 });
 
 // Dynamic image serving endpoint
-// app.get("/images/:folder/:image", (req, res) => {
-//   const { folder, image } = req.params;
-//   const imagePath = path.join(__dirname, "images/uploads", folder, image);
-//   fs.access(imagePath, fs.constants.F_OK, (err) => {
-//     if (err) return res.status(404).json({ message: "Image not found" });
-//     res.sendFile(imagePath);
-//   });
-// });
-
-app.get("/images/:folder/:subfolder/:image", (req, res) => {
-  const { folder, subfolder, image } = req.params;
-  const imagePath = path.join(__dirname, "images", folder, subfolder, image);
+app.get("/images/:folder/:image", (req, res) => {
+  const { folder, image } = req.params;
+  const imagePath = path.join(__dirname, "images/uploads", folder, image);
   fs.access(imagePath, fs.constants.F_OK, (err) => {
     if (err) return res.status(404).json({ message: "Image not found" });
     res.sendFile(imagePath);
   });
 });
+
+app.get("/images/therapists/:subfolder/:image", (req, res) => {
+  const { subfolder, image } = req.params;
+  const imagePath = path.join(__dirname, "images/therapists", subfolder, image);
+  fs.access(imagePath, fs.constants.F_OK, (err) => {
+    if (err) return res.status(404).json({ message: "Image not found" });
+    res.sendFile(imagePath);
+  });
+});
+
 app.use("/api", routes);
 app.use((err, req, res, next) => {
   logger.error(`Error: ${err.message}`);

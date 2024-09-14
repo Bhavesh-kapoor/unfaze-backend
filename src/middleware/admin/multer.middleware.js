@@ -1,54 +1,9 @@
-// import multer from "multer";
-// import path from "path";
-// import ApiError from "../../utils/ApiError.js";
-
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     let folder;
-//     if (file.fieldname === "adharcard") {
-//       folder = "images/uploads/adharcards";
-//     } else if (file.fieldname === "passport") {
-//       folder = "images/uploads/passports";
-//     } else if (file.fieldname === "pancard") {
-//       folder = "images/uploads/pancards";
-//     } else if (file.fieldname == "imageUrl") {
-//       folder = "images/uploads/blogs";
-//     } else if (file.fieldname == "profileImage") {
-//       folder = "images/uploads/profileImage";
-//     }
-//     cb(null, folder);
-//   },
-//   filename: function (req, file, cb) {
-//     const ext = path.extname(file.originalname);
-//     const uniqueName = `${Date.now()}-${file.fieldname}${ext}`;
-//     cb(null, uniqueName);
-//   },
-// });
-
-// const fileFilter = (req, file, cb) => {
-//   const allowedTypes = /jpeg|jpg|png|pdf/;
-//   const extname = allowedTypes.test(
-//     path.extname(file.originalname).toLowerCase()
-//   );
-//   const mimetype = allowedTypes.test(file.mimetype);
-//   if (extname && mimetype) {
-//     return cb(null, true);
-//   } else {
-//     cb(new ApiError(400, "", "Only images and PDFs are allowed"));
-//   }
-// };
-
-// const upload = multer({
-//   storage: storage,
-//   fileFilter: fileFilter,
-// });
-
-// export default upload;
-import multer from "multer";
-import path from "path";
 import fs from "fs";
+import path from "path";
+import multer from "multer";
 import ApiError from "../../utils/ApiError.js";
 
+// Function to create folder if it doesn't exist
 const createFolder = (folderPath) => {
   try {
     if (!fs.existsSync(folderPath)) {
@@ -62,66 +17,86 @@ const createFolder = (folderPath) => {
 
 // Function to get the part of the email before @
 const getEmailPrefix = (email) => {
+  if (email && email.includes("@")) return email.split("@")[0];
+  else return email;
+};
 
-  if (email && email.includes('@')) {
-    return email.split("@")[0];
+// Function to determine the storage folder
+const getFolder = (fieldname, emailPrefix) => {
+  const therapistFields = [
+    "profileImage",
+    "highschoolImg",
+    "graduationImg",
+    "intermediateImg",
+    "postGraduationImg",
+  ];
+  if (therapistFields.includes(fieldname) && emailPrefix)
+    return `src/images/therapists/${emailPrefix}`;
 
-  } else {
-    return email;
+  switch (fieldname) {
+    case "blog":
+      return "src/images/blogs";
+    case "userAvatar":
+      return "src/images/users";
+    default:
+      return "src/images/other";
   }
 };
 
+// Function to remove existing file by fieldname
+const removeExistingFile = (folder, fieldname) => {
+  try {
+    const files = fs.readdirSync(folder);
+    for (const file of files) {
+      if (file.includes(fieldname)) {
+        const filePath = path.join(folder, file);
+        fs.unlinkSync(filePath);
+        console.log(`Removed old file: ${filePath}`);
+        break;
+      }
+    }
+  } catch (error) {
+    console.error(`Error reading/removing file in folder ${folder}:`, error);
+    throw new Error(`Failed to remove existing file in folder ${folder}.`);
+  }
+};
+
+// Multer disk storage configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    const emailPrefix = getEmailPrefix(req.body.email || req.user.email); // Fallback to req.user.email if body email doesn't exist
+    const folder = getFolder(file.fieldname, emailPrefix);
 
-    const emailPrefix = getEmailPrefix(req.body.email || req.user.email);
-    let folder;
-    if (file.fieldname === "profileImage") {
-      folder = `src/images/therapists/${emailPrefix}`;
-    } else if (file.fieldname === "highschoolImg") {
-      folder = `src/images/therapists/${emailPrefix}`;
-    } else if (file.fieldname === "intermediateImg") {
-      folder = `src/images/therapists/${emailPrefix}`;
-    } else if (file.fieldname === "graduationImg") {
-      folder = `src/images/therapists/${emailPrefix}`;
-    } else if (file.fieldname === "postGraduationImg") {
-      folder = `src/images/therapists/${emailPrefix}`;
-    } else if (file.fieldname === "blog") {
-      folder = "src/images/blogs";
-    } else if (file.fieldname === "userAvetar") {
-      folder = "src/images/users";
+    try {
+      createFolder(folder); // Ensure folder exists
+      removeExistingFile(folder, file.fieldname); // Remove existing file with same fieldname
+      cb(null, folder);
+    } catch (error) {
+      cb(new Error("Failed to create directory"), folder); // Handle any folder creation errors
     }
-    else {
-      folder = `src/images/other`;
-    }
-
-    // Create folder if it doesn't exist
-    createFolder(folder);
-    cb(null, folder);
   },
+
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${file.fieldname}${ext}`;
+    const uniqueName = `${Date.now()}-${file.fieldname}${ext}`; // Generate unique file name
     cb(null, uniqueName);
   },
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|pdf/;
-  const extname = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase()
-  );
-  const mimetype = allowedTypes.test(file.mimetype);
-  if (extname && mimetype) {
-    return cb(null, true);
+  const allowedTypes = /jpeg|jpg|webp|png|pdf/;
+  const isValid =
+    allowedTypes.test(path.extname(file.originalname).toLowerCase()) &&
+    allowedTypes.test(file.mimetype);
+
+  if (isValid) {
+    cb(null, true);
   } else {
-    cb(new ApiError(400, "", "Only images and PDFs are allowed"));
+    cb(
+      new ApiError(400, "", "Only JPG, WEBP, PNG images, and PDFs are allowed")
+    );
   }
 };
 
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-});
-
+const upload = multer({ storage: storage, fileFilter: fileFilter });
 export default upload;

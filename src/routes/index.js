@@ -1,12 +1,11 @@
 import express from "express";
-import ApiResponse from "../utils/ApiResponse.js";
-import asyncHandler from "../utils/asyncHandler.js";
-import verifyJwtToken from "../middleware/admin/verifyJwtToken.js";
-
 import userRoutes from "./user/userRoutes.js";
 import paymentRoutes from "./payment.route.js";
 import adminRoutes from "./admin/auth.route.js";
+import ApiResponse from "../utils/ApiResponse.js";
 import publicRoute from "../routes/public.route.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import verifyJwtToken from "../middleware/admin/verifyJwtToken.js";
 import publicAdminRoute from "../routes/admin/adminpublic.route.js";
 import therapistRoute from "../routes/therapist/therapist.route.js";
 
