@@ -684,11 +684,11 @@ export const generateInvoice = asyncHandler(async (req, res) => {
   doc
     .fontSize(10)
     .text("From", 50, 110)
-    .fontSize(12)
+    .fontSize(10)
     .text("UNFAZED THERAPY SOLUTIONS", 50, 125)
     .fontSize(10)
     .text("PRIVATE LIMITED", 50, 140)
-    .text("E-514, Nri City Township,", 50, 155)
+    .text("Nri City Township,", 50, 155)
     .text("Kanpur Nagar, Uttar Pradesh,", 50, 170)
     .text("India - 208002", 50, 185);
 
@@ -706,11 +706,11 @@ export const generateInvoice = asyncHandler(async (req, res) => {
     )
     .text(`Email-ID: ${data?.user?.email}`, 50, 265);
 
-  const formattedDate = format(data?.updatedAt, "MMM dd, yyyy HH:mm a");
-  const formattedStartDate = format(data?.start_time, "MMM dd, yyyy HH:mm a");
+  const formattedDate = format(data?.updatedAt, "MMM dd, yyyy");
+  const formattedStartDate = format(data?.start_time, "MMM dd, yyyy hh:mm a");
 
   doc
-    .fontSize(14)
+    .fontSize(12)
     .text(`Invoice No.: #${data?.transactionId.slice(-8)}`, 350, 120, {
       align: "right",
     })
@@ -738,7 +738,7 @@ export const generateInvoice = asyncHandler(async (req, res) => {
     .text("Price", 480, 330);
 
   // Horizontal line
-  doc.moveTo(50, 320).lineTo(550, 320).stroke();
+  // doc.moveTo(50, 320).lineTo(550, 320).stroke();
 
   // Product/Service Details
   const amount = data?.amount_INR ? data.amount_INR : data?.amount_USD;
@@ -750,10 +750,10 @@ export const generateInvoice = asyncHandler(async (req, res) => {
     .text(`Rs. ${amount}`, 480, 360);
 
   // Horizontal line
-  doc.moveTo(50, 350).lineTo(550, 350).stroke();
+  // doc.moveTo(50, 350).lineTo(550, 350).stroke();
 
   // Horizontal line
-  doc.moveTo(50, 380).lineTo(550, 380).stroke();
+  // doc.moveTo(50, 380).lineTo(550, 380).stroke();
 
   // Pricing Details
   doc
