@@ -4,11 +4,14 @@ import {
   ListByCategory,
   calculateTotalSales,
   TotalSalesByDuration,
+  fetchAllTransactions,
 } from "../../controllers/admin/transactionsController.js";
 
 const router = Router();
 
 router.get("/total-sales", calculateTotalSales);
+
+router.get("/list", fetchAllTransactions);
 
 router.get("/total-sales-list", TotalSalesList);
 

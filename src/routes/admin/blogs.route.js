@@ -1,29 +1,23 @@
 import { Router } from "express";
-import upload from "../../middleware/admin/multer.middleware.js";
 import {
   createBlog,
   deleteBolg,
   updateBlog,
   getAllBlogs,
   findBolgById,
-  validateBlogs,
 } from "../../controllers/admin/BlogsController.js";
+import upload from "../../middleware/admin/multer.middleware.js";
 
 const router = Router();
-
-router.post("/create", upload.single("imageUrl"), validateBlogs, createBlog);
-
-router.put(
-  "/update/:_id",
-  upload.single("imageUrl"),
-  validateBlogs,
-  updateBlog
-);
 
 router.get("/all", getAllBlogs);
 
 router.delete("/delete/:_id", deleteBolg);
 
 router.get("/get-blog/:_id", findBolgById);
+
+router.post("/create", upload.single("blogImageUrl"), createBlog);
+
+router.put("/update/:_id", upload.single("blogImageUrl"), updateBlog);
 
 export default router;

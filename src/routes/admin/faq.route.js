@@ -12,7 +12,7 @@ const router = Router();
 
 router.get("/all", read);
 
-router.get("/get-one/:_id", getById);
+router.get("/edit/:_id", getById);
 
 router.delete("/delete/:_id", deleteFaq);
 

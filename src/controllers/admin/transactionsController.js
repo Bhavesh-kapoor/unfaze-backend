@@ -91,6 +91,87 @@ const calculateTotalSales = asyncHandler(async (req, res) => {
   );
 });
 
+export const fetchAllTransactions = async (req, res) => {
+  try {
+    const { status = "successful", page = 1, limit = 10 } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const pageSize = parseInt(limit, 10);
+    const pipeline = [
+      { $match: { payment_status: status } },
+      {
+        $lookup: {
+          from: "specializations", // The collection name for category
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "users", // The collection name for user_id
+          localField: "user_id",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      { $unwind: { path: "$userData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "therapists", // The collection name for therapist_id
+          localField: "therapist_id",
+          foreignField: "_id",
+          as: "therapistData",
+        },
+      },
+      { $unwind: { path: "$therapistData", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          end_time: 1,
+          rate_USD: 1,
+          updatedAt: 1,
+          amount_USD: 1,
+          amount_INR: 1,
+          start_time: 1,
+          transactionId: 1,
+          payment_status: 1,
+          payment_details: 1,
+          "category.name": 1,
+          "userData.email": 1,
+          "userData.lastName": 1,
+          "userData.firstName": 1,
+          "therapistData.email": 1,
+          "therapistData.lastName": 1,
+          "therapistData.firstName": 1,
+        },
+      },
+      { $skip: (pageNumber - 1) * pageSize },
+      { $limit: pageSize },
+    ];
+    const transactions = await Transaction.aggregate(pipeline).exec();
+
+    const totalCount = await Transaction.countDocuments({
+      payment_status: status,
+    }).exec();
+
+    res.status(200).json({
+      success: true,
+      data: transactions,
+      pagination: {
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalCount / pageSize),
+        totalCount: totalCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Unable to fetch transactions.",
+    });
+  }
+};
+
 const TotalSalesByDuration = asyncHandler(async (req, res) => {
   const now = new Date();
 
