@@ -454,8 +454,8 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const updateTherapist = asyncHandler(async (req, res) => {
-  const _id = req.user?._id;
-
+  let _id = req.user?._id;
+  if (req.body?._id) _id = req.body?._id;
   const {
     bio,
     email,
@@ -465,6 +465,7 @@ const updateTherapist = asyncHandler(async (req, res) => {
     lastName,
     usdPrice,
     inrPrice,
+    isActive,
     languages,
     firstName,
     panNumber,
@@ -479,6 +480,8 @@ const updateTherapist = asyncHandler(async (req, res) => {
     specialization,
     addressDetails,
     postGraduation,
+    serviceChargeInr,
+    serviceChargeUsd,
   } = req.body;
 
   try {
@@ -492,6 +495,7 @@ const updateTherapist = asyncHandler(async (req, res) => {
       email: email || existingTherapist.email,
       gender: gender || existingTherapist.gender,
       mobile: mobile || existingTherapist.mobile,
+      bio: isActive || existingTherapist.isActive,
       license: license || existingTherapist.license,
       lastName: lastName || existingTherapist.lastName,
       panNumber: panNumber || existingTherapist.panNumber,
@@ -506,6 +510,14 @@ const updateTherapist = asyncHandler(async (req, res) => {
       specialization: specialization || existingTherapist.specialization,
       usdPrice: usdPrice !== undefined ? usdPrice : existingTherapist.usdPrice,
       inrPrice: inrPrice !== undefined ? inrPrice : existingTherapist.inrPrice,
+      serviceChargeUsd:
+        serviceChargeUsd !== undefined
+          ? serviceChargeUsd
+          : existingTherapist.serviceChargeUsd,
+      serviceChargeInr:
+        serviceChargeInr !== undefined
+          ? serviceChargeInr
+          : existingTherapist.serviceChargeInr,
       educationDetails: {
         highSchool: {
           ...existingTherapist.educationDetails.highSchool,
