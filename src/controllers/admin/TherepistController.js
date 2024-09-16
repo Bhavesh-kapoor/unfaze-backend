@@ -295,6 +295,7 @@ const logout = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
+
 const activateOrDeactivate = asyncHandler(async (req, res) => {
   const { _id } = req.params;
 
@@ -447,6 +448,7 @@ const getTherepistById = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, Therepist, "Therepist found Successfully!"));
 });
+
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
@@ -583,6 +585,7 @@ const updateTherapist = asyncHandler(async (req, res) => {
     res.status(500).json(new ApiError(500, "", err));
   }
 });
+
 const updateAvatar = asyncHandler(async (req, res) => {
   const user_id = req.user?._id;
   if (!req.file) {
@@ -601,6 +604,25 @@ const updateAvatar = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, "", "profile image uploaded successfully!"));
 });
+
+export const deleteTherapistByID = asyncHandler(async (req, res) => {
+  const therapistID = req.params._id;
+  if (!mongoose.Types.ObjectId.isValid(therapistID)) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "", "Invalid therapistID id"));
+  }
+  const deletedTherapist = await Therapist.findByIdAndDelete(therapistID);
+  if (!deletedTherapist) {
+    return res
+      .status(200)
+      .json(new ApiError(404, "", "error while deleting the Blog"));
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "", "Blog deleted successfully!"));
+});
+
 const dashboard = asyncHandler(async (req, res) => {
   const therapist = req.user;
   if (!therapist?._id) {
