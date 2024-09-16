@@ -10,6 +10,7 @@ import {
   updateTherapist,
   validateRegister,
   activateOrDeactivate,
+  deleteTherapistByID,
 } from "../../controllers/admin/TherepistController.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { getTherepistById } from "../../controllers/admin/TherepistController.js";
@@ -39,6 +40,8 @@ router.get("/therapists-list", therapistList);
 router.post("/login", validateRegister, login);
 
 router.get("/get-sessions", getTherapistSessions);
+
+router.delete("/delete/:_id", deleteTherapistByID);
 
 router.get("/get-therapist/:_id", getTherepistById);
 
