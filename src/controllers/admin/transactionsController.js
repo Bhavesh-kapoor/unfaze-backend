@@ -822,11 +822,11 @@ const getTherapistRevenue = async (req, res) => {
       return result.length > 0
         ? result[0]
         : {
-            totalUSDSales: 0,
-            totalINRSales: 0,
-            countUSDSales: 0,
-            countINRSales: 0,
-          };
+          totalUSDSales: 0,
+          totalINRSales: 0,
+          countUSDSales: 0,
+          countINRSales: 0,
+        };
     };
     const revenue = await calculateRevenue(start, end);
     res
@@ -847,21 +847,26 @@ const getTherapistSessions = async (req, res) => {
       userId = user?._id;
     }
     const { status = "upcoming", page = 1, limit = 10 } = req.query;
-
     if (!userId) {
       return res
         .status(400)
         .json(new ApiError(400, null, "Therapist ID is required!"));
     }
+
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
+    const now = new Date();
+    const matchConditions = {
+      therapist_id: userId,
+    };
 
+    if (status === "upcoming") {
+      matchConditions.start_time = { $gt: now };
+    }
     const sessions = await Session.aggregate([
       {
-        $match: {
-          therapist_id: userId,
-        },
+        $match: matchConditions,
       },
       {
         $lookup: {
@@ -925,19 +930,14 @@ const getTherapistSessions = async (req, res) => {
           status: 1,
         },
       },
+      { $sort: { start_time: 1 } },
       { $skip: skip },
       { $limit: limitNumber },
     ]);
-    if (!sessions.length) {
-      return res
-        .status(404)
-        .json(new ApiResponse(200, [], "No transactions found for this user"));
-    }
 
     if (!sessions.length) {
       return res.status(404).json({ message: "No sessions found" });
     }
-
     res.status(200).json({
       sessions,
       page: pageNumber,
@@ -949,32 +949,36 @@ const getTherapistSessions = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 const getUserSessions = async (req, res) => {
   try {
     const user = req.user;
     let userId;
+
     if (user.role === "admin") {
       userId = req.query.userId;
     } else {
       userId = user?._id;
     }
-    const { status = "upcoming", page = 1, limit = 10 } = req.query;
 
+    const { status = "upcoming", page = 1, limit = 10 } = req.query;
     if (!userId) {
-      return res
-        .status(400)
-        .json(new ApiError(400, null, "Therapist ID is required!"));
+      return res.status(400).json(new ApiError(400, null, "User ID is required!"));
     }
+
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
+    const now = new Date();
+    const matchConditions = {
+      user_id: userId,
+    };
 
+    if (status === "upcoming") {
+      matchConditions.start_time = { $gt: now };
+    }
     const sessions = await Session.aggregate([
       {
-        $match: {
-          user_id: userId,
-        },
+        $match: matchConditions,
       },
       {
         $lookup: {
@@ -1038,19 +1042,14 @@ const getUserSessions = async (req, res) => {
           status: 1,
         },
       },
+      { $sort: { start_time: 1 } }, 
       { $skip: skip },
       { $limit: limitNumber },
     ]);
-    if (!sessions.length) {
-      return res
-        .status(404)
-        .json(new ApiResponse(200, [], "No transactions found for this user"));
-    }
 
     if (!sessions.length) {
       return res.status(404).json({ message: "No sessions found" });
     }
-
     res.status(200).json({
       sessions,
       page: pageNumber,
