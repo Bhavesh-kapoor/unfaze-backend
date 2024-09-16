@@ -19,6 +19,7 @@ const therapistList = asyncHandler(async (req, res) => {
   const skip = (pageNumber - 1) * limitNumber;
 
   const pipeline = [
+    { $match: { isActive: true } },
     {
       $lookup: {
         from: "specializations",
@@ -27,24 +28,18 @@ const therapistList = asyncHandler(async (req, res) => {
         as: "specializationDetails",
       },
     },
-    {
-      $sort: { [sortkey]: sortdir === "desc" ? -1 : 1 },
-    },
-    {
-      $skip: skip,
-    },
-    {
-      $limit: limitNumber,
-    },
+    { $sort: { [sortkey]: sortdir === "desc" ? -1 : 1 } },
+    { $skip: skip },
+    { $limit: limitNumber },
     {
       $project: {
         _id: 1,
-        profileImage: 1,
-        name: { $concat: ["$firstName", " ", "$lastName"] },
         email: 1,
-        isEmailVerified: 1,
-        isActive: 1,
         createdAt: 1,
+        firstName: 1,
+        profileImageUrl: 1,
+        isEmailVerified: 1,
+        name: { $concat: ["$firstName", " ", "$lastName"] },
         specializationDetails: {
           $map: {
             input: "$specializationDetails",
