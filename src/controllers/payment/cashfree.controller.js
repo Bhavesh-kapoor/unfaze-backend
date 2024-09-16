@@ -16,7 +16,7 @@ function convertTo24HourFormat(time12h) {
   hours = parseInt(hours, 10);
   if (modifier === 'AM' && hours === 12) {
     hours = 0;
-  } 
+  }
   if (modifier === 'PM' && hours !== 12) {
     hours += 12;
   }
@@ -26,7 +26,7 @@ function convertTo24HourFormat(time12h) {
   return `${hours24}:${minutes24}`;
 }
 
-const SESSION_DURATION_MINUTES = 30;
+const SESSION_DURATION_MINUTES = 60;
 const createOrder = asyncHandler(async (req, res) => {
   const { therapist_id, specialization_id, slot_id } = req.body;
   const order_currency = "INR";
@@ -42,7 +42,7 @@ const createOrder = asyncHandler(async (req, res) => {
     },
     {
       $match: {
-        "timeslots._id": new mongoose.Types.ObjectId(slot_id), 
+        "timeslots._id": new mongoose.Types.ObjectId(slot_id),
         "timeslots.isBooked": false,
       },
     },
@@ -114,7 +114,7 @@ const createOrder = asyncHandler(async (req, res) => {
       transactionId: order_id,
       user_id: user._id,
       therapist_id,
-      slotId:slot_id,
+      slotId: slot_id,
       category: specialization_id,
       amount_USD: therapist.usdPrice,
       rate_USD: rate_USD,
@@ -138,7 +138,7 @@ const createOrder = asyncHandler(async (req, res) => {
     await Slot.updateOne({
       therapist_id: new mongoose.Types.ObjectId(therapist_id),
       "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-    },{
+    }, {
       $set: {
         "timeslots.$.isBooked": true,
       },

@@ -141,7 +141,8 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
         start_time: transaction.start_time,
         end_time: transaction.end_time,
       });
-      const channelName = `session_${session._id}`;
+      let channelName = session._id.toString().slice(-10)
+      channelName = `session_${channelName}`;
       session.channelName = channelName;
       await session.save();
       await sendNotificationsAndEmails(transaction, user);
@@ -212,7 +213,7 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
         end_time: transaction.end_time,
       });
 
-      const channelName = session._id.toString().slice(-10)
+      let channelName = session._id.toString().slice(-10)
       channelName = `session_${channelName}`;
       session.channelName = channelName;
       await session.save();
