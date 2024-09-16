@@ -1,24 +1,38 @@
-import Feedback from "../models/feedbackModel.js";
-import { CustomerFeedback } from "../models/reviewsModal.js";
 import ApiError from "../utils/ApiError.js";
+import Feedback from "../models/feedbackModel.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import { CustomerFeedback } from "../models/reviewsModal.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
-export const createFeedback = async (req, res) => {
+export const createFeedback = asyncHandler(async (req, res) => {
   try {
-    const feedback = new CustomerFeedback(req.body);
+    const { _id, role } = req.user;
+    if (role === "therapist") {
+      return res
+        .status(400)
+        .json({ message: "You are not allow to submit a review!" });
+    }
+    const feedback = new CustomerFeedback({ ...req.body, user: _id });
     await feedback.save();
-    res.status(201).json(feedback);
+    res
+      .status(201)
+      .json(new ApiResponse(201, feedback, "Your review has been submitted!"));
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ message: "Something went wrong!" });
   }
-};
+});
 
 export const getAllFeedbacks = async (req, res) => {
   try {
-    const feedbacks = await CustomerFeedback.find().populate({
-      path: "therapist",
-      select: "_id firstName lastName",
-    });
+    const feedbacks = await CustomerFeedback.find()
+      .populate({
+        path: "therapist",
+        select: "_id firstName lastName",
+      })
+      .populate({
+        path: "user",
+        select: "_id firstName lastName email",
+      });
     res.status(200).json(feedbacks);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -27,9 +41,7 @@ export const getAllFeedbacks = async (req, res) => {
 
 export const getFeedbackById = async (req, res) => {
   try {
-    const feedback = await CustomerFeedback.findById(req.params.id).populate(
-      "therapist"
-    ); // Populate if needed
+    const feedback = await CustomerFeedback.findById(req.params.id);
     if (!feedback) {
       return res.status(404).json({ message: "Feedback not found" });
     }
