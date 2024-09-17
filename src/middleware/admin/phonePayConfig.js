@@ -95,8 +95,22 @@ export async function processPayment(req, res) {
         .status(404)
         .json(new ApiError(404, "", "Invalid therapist !!!"));
     }
-    let transactionId = uniqid();
+    // const existingTransaction = await Transaction.findOne({
+    //   user_id: user._id,
+    //   therapist_id: new mongoose.Types.ObjectId(therapist_id),
+    //   specialization_id: new mongoose.Types.ObjectId(specialization_id),
+    //   payment_status: { $ne: "successful" }
+    // })
+    let transactionId
+    transactionId = uniqid();
     transactionId = `unfazed${transactionId}`;
+    // if (existingTransaction) {
+    //   transactionId = existingTransaction.transactionId
+    // } else {
+    //   transactionId = uniqid();
+    //   transactionId = `unfazed${transactionId}`;
+    // }
+
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
@@ -110,7 +124,6 @@ export async function processPayment(req, res) {
       },
       payMode: "PAY_PAGE",
     };
-
     const bufferObj = Buffer.from(JSON.stringify(normalPayLoad), "utf8");
     const base64EncodedPayload = bufferObj.toString("base64");
     const string = base64EncodedPayload + "/pg/v1/pay" + process.env.SALT_KEY;
@@ -132,6 +145,31 @@ export async function processPayment(req, res) {
 
     try {
       const response = await axios.request(options);
+      // if (existingTransaction) {
+      //   existingTransaction.transactionId = transactionId;
+      //   existingTransaction.therapist_id = new mongoose.Types.ObjectId(therapist_id);
+      //   existingTransaction.slotId = slot_id;
+      //   existingTransaction.category = new mongoose.Types.ObjectId(specialization_id);
+      //   existingTransaction.amount_INR = therapist.inrPrice;
+      //   existingTransaction.payment_status = "PAYMENT_INITIATED";
+      //   existingTransaction.start_time = startDateTime;
+      //   existingTransaction.end_time = endDateTime;
+      //   await existingTransaction.save();
+      // } else {
+      //   const initiatedTransaction = new Transaction({
+      //     transactionId,
+      //     user_id: user._id,
+      //     therapist_id,
+      //     slotId: slot_id,
+      //     category: specialization_id,
+      //     amount_INR: therapist.inrPrice,
+      //     payment_status: "PAYMENT_INITIATED",
+      //     start_time: startDateTime,
+      //     end_time: endDateTime,
+      //   });
+      //   await initiatedTransaction.save();
+      // }
+
       const initiatedTransaction = new Transaction({
         transactionId,
         user_id: user._id,
@@ -143,7 +181,6 @@ export async function processPayment(req, res) {
         start_time: startDateTime,
         end_time: endDateTime,
       });
-
       await initiatedTransaction.save();
       await Slot.updateOne({
         therapist_id: new mongoose.Types.ObjectId(therapist_id),

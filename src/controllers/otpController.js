@@ -43,7 +43,7 @@ const createAndStoreOTP = async (email) => {
   await otpDoc.save();
   return otp;
 };
-export const createAndStoreMobileOTP = async (mobile) => {
+const createAndStoreMobileOTP = async (mobile) => {
   const otp = otpGenerator.generate(6, {
     lowerCaseAlphabets: false,
     upperCaseAlphabets: false,
@@ -202,4 +202,4 @@ const mobileVerify = async (req, res) => {
 //       .json(new ApiResponse(200, info, "message sent successfully!"));
 //   });
 // });
-export { sendOtp, userEmailVerify, therapistEmailVerify, verifyOTP, mobileVerify, sendMobileOtp };
+export { sendOtp, userEmailVerify, therapistEmailVerify, verifyOTP, mobileVerify, sendMobileOtp, createAndStoreOTP, createAndStoreMobileOTP };

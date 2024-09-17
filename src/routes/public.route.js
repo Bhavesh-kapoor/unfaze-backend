@@ -24,11 +24,13 @@ import {
   getTherapistSpecialization,
   register as therapistRegister,
   validateRegister as therapistValidateRegister,
+  forgotPassword as therapistforgotPassword,
+  verifyOtpAllowAccess as therapistVerifyOtpAllowAccess,
 } from "../controllers/admin/TherepistController.js";
 import { sendMobileOtp } from "../controllers/otpController.js";
-import { userEmailVerify } from "../controllers/otpController.js";
+// import { userEmailVerify } from "../controllers/otpController.js";
 import { getSlotsByDate } from "../controllers/slotController.js";
-import { forgotPassword } from "../controllers/admin/user.controller.js";
+import { forgotPassword, verifyOtpAllowAccess } from "../controllers/admin/user.controller.js";
 
 const router = express.Router();
 
@@ -76,8 +78,11 @@ router.use("/reviews", customerFeedbackRoutes);
 router.post("/therapist/login", therapistLogin);
 
 router.get("/forget-password", forgotPassword);
+router.get("/verify-otp-grant-access", verifyOtpAllowAccess);
+router.get("/therapist/forget-password", therapistforgotPassword);
+router.get("/therapist/verify-otp-grant-access", therapistVerifyOtpAllowAccess);
 
-router.get("/mail-otp-verify", userEmailVerify);
+// router.get("/mail-otp-verify", userEmailVerify);
 
 router.get("/get-blog-details", findBolgbySlug);
 
@@ -97,7 +102,7 @@ router.get("/slot/list/:therapist_id/:date", getSlotsByDate);
 
 router.get("/get-therapist-list-by-category", therapistListByGroup);
 
-router.post("/therapist/register", multipleImages, therapistRegister);
+router.post("/therapist/register", multipleImages,therapistValidateRegister, therapistRegister);
 
 router.get(
   "/user/google",
@@ -124,5 +129,4 @@ router.get(
   }),
   handleAuthRedirect
 );
-
 export default router;

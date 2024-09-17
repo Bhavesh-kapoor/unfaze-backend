@@ -29,7 +29,12 @@ function convertTo24HourFormat(time12h) {
 const SESSION_DURATION_MINUTES = 60;
 const createOrder = asyncHandler(async (req, res) => {
   const { therapist_id, specialization_id, slot_id } = req.body;
-  const order_currency = "INR";
+  let order_currency;
+  if (process.env.DEV_MODE == "dev") {
+    order_currency = "INR"
+  } else {
+    order_currency = "USD"
+  }
   const user = req.user;
   const timeSlots = await Slot.aggregate([
     {

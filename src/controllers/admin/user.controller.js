@@ -9,9 +9,9 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { parseISO, addDays, startOfDay, endOfDay, format } from "date-fns";
 import { sendOtpMessage } from "../../config/msg91.config.js";
-import { createAndStoreMobileOTP } from "../otpController.js";
+import { createAndStoreOTP } from "../otpController.js";
 import { otpContent } from "../../static/emailcontent.js";
-import { welcomeEmail } from "../../static/emailcontent.js";
+import { welcomeEmail, passwordUpdatedEmail } from "../../static/emailcontent.js";
 import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { check, validationResult } from "express-validator";
 import { Transaction } from "../../models/transactionModel.js";
@@ -554,8 +554,8 @@ export const createAdmin = asyncHandler(async (req, res) => {
 
 const forgotPassword = asyncHandler(async (req, res) => {
   try {
-    const { email, mobile } = req.body;
-    const user = await User.findOne({ $or: [{ email }, { mobile }] });
+    const { email } = req.body;
+    const user = await User.findOne({ email: email });
     if (!user) {
       return res
         .status(404)
@@ -563,8 +563,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
           new ApiResponse(404, null, "You are not associated with any Account!")
         );
     }
-    const otp = await createAndStoreMobileOTP(mobile);
-    const response = await sendOtpMessage(user.mobile, otp);
+    const otp = await createAndStoreOTP(email);
     const htmlContent = otpContent(otp);
     const options = mailOptions(
       user.email,
@@ -577,18 +576,89 @@ const forgotPassword = asyncHandler(async (req, res) => {
       }
       console.log("Email Otp sent: %s", info.messageId);
     });
+
     return res
       .status(200)
       .json(
-        new ApiResponse(200, null, "OTP sent on your registered mobile number")
+        new ApiResponse(200, null, "OTP sent on your registered Email")
       );
   } catch (error) {
     console.log(error);
     return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
   }
 });
+const verifyOtpAllowAccess = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  try {
+    const isVeried = await verifyOTP(email, otp);
+    if (!isVeried) {
+      return res.status(201).json(new ApiError(201, "", "Invalid OTP"));
+    }
+    const user = await User.findOne({ email: email }).select("-password -refreshToken");
+    if (!user) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Invalid email"));
+    }
+    let { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
 
-export const generateInvoice = asyncHandler(async (req, res) => {
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            user: user
+          },
+          "User verified!"
+        )
+      );
+  } catch (error) {
+    console.log(error)
+    res.status(500).json(new ApiError(500, error, "failed to verify OTP"));
+  }
+})
+const setNewPasswrd = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user?._id
+    const { password } = req.body;
+    const user = await User.findByIdAndUpdate(userId, { password }, { new: true });
+    user.password = null;
+    user.refreshToken = null;
+    // let { accessToken, refreshToken } = await createAccessOrRefreshToken(
+    //   user._id
+    // );
+    // const options = {
+    //   httpOnly: true,
+    //   secure: true,
+    // };
+    const htmlContent = passwordUpdatedEmail(
+      `${user?.firstName} ${user?.lastName}`
+    );
+    const Emailoptions = mailOptions(user?.email, "Password recovery email", htmlContent);
+    transporter.sendMail(Emailoptions, (error, info) => {
+      if (error) {
+        console.log(error);
+      }
+      console.log("mail sent: %s", info.messageId);
+    });
+    user.password = null;
+    user.refreshToken = null;
+    return res.status(200).json(new ApiResponse(200, user, "password updated successfully"))
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ "error": error });
+  }
+})
+const generateInvoice = asyncHandler(async (req, res) => {
   const { transactionId } = req.body;
 
   const projectedFields = {
@@ -774,7 +844,10 @@ export {
   updateAvatar,
   updateProfile,
   forgotPassword,
+  verifyOtpAllowAccess,
   getCurrentUser,
   validateRegister,
   changeCurrentPassword,
+  generateInvoice,
+  setNewPasswrd
 };

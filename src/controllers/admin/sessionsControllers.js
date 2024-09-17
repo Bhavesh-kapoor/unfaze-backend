@@ -106,7 +106,7 @@ const bookaSession = asyncHandler(async (req, res) => {
   if (existingSession) {
     return res.status(400).send({ error: "Slot is already booked!" });
   }
-//payments 
+  //payments 
 
   // Create and save the new session
   try {
@@ -170,5 +170,15 @@ const bookedSessions = asyncHandler(async (req, res) => {
 
   res.status(200).json(new ApiResponse(200, sessions, "Session fetched successfully!"));
 });
+// ----------------------------------------------------------------------------------------
+const sessionCompleted = asyncHandler(async (req, res) => {
+  const { sessionId } = req.params;
+if(!sessionId){
+  return res.status(400).json(new ApiResponse(400, null, "Invalid Session ID"));
+}
+  const user = req.user;
+  const session = await Session.findByIdAndUpdate(sessionId, { status: "completed" }, { new: true });
+  return res.status(200).json(new ApiResponse(200, session, "Session completed successfully!"));
+})
 
-export { availableSlots, bookaSession, bookedSessions };
+export {sessionCompleted };

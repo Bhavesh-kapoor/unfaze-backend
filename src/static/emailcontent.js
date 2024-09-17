@@ -62,10 +62,40 @@ const welcomeEmail = (name) => {
         <p style="color: #888;">Warm regards,</p>
         <p>Team Unfazed</p>
         <p><strong>Whatsapp:</strong> +91-6392-975-097</p>
-        <p><strong>Email:</strong> <a href="mailto:contact@unfazed.in" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
+        <p><strong>Email:</strong> <a href="mailto:bds.unfazed@gmail.com" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
         <p><strong>Website:</strong> <a href="http://www.unfazed.in" target="_blank" style="color: #0066cc; text-decoration: none;">www.unfazed.in</a></p>
     </div>`
     )
 }
+const passwordUpdatedEmail = (name) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+    <h2 style="color: #333;">Password Updated Successfully</h2>
 
-export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail }
+    <p style="font-size: 16px; color: #555;">Dear ${name},</p>
+
+    <p style="font-size: 16px; color: #555;">
+      We wanted to let you know that your password has been successfully updated.
+    </p>
+
+    <p style="font-size: 16px; color: #555;">
+      If you did not make this change or if you believe an unauthorized person has accessed your account, please reset your password immediately or contact our support team.
+    </p>
+
+    <p style="font-size: 16px; color: #555;">Thank you for using our service!</p>
+
+    <p style="font-size: 16px; color: #555; margin-top: 20px;">
+      Best regards,<br>
+      <p> Team<strong> Unfazed</strong></p><br>
+      <a href="mailto:bds.unfazed@gmail.com" style="color: #1a73e8; text-decoration: none;">support@bds.unfazed@gmail.com</a>
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+    <p style="font-size: 12px; color: #888;">
+      If you have any questions or need further assistance, please feel free to reach out to our support team.
+    </p>
+  </div>
+`;
+
+
+export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail,passwordUpdatedEmail }

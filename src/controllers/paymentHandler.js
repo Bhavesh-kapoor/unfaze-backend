@@ -7,7 +7,7 @@ import { Therapist } from "../models/therapistModel.js";
 import { Session } from "../models/sessionsModel.js";
 import { Slot } from "../models/slotModal.js";
 
-const sendNotificationsAndEmails = async (transaction, user) => {
+const sendNotificationsAndEmails = async (transaction, user,therapist) => {
   const receiverId = transaction.therapist_id;
   const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
   const payload = {
@@ -30,7 +30,7 @@ const sendNotificationsAndEmails = async (transaction, user) => {
 
   const mailOptions = {
     from: `Unfaze <${process.env.GMAIL}>`,
-    to: transaction.therapist_id.email,
+    to:therapist.email,
     subject: "Course Enrollment Confirmation",
     html: `<p>${user.firstName} ${user.lastName} has successfully booked a session.</p>`,
   };
@@ -145,7 +145,7 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       channelName = `session_${channelName}`;
       session.channelName = channelName;
       await session.save();
-      await sendNotificationsAndEmails(transaction, user);
+      await sendNotificationsAndEmails(transaction, user,therapist);
 
       res
         .status(201)

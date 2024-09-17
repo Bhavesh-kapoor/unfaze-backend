@@ -19,7 +19,8 @@ import {
   sendMobileOtp,
   mobileVerify,
 } from "../../controllers/otpController.js";
-
+import { sessionCompleted } from "../../controllers/admin/sessionsControllers.js";
+import { setNewPasswrd } from "../../controllers/admin/user.controller.js";
 const router = Router();
 
 router.use("/slot", slotRoutes);
@@ -41,11 +42,10 @@ router.post("/verify-mobile-otp", mobileVerify);
 router.post("/generate-invoice", generateInvoice);
 
 router.get("/get-transactions", UserTransactions);
-
+router.put("/set-new-password", setNewPasswrd);
 router.get("/joining-token", generateSessionToken);
-
+router.put("/session-completed/:sessionId", sessionCompleted);
 router.put("/update-user", upload.single("userAvetar"), updateProfile);
-
 router.patch("/update-avatar", upload.single("userAvetar"), updateAvatar);
 
 export default router;

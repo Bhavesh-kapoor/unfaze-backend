@@ -11,6 +11,8 @@ import { sendNotification } from "../notificationController.js";
 import { loginCredentialEmail } from "../../static/emailcontent.js";
 import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { generateTempPassword } from "../../utils/tempPasswordGenerator.js";
+import { verifyOTP, createAndStoreOTP } from "../otpController.js";
+import { otpContent, passwordUpdatedEmail } from "../../static/emailcontent.js";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -74,8 +76,8 @@ const register = asyncHandler(async (req, res) => {
         existingTherapist?.email === email
           ? "Email"
           : existingTherapist?.mobile === mobile
-          ? "Phone Number"
-          : "";
+            ? "Phone Number"
+            : "";
 
       return res
         .status(400)
@@ -798,6 +800,110 @@ const dashboard = asyncHandler(async (req, res) => {
   }
 });
 
+const forgotPassword = asyncHandler(async (req, res) => {
+  try {
+    const { email } = req.body;
+    console.log(email)
+    const user = await Therapist.findOne({ email: email });
+    if (!user) {
+      return res
+        .status(404)
+        .json(
+          new ApiResponse(404, null, "You are not associated with any Account!")
+        );
+    }
+    const otp = await createAndStoreOTP(email);
+    console.log("otp", otp)
+    const htmlContent = otpContent(otp);
+    const options = mailOptions(
+      user.email,
+      "Email verification code - Unfaze",
+      htmlContent
+    );
+    transporter.sendMail(options, (error, info) => {
+      if (error) {
+        console.log(error);
+      }
+      console.log("Email Otp sent: %s", info.messageId);
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, null, "OTP sent on your registered Email")
+      );
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
+  }
+});
+const verifyOtpAllowAccess = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  try {
+    const isVeried = await verifyOTP(email, otp);
+    if (!isVeried) {
+      return res.status(201).json(new ApiError(201, "", "Invalid OTP"));
+    }
+    const user = await Therapist.findOne({ email: email }).select("-password -refreshToken");
+    if (!user) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Invalid email"));
+    }
+    let { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            user: user
+          },
+          "User verified!"
+        )
+      );
+  } catch (error) {
+    console.log(error)
+    res.status(500).json(new ApiError(500, error, "failed to verify OTP"));
+  }
+})
+const setNewPasswrd = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user?._id
+    const { password } = req.body;
+    if (!password) {
+      return res.status(401).json(new ApiResponse(401, null, "password is required!"));
+    }
+    const user = await Therapist.findByIdAndUpdate(userId, { password }, { new: true });
+    user.password = null;
+    user.refreshToken = null;
+    const htmlContent = passwordUpdatedEmail(
+      `${user?.firstName} ${user?.lastName}`
+    );
+    const Emailoptions = mailOptions(user?.email, "Password recovery email", htmlContent);
+    transporter.sendMail(Emailoptions, (error, info) => {
+      if (error) {
+        console.log(error);
+      }
+      console.log("mail sent: %s", info.messageId);
+    });
+    user.password = null;
+    user.refreshToken = null;
+    return res.status(200).json(new ApiResponse(200, user, "password updated successfully"))
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ "error": error });
+  }
+})
 export {
   register,
   login,
@@ -810,4 +916,7 @@ export {
   updateAvatar,
   getTherepistById,
   dashboard,
+  forgotPassword,
+  verifyOtpAllowAccess,
+  setNewPasswrd
 };

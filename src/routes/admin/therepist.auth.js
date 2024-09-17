@@ -11,6 +11,7 @@ import {
   validateRegister,
   activateOrDeactivate,
   deleteTherapistByID,
+  setNewPasswrd
 } from "../../controllers/admin/TherepistController.js";
 import upload from "../../middleware/admin/multer.middleware.js";
 import { getTherepistById } from "../../controllers/admin/TherepistController.js";
@@ -56,5 +57,6 @@ router.post("/activate-or-deactive/:_id", activateOrDeactivate);
 router.post("/register", multipleImages, validateRegister, register);
 
 router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
+router.put("/set-new-password",setNewPasswrd );
 
 export default router;
