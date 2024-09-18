@@ -11,7 +11,7 @@ import session from "express-session";
 import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
-import "./jobs/transactionJobs.js"
+import "./jobs/transactionJobs.js";
 
 // Load environment variables
 dotenv.config();
@@ -44,7 +44,7 @@ const corsOptions = {
 };
 
 app.use(helmet());
-app.use(cors());
+app.use(cors(corsOptions));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
