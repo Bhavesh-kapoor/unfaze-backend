@@ -36,6 +36,7 @@ const validateRegister = [
 
 const adminlogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  console.log(req.body)
 
   if (!email && !password) {
     return res
@@ -49,6 +50,7 @@ const adminlogin = asyncHandler(async (req, res) => {
 
   // now check password is correct  or not
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
+  console.log(isPasswordCorrect)
   if (!isPasswordCorrect)
     return res.status(401).json(new ApiError(401, "", "Invalid Credentials!"));
 
@@ -576,7 +578,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
       }
       console.log("Email Otp sent: %s", info.messageId);
     });
-
     return res
       .status(200)
       .json(
@@ -630,7 +631,10 @@ const setNewPasswrd = asyncHandler(async (req, res) => {
   try {
     const userId = req.user?._id
     const { password } = req.body;
-    const user = await User.findByIdAndUpdate(userId, { password }, { new: true });
+    const user = await User.findById(userId);
+    user.password = password;
+    await user.save({ validateBeforeSave: false })
+
     user.password = null;
     user.refreshToken = null;
     // let { accessToken, refreshToken } = await createAccessOrRefreshToken(

@@ -883,7 +883,9 @@ const setNewPasswrd = asyncHandler(async (req, res) => {
     if (!password) {
       return res.status(401).json(new ApiResponse(401, null, "password is required!"));
     }
-    const user = await Therapist.findByIdAndUpdate(userId, { password }, { new: true });
+    const user = await Therapist.findById(userId);
+    user.password = password;
+    await user.save({ validateBeforeSave: false })
     user.password = null;
     user.refreshToken = null;
     const htmlContent = passwordUpdatedEmail(

@@ -77,8 +77,8 @@ router.use("/reviews", customerFeedbackRoutes);
 
 router.post("/therapist/login", therapistLogin);
 
-router.get("/forget-password", forgotPassword);
-router.get("/verify-otp-grant-access", verifyOtpAllowAccess);
+router.post("/forget-password", forgotPassword);
+router.post("/verify-otp-grant-access", verifyOtpAllowAccess);
 router.get("/therapist/forget-password", therapistforgotPassword);
 router.get("/therapist/verify-otp-grant-access", therapistVerifyOtpAllowAccess);
 
@@ -102,7 +102,7 @@ router.get("/slot/list/:therapist_id/:date", getSlotsByDate);
 
 router.get("/get-therapist-list-by-category", therapistListByGroup);
 
-router.post("/therapist/register", multipleImages,therapistValidateRegister, therapistRegister);
+router.post("/therapist/register", multipleImages, therapistValidateRegister, therapistRegister);
 
 router.get(
   "/user/google",
