@@ -80,7 +80,7 @@ router.post("/therapist/login", therapistLogin);
 router.post("/forget-password", forgotPassword);
 router.post("/verify-otp-grant-access", verifyOtpAllowAccess);
 router.get("/therapist/forget-password", therapistforgotPassword);
-router.get("/therapist/verify-otp-grant-access", therapistVerifyOtpAllowAccess);
+router.post("/therapist/verify-otp-grant-access", therapistVerifyOtpAllowAccess);
 
 // router.get("/mail-otp-verify", userEmailVerify);
 
