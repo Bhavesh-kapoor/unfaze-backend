@@ -19,10 +19,10 @@ const educationDetailSchema = new Schema(
 
 const educationSchema = new Schema(
   {
-    highSchool: { type: educationDetailSchema, required: true },
-    graduation: { type: educationDetailSchema, required: false },
-    intermediate: { type: educationDetailSchema, required: true },
-    postGraduation: { type: educationDetailSchema, required: false },
+    highSchool: { type: educationDetailSchema },
+    graduation: { type: educationDetailSchema },
+    intermediate: { type: educationDetailSchema },
+    postGraduation: { type: educationDetailSchema },
   },
   { _id: false }
 );
@@ -108,8 +108,8 @@ const TherapistSchema = new Schema(
     adharNumber: { type: String, default: "" },
     dateOfBirth: { type: Date, required: true },
     isActive: { type: Boolean, default: false },
-    serviceChargeUsd: { type: Number, default: 0, required: true },
-    serviceChargeInr: { type: Number, default: 0, required: true },
+    serviceChargeUsd: { type: Number, default: 0 },
+    serviceChargeInr: { type: Number, default: 0 },
     specialization: [
       {
         type: mongoose.Schema.Types.ObjectId,
