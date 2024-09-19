@@ -721,6 +721,7 @@ const dashboard = asyncHandler(async (req, res) => {
           upcomingSessionCount: [
             {
               $match: { status: "upcoming" },
+              $match: { status: "rescheduled" }
             },
             {
               $count: "count",
@@ -737,11 +738,12 @@ const dashboard = asyncHandler(async (req, res) => {
           sessions: [
             {
               $match: { status: "upcoming" },
+              $match: { status: "rescheduled" }
             },
             {
               $sort: { start_time: 1 },
             },
-            { $limit: 5 },
+            { $limit: 3 },
             {
               $project: {
                 transactionId: 1,
