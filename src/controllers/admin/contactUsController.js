@@ -25,9 +25,9 @@ const raiseQuery = asyncHandler(async (req, res) => {
       .json(new ApiError(500, "", "something went wrongwhile raising query! "));
   }
   /*--------------------------------send mail notification to admin--------------------------------------------------*/
-  const htmlContent = contactUsContent(senderName, senderEmail, query,senderMobile);
+  const htmlContent = contactUsContent(senderName, senderEmail, query, senderMobile);
   const options = mailOptions(
-    senderEmail,
+    "adarshsrivastav375@gmail.com",
     "Query raised from unfazed user",
     htmlContent
   );

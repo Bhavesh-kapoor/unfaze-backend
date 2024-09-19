@@ -169,7 +169,11 @@ export const deleteSlot = async (request, response) => {
     { therapist_id: therapist_id },
     { $pull: { timeslots: { _id: slot_id } } }
   );
-
+  if (updatedData.modifiedCount > 0) {
+    console.log("Timeslot successfully removed.");
+  } else {
+    console.log("No timeslot found or no changes made.");
+  }
   return response
     .status(200)
     .json(new ApiResponse(200, updatedData, "Slot deleted successfully"));

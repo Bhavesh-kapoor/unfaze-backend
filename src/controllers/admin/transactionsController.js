@@ -960,7 +960,7 @@ const getUserSessions = async (req, res) => {
       userId = user?._id;
     }
 
-    const { status = "upcoming", page = 1, limit = 10 } = req.query;
+    const { status, page = 1, limit = 10 } = req.query;
     if (!userId) {
       return res.status(400).json(new ApiError(400, null, "User ID is required!"));
     }
@@ -973,9 +973,9 @@ const getUserSessions = async (req, res) => {
       user_id: userId,
     };
 
-    if (status === "upcoming") {
-      matchConditions.start_time = { $gt: now };
-    }
+    // if (status === "upcoming") {
+    //   matchConditions.start_time = { $gt: now };
+    // }
     const sessions = await Session.aggregate([
       {
         $match: matchConditions,
@@ -1035,6 +1035,7 @@ const getUserSessions = async (req, res) => {
               "$therapist_details.lastName",
             ],
           },
+          therapistId:"$therapist_details._id",
           category: "$category.name",
           amount_USD: "$transactions_details.amount_USD",
           amount_INR: "$transactions_details.amount_INR",
@@ -1042,7 +1043,7 @@ const getUserSessions = async (req, res) => {
           status: 1,
         },
       },
-      { $sort: { start_time: 1 } }, 
+      { $sort: { start_time: 1 } },
       { $skip: skip },
       { $limit: limitNumber },
     ]);
@@ -1063,16 +1064,20 @@ const getUserSessions = async (req, res) => {
 };
 
 const UserTransactions = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
   const user = req.user;
   if (!user) {
     return res
       .status(400)
       .json(new ApiResponse(400, null, "User ID is required!"));
   }
-
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+  const skip = (pageNumber - 1) * limitNumber;
   const userTransactions = await Transaction.aggregate([
     {
-      $match: { user_id: user._id },
+      $match: { user_id: user._id,payment_status: { $ne: "PAYMENT_INITIATED" } },
+      
     },
     {
       $lookup: {
@@ -1112,6 +1117,9 @@ const UserTransactions = asyncHandler(async (req, res) => {
         payment_status: "$payment_details.payment_status",
       },
     },
+    { $sort: { start_time: -1 } },
+    { $skip: skip },
+    { $limit: limitNumber },
   ]);
   if (!userTransactions.length) {
     return res
