@@ -11,7 +11,10 @@ import { parseISO, addDays, startOfDay, endOfDay, format } from "date-fns";
 import { sendOtpMessage } from "../../config/msg91.config.js";
 import { createAndStoreOTP } from "../otpController.js";
 import { otpContent } from "../../static/emailcontent.js";
-import { welcomeEmail, passwordUpdatedEmail } from "../../static/emailcontent.js";
+import {
+  welcomeEmail,
+  passwordUpdatedEmail,
+} from "../../static/emailcontent.js";
 import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { check, validationResult } from "express-validator";
 import { Transaction } from "../../models/transactionModel.js";
@@ -36,7 +39,6 @@ const validateRegister = [
 
 const adminlogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  console.log(req.body)
 
   if (!email && !password) {
     return res
@@ -50,7 +52,6 @@ const adminlogin = asyncHandler(async (req, res) => {
 
   // now check password is correct  or not
   const isPasswordCorrect = await existUser.isPasswordCorrect(password);
-  console.log(isPasswordCorrect)
   if (!isPasswordCorrect)
     return res.status(401).json(new ApiError(401, "", "Invalid Credentials!"));
 
@@ -580,9 +581,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     });
     return res
       .status(200)
-      .json(
-        new ApiResponse(200, null, "OTP sent on your registered Email")
-      );
+      .json(new ApiResponse(200, null, "OTP sent on your registered Email"));
   } catch (error) {
     console.log(error);
     return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
@@ -595,13 +594,15 @@ const verifyOtpAllowAccess = asyncHandler(async (req, res) => {
     if (!isVeried) {
       return res.status(201).json(new ApiError(201, "", "Invalid OTP"));
     }
-    const user = await User.findOne({ email: email }).select("-password -refreshToken");
+    const user = await User.findOne({ email: email }).select(
+      "-password -refreshToken"
+    );
     if (!user) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "Invalid email"));
+      return res.status(404).json(new ApiResponse(404, null, "Invalid email"));
     }
-    let { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
+    let { accessToken, refreshToken } = await createAccessOrRefreshToken(
+      user._id
+    );
     const options = {
       httpOnly: true,
       secure: true,
@@ -617,23 +618,23 @@ const verifyOtpAllowAccess = asyncHandler(async (req, res) => {
           {
             accessToken: accessToken,
             refreshToken: refreshToken,
-            user: user
+            user: user,
           },
           "User verified!"
         )
       );
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json(new ApiError(500, error, "failed to verify OTP"));
   }
-})
+});
 const setNewPasswrd = asyncHandler(async (req, res) => {
   try {
-    const userId = req.user?._id
+    const userId = req.user?._id;
     const { password } = req.body;
     const user = await User.findById(userId);
     user.password = password;
-    await user.save({ validateBeforeSave: false })
+    await user.save({ validateBeforeSave: false });
 
     user.password = null;
     user.refreshToken = null;
@@ -647,7 +648,11 @@ const setNewPasswrd = asyncHandler(async (req, res) => {
     const htmlContent = passwordUpdatedEmail(
       `${user?.firstName} ${user?.lastName}`
     );
-    const Emailoptions = mailOptions(user?.email, "Password recovery email", htmlContent);
+    const Emailoptions = mailOptions(
+      user?.email,
+      "Password recovery email",
+      htmlContent
+    );
     transporter.sendMail(Emailoptions, (error, info) => {
       if (error) {
         console.log(error);
@@ -656,12 +661,14 @@ const setNewPasswrd = asyncHandler(async (req, res) => {
     });
     user.password = null;
     user.refreshToken = null;
-    return res.status(200).json(new ApiResponse(200, user, "password updated successfully"))
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "password updated successfully"));
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ "error": error });
+    return res.status(500).json({ error: error });
   }
-})
+});
 const generateInvoice = asyncHandler(async (req, res) => {
   const { transactionId } = req.body;
 
@@ -853,5 +860,5 @@ export {
   validateRegister,
   changeCurrentPassword,
   generateInvoice,
-  setNewPasswrd
+  setNewPasswrd,
 };
