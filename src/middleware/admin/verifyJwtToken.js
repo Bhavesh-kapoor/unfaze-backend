@@ -43,7 +43,6 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.error(error); // Log the error for debugging
     if (error instanceof jwt.JsonWebTokenError) {
       return res.status(498).json(new ApiError(498, null, "Invalid Token"));
     }
