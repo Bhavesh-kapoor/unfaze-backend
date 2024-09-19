@@ -14,7 +14,8 @@ const router = Router();
 
 router.get("/agora-token", generateSessionToken);
 router.get("/session-completed/:sessionId", sessionCompleted);
-router.get("/reschedule", rescheduleSession);
+router.post("/reschedule", rescheduleSession);
 
 
 export default router;
+/api/auth/user/session/reschedule

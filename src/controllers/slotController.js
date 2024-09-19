@@ -152,32 +152,28 @@ export const deleteSlot = async (request, response) => {
   if (!slot_id || !therapist_id) {
     return response
       .status(400)
-      .json(new ApiError(400, "Slot ID and Therapist ID are required"));
+      .json({ error: "Slot ID and Therapist ID are required" });
   }
 
-  const slot = await Slot.findOne({
-    therapist_id: therapist_id,
-    "timeslots._id": slot_id,
-  });
-
-  if (!slot) {
-    return response.status(404).json(new ApiError(404, "Slot not found"));
+  try {
+    const updatedData = await Slot.updateOne(
+      { therapist_id: therapist_id, "timeslots._id": slot_id },
+      { $pull: { timeslots: { _id: slot_id } } }
+    );
+    if (updatedData.modifiedCount > 0) {
+      return response
+        .status(200)
+        .json({ message: "Slot deleted successfully", data: updatedData });
+    } else {
+      return response
+        .status(404)
+        .json({ error: "Slot not found or no changes made" });
+    }
+  } catch (error) {
+    return response.status(500).json({ error: "Internal Server Error", details: error.message });
   }
-
-  // Remove the slot from the timeslots array
-  const updatedData = await Slot.updateOne(
-    { therapist_id: therapist_id },
-    { $pull: { timeslots: { _id: slot_id } } }
-  );
-  if (updatedData.modifiedCount > 0) {
-    console.log("Timeslot successfully removed.");
-  } else {
-    console.log("No timeslot found or no changes made.");
-  }
-  return response
-    .status(200)
-    .json(new ApiResponse(200, updatedData, "Slot deleted successfully"));
 };
+
 
 export const addMoreSlots = async (req, res) => {
   const { date, startTime, endTime, therapist_id } = req.body;
