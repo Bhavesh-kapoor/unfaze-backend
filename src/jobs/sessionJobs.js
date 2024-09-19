@@ -3,12 +3,9 @@ import cron from "node-cron";
 import { subMinutes } from "date-fns";
 import { Session } from "../models/sessionsModel.js";
 cron.schedule("*/15 * * * *", async () => {
-    console.log("Running cron job to check for missed sessions...");
     try {
         const now = new Date();
-        const thresholdTime = subMinutes(now, 5);
-
-        
+        const thresholdTime = subMinutes(now, 5); 
         const missedSessions = await Session.updateMany(
             {
                 end_time: { $lt: thresholdTime },

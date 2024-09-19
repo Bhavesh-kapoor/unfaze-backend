@@ -260,6 +260,14 @@ const rescheduleSession = asyncHandler(async (req, res) => {
   session.end_time = endDateTime;
   session.status = "rescheduled";
   const rescheduled = await session.save();
+  await Slot.updateOne({
+    therapist_id: new mongoose.Types.ObjectId(session.therapist_id),
+    "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+  }, {
+    $set: {
+      "timeslots.$.isBooked": true,
+    },
+  })
   console.log(rescheduled)
   res.status(201).json(new ApiResponse(201, rescheduled, "session recheduled"))
 })

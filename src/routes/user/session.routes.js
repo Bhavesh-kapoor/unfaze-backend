@@ -18,4 +18,3 @@ router.post("/reschedule", rescheduleSession);
 
 
 export default router;
-/api/auth/user/session/reschedule
