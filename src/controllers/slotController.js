@@ -96,9 +96,14 @@ export const getNext10DaysSlots = async (request, response) => {
         },
       },
       {
+        $sort: {
+          "timeslots.date": 1,
+        },
+      },
+      {
         $group: {
           _id: "$_id",
-          timeslots: { $push: "$timeslots" }, // Reassemble the timeslots array
+          timeslots: { $push: "$timeslots" },
         },
       },
     ]);
