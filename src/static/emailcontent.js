@@ -1,11 +1,12 @@
-const contactUsContent = (name, email, message) => {
-    return (`
+const contactUsContent = (senderName, senderEmail, query, senderMobile) => {
+  return (`
           <div style="font-family: Arial, sans-serif; line-height: 1.6;">
               <h2 style="color: #333;">Hello, admin</h2>
-              <h1 style="color: #007bff;"> Name:${name}</h1>
-              <p>Email of the user is ${email}</p>
+              <h1 style="color: #007bff;"> Name:${senderName}</h1>
+              <p>Email of the user is ${senderEmail}</p>
+              <p>Email of the user is ${senderMobile}</p>
               <p>message:</p>
-              <p>${message}</p>
+              <p>${query}</p>
               <br>
               <p>Best regards,</p>
               <p>The Unfaze Team</p>
@@ -13,7 +14,7 @@ const contactUsContent = (name, email, message) => {
       `)
 }
 const otpContent = (otp) => {
-    return (`
+  return (`
           <div style="font-family: Arial, sans-serif; line-height: 1.6;">
               <h2 style="color: #333;">Hello,</h2>
               <p>Thank you for using Unfaze. Your OTP code is:</p>
@@ -25,10 +26,10 @@ const otpContent = (otp) => {
               <p>The Unfaze Team</p>
           </div>
       `
-    )
+  )
 }
 const loginCredentialEmail = (username, tempPassword) => {
-    return (`
+  return (`
         <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
             <h2 style="color: #333;">Hello,</h2>
             <p>We are pleased to inform you that your account has been created successfully! Below are your login credentials:</p>
@@ -45,8 +46,8 @@ const loginCredentialEmail = (username, tempPassword) => {
 };
 
 const welcomeEmail = (name) => {
-    return (
-        `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+  return (
+    `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
         <h2 style="color: #555;">Hi ${name},</h2>
         <p>Welcome to Unfazed! We're thrilled to have you on board. You&apos;ve just taken the first step towards prioritizing your mental well-being, and we’re here to support you every step of the way.</p>
         <p>At Unfazed, we believe in creating a safe, judgment-free space where you can explore, heal, and grow. Whether you're looking for therapy, personal development, or simply a space to unwind and reconnect, we've got you covered.</p>
@@ -65,7 +66,7 @@ const welcomeEmail = (name) => {
         <p><strong>Email:</strong> <a href="mailto:bds.unfazed@gmail.com" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
         <p><strong>Website:</strong> <a href="http://www.unfazed.in" target="_blank" style="color: #0066cc; text-decoration: none;">www.unfazed.in</a></p>
     </div>`
-    )
+  )
 }
 const passwordUpdatedEmail = (name) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
@@ -98,4 +99,4 @@ const passwordUpdatedEmail = (name) => `
 `;
 
 
-export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail,passwordUpdatedEmail }
+export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail }

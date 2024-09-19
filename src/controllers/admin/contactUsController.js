@@ -7,8 +7,8 @@ import { isValidObjectId } from "../../utils/mongooseUtility.js";
 import { transporter, mailOptions } from "../../config/nodeMailer.js";
 
 const raiseQuery = asyncHandler(async (req, res) => {
-  const { senderName, senderEmail, query } = req.body;
-  if ([senderName, senderEmail, query].some((field) => field?.trim() === "")) {
+  const { senderName, senderEmail, query, senderMobile } = req.body;
+  if ([senderName, senderEmail, query, senderMobile].some((field) => field?.trim() === "")) {
     return res
       .status(400)
       .json(new ApiError(400, "", "all fields are mandetory"));
@@ -17,6 +17,7 @@ const raiseQuery = asyncHandler(async (req, res) => {
     query,
     senderName,
     senderEmail,
+    senderMobile
   });
   if (!raisedQuery) {
     return res
@@ -24,7 +25,7 @@ const raiseQuery = asyncHandler(async (req, res) => {
       .json(new ApiError(500, "", "something went wrongwhile raising query! "));
   }
   /*--------------------------------send mail notification to admin--------------------------------------------------*/
-  const htmlContent = contactUsContent(senderName, senderEmail, query);
+  const htmlContent = contactUsContent(senderName, senderEmail, query,senderMobile);
   const options = mailOptions(
     senderEmail,
     "Query raised from unfazed user",
