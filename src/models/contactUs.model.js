@@ -14,6 +14,11 @@ const ContactUsSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    senderMobile: {
+      type: Number,
+      required: true,
+      trim: true,
+    },
     query: {
       type: String,
       required: true,
