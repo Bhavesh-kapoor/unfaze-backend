@@ -1,10 +1,28 @@
-import { parseISO, addMinutes, format } from "date-fns";
+import { parseISO, addMinutes, format, isValid } from "date-fns";
 import { Session } from "../../models/sessionsModel.js";
 import { Therapist } from "../../models/therapistModel.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { Course } from "../../models/courseModel.js";
+// import { Course } from "../../models/courseModel.js";
+import mongoose from "mongoose";
+import { Slot } from "../../models/slotModal.js";
+
+function convertTo24HourFormat(time12h) {
+  const [time, modifier] = time12h.split(' ');
+  let [hours, minutes] = time.split(':');
+  hours = parseInt(hours, 10);
+  if (modifier === 'AM' && hours === 12) {
+    hours = 0;
+  }
+  if (modifier === 'PM' && hours !== 12) {
+    hours += 12;
+  }
+  const hours24 = hours.toString().padStart(2, '0');
+  const minutes24 = minutes.padStart(2, '0');
+
+  return `${hours24}:${minutes24}`;
+}
 
 const SESSION_DURATION_MINUTES = 30;
 const GAP_BETWEEN_SESSIONS_MINUTES = 15;
@@ -173,12 +191,77 @@ const bookedSessions = asyncHandler(async (req, res) => {
 // ----------------------------------------------------------------------------------------
 const sessionCompleted = asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
-if(!sessionId){
-  return res.status(400).json(new ApiResponse(400, null, "Invalid Session ID"));
-}
+  if (!sessionId) {
+    return res.status(400).json(new ApiResponse(400, null, "Invalid Session ID"));
+  }
   const user = req.user;
   const session = await Session.findByIdAndUpdate(sessionId, { status: "completed" }, { new: true });
   return res.status(200).json(new ApiResponse(200, session, "Session completed successfully!"));
 })
 
-export {sessionCompleted };
+const rescheduleSession = asyncHandler(async (req, res) => {
+  const { session_id, slot_id } = req.body;
+  if (!session_id || !slot_id) {
+    return res.status(400).json(new ApiResponse(400, null, "Invalid Session ID or Slot ID"));
+  }
+  const session = await Session.findOne({ _id: session_id, status: "missed" });
+  if (!session) {
+    return res.status(400).json(new ApiError(400, null, "You cant't reschedule this session!"));
+  }
+  const timeSlots = await Slot.aggregate([
+    {
+      $match: {
+        therapist_id: session.therapist_id,
+      },
+    },
+    {
+      $unwind: "$timeslots",
+    },
+    {
+      $match: {
+        "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+        "timeslots.isBooked": false,
+      },
+    },
+    {
+      $project: {
+        _id: "$timeslots._id",
+        therapist_id: 1,
+        date: "$timeslots.date",
+        startTime: "$timeslots.startTime",
+        endTime: "$timeslots.endTime",
+        isBooked: "$timeslots.isBooked",
+      },
+    },
+  ]);
+  if (timeSlots.length === 0) {
+    return res
+      .status(404)
+      .json(new ApiError(404, "", "Timeslot not found or already booked"));
+  }
+  const { date, startTime, endTime } = timeSlots[0];
+  const formattedDate = format(new Date(date), "yyyy-MM-dd");
+  const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
+  const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+  console.log(formattedDate, startDateTime, endDateTime)
+  if (!isValid(startDateTime) || !isValid(endDateTime)) {
+    console.error("Invalid date-time format:", startDateTime, endDateTime);
+    return res
+      .status(400)
+      .json(new ApiError(400, "", "Invalid date or time format"));
+  }
+
+  if (startDateTime >= endDateTime) {
+    return res
+      .status(400)
+      .send({ error: "End time must be after start time" });
+  }
+  session.start_time = startDateTime;
+  session.end_time = endDateTime;
+  session.status = "rescheduled";
+  const rescheduled = await session.save();
+  console.log(rescheduled)
+  res.status(201).json(new ApiResponse(201, rescheduled, "session recheduled"))
+})
+
+export { sessionCompleted, rescheduleSession };

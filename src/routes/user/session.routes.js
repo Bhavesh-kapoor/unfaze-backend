@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { generateSessionToken } from "../../controllers/agora.js";
 import {
- sessionCompleted 
+    sessionCompleted, rescheduleSession
 } from "../../controllers/admin/sessionsControllers.js";
 
 const router = Router();
@@ -14,5 +14,7 @@ const router = Router();
 
 router.get("/agora-token", generateSessionToken);
 router.get("/session-completed/:sessionId", sessionCompleted);
+router.get("/reschedule", rescheduleSession);
+
 
 export default router;

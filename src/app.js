@@ -12,6 +12,7 @@ import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
 import "./jobs/transactionJobs.js";
+import "./jobs/sessionJobs.js"
 
 // Load environment variables
 dotenv.config();

@@ -29,7 +29,7 @@ router.get("/thankyou", thankyou);
 
 router.use("/feedback", feedbackRoute);
 
-router.use("/sessions", sessionRouter);
+router.use("/session", sessionRouter);
 
 router.post("/email-verify", userEmailVerify);
 
@@ -47,5 +47,6 @@ router.get("/joining-token", generateSessionToken);
 router.put("/session-completed/:sessionId", sessionCompleted);
 router.put("/update-user", upload.single("userAvetar"), updateProfile);
 router.patch("/update-avatar", upload.single("userAvetar"), updateAvatar);
+
 
 export default router;
