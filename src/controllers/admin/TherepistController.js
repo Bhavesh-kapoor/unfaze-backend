@@ -720,8 +720,9 @@ const dashboard = asyncHandler(async (req, res) => {
           ],
           upcomingSessionCount: [
             {
-              $match: { status: "upcoming" },
-              $match: { status: "rescheduled" }
+              $match: {
+                status: { $in: ["upcoming", "rescheduled"] },
+              },
             },
             {
               $count: "count",
@@ -743,7 +744,7 @@ const dashboard = asyncHandler(async (req, res) => {
             {
               $sort: { start_time: 1 },
             },
-            { $limit: 3 },
+            { $limit: 10 },
             {
               $project: {
                 transactionId: 1,
