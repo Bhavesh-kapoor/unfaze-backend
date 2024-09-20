@@ -7,6 +7,9 @@ import asyncHandler from "../../utils/asyncHandler.js";
 // import { Course } from "../../models/courseModel.js";
 import mongoose from "mongoose";
 import { Slot } from "../../models/slotModal.js";
+import { Transaction } from "../../models/transactionModel.js";
+import { sendNotificationsAndEmails } from "../paymentHandler.js";
+import { User } from "../../models/userModel.js"
 
 function convertTo24HourFormat(time12h) {
   const [time, modifier] = time12h.split(' ');
@@ -271,5 +274,42 @@ const rescheduleSession = asyncHandler(async (req, res) => {
   console.log(rescheduled)
   res.status(201).json(new ApiResponse(201, rescheduled, "session recheduled"))
 })
+const bookSessionManully = asyncHandler(async (req, res) => {
+  try {
+    const { transactionId } = req.body;
+    if (!transactionId) {
+      return res.status(400).json(new ApiResponse(400, null, "transaction Id required!"));
+    }
+    const transaction = await Transaction.findOne({ transactionId: transactionId, payment_status: "successful" })
+    if (!transaction) {
+      return res.status(400).json(new ApiResponse(400, null, "Transaction not found or payment failed!"));
+    }
+    const user = await User.findById(transaction.user_id);
+    const therapist = await Therapist.findById(transaction.therapist_id);
+    const session = await Session.findOne({ transaction_id: transaction._id })
+    if (session) {
+      return res.status(400).json(new ApiResponse(400, null, "Session already booked!"));
+    }
+    const newSession = new Session({
+      user_id: transaction.user_id,
+      therapist_id: transaction.therapist_id,
+      start_time: transaction.start_time,
+      end_time: transaction.end_time,
+      transaction_id: transaction.transactionId,
+      status: "upcoming",
+    })
+    let channelName = newSession._id.toString().slice(-10)
+    channelName = `session_${channelName}`;
+    session.channelName = channelName;
+    await session.save();
+    await sendNotificationsAndEmails(transaction, user, therapist);
+    res
+      .status(201)
+      .json(new ApiResponse(201, session, "Session booked successfully"));
+  } catch (error) {
+    console.log(error)
+    throw new ApiError(500, error, "something went wrong")
+  }
+})
 
-export { sessionCompleted, rescheduleSession };
+export { sessionCompleted, rescheduleSession, bookSessionManully };

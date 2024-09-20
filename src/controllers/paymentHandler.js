@@ -7,7 +7,7 @@ import { Therapist } from "../models/therapistModel.js";
 import { Session } from "../models/sessionsModel.js";
 import { Slot } from "../models/slotModal.js";
 
-const sendNotificationsAndEmails = async (transaction, user,therapist) => {
+export const sendNotificationsAndEmails = async (transaction, user,therapist) => {
   const receiverId = transaction.therapist_id;
   const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
   const payload = {

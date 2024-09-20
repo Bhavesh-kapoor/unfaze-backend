@@ -325,6 +325,7 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
       console.log("Email sent successfully:", info.response);
     }
   });
+  
   therapist.isActive = !therapist.isActive;
   therapist.password = password;
   await therapist.save();
