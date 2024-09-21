@@ -7,11 +7,17 @@ import {
   findById,
   findList,
 } from "../../controllers/courseControllers.js";
+
 const courseRouter = Router();
+
 courseRouter.post("/create", validateInput, createCourse);
+
 courseRouter.put("/update/:_id", updateCourse);
+
 courseRouter.delete("/delete/:_id", deleteCourse);
+
 courseRouter.get("/course_list", findList);
-courseRouter.get("/find/:_id", findById);
+
+courseRouter.get("/get/:_id", findById);
 
 export default courseRouter;
