@@ -4,6 +4,7 @@ import { Course } from "../models/courseModel.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
 import { Types } from "mongoose";
+import { Types } from "mongoose";
 
 const validateInput = [
   check("session_offered", " session_count is required").notEmpty(),
@@ -39,7 +40,9 @@ const createCourse = asyncHandler(async (req, res) => {
 
     await newCourse.save();
 
-    return res.status(201).json(new ApiResponse(201, newCourse, "Course created successfully"));
+    return res
+      .status(201)
+      .json(new ApiResponse(201, newCourse, "Course created successfully"));
   } catch (error) {
     return res.status(500).json(new ApiError(500, "Something went wrong"));
   }
@@ -49,20 +52,25 @@ const updateCourse = asyncHandler(async (req, res) => {
   const { _id } = req.params;
 
   try {
-    const updatedCourse = await Course.findByIdAndUpdate(
-      _id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const updatedCourse = await Course.findByIdAndUpdate(_id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedCourse) {
       throw new ApiError(404, "Course not found");
     }
 
-    res.status(200).json(new ApiResponse(200, updatedCourse, "Course updated successfully"));
+    res
+      .status(200)
+      .json(new ApiResponse(200, updatedCourse, "Course updated successfully"));
   } catch (error) {
     console.error("Error updating course:", error);
-    throw new ApiError(501, "Something went wrong while updating the course", error);
+    throw new ApiError(
+      501,
+      "Something went wrong while updating the course",
+      error
+    );
   }
 });
 const deleteCourse = asyncHandler(async (req, res) => {
@@ -72,10 +80,14 @@ const deleteCourse = asyncHandler(async (req, res) => {
     const deletedCourse = await Course.findByIdAndDelete(_id);
 
     if (!deletedCourse) {
-      return res.status(404).json(new ApiResponse(404, null, "Course not found"));
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Course not found"));
     }
 
-    res.status(200).json(new ApiResponse(200, null, "Course deleted successfully"));
+    res
+      .status(200)
+      .json(new ApiResponse(200, null, "Course deleted successfully"));
   } catch (error) {
     console.error("Error deleting course:", error);
     throw new ApiError(501, "Something went wrong while deleting the course");
@@ -137,13 +149,13 @@ const findList = asyncHandler(async (req, res) => {
   }
 });
 
-
-
 const findById = asyncHandler(async (req, res) => {
   const { _id } = req.params;
 
   if (!_id) {
-    return res.status(400).json(new ApiError(400, null, "Course ID is required"));
+    return res
+      .status(400)
+      .json(new ApiError(400, null, "Course ID is required"));
   }
 
   try {
@@ -175,6 +187,7 @@ const findById = asyncHandler(async (req, res) => {
           inrPrice: 1,
           isActive: 1,
           category: "$specializations.name",
+          specialization_id: "$specializations._id",
         },
       },
     ];
@@ -185,18 +198,17 @@ const findById = asyncHandler(async (req, res) => {
       return res.status(404).json(new ApiError(404, null, "Course not found"));
     }
 
-    return res.status(200).json(
-      new ApiResponse(200, course[0], "Course fetched successfully")
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, course[0], "Course fetched successfully"));
   } catch (error) {
     console.error("Error fetching courses:", error);
     throw new ApiError(501, "Something went wrong while fetching the course");
   }
 });
 
-
 const purchaseAcourse = asyncHandler(async (req, res) => {
-  const { courseId } = req.params
-})
+  const { courseId } = req.params;
+});
 
 export { validateInput, createCourse, updateCourse, deleteCourse, findList, findById };

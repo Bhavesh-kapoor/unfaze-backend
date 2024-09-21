@@ -21,7 +21,7 @@ router.post("/submit-review", verifyJwtToken, createSessionFeedback);
 router.get("/all", getAllFeedbacks);
 
 // Get feedback by ID
-router.get("/:id", verifyJwtToken, getFeedbackById);
+router.get("/get/:id", verifyJwtToken, getFeedbackById);
 
 // Update feedback by ID
 router.put("/update/:id", verifyJwtToken, updateFeedbackById);
