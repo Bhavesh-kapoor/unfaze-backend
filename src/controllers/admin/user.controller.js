@@ -206,7 +206,6 @@ const updateProfile = asyncHandler(async (req, res) => {
   }
 
   const user = req.body;
-  console.log(req.file)
   let profileImage = req.file ? req.file.path : "";
 
   try {
