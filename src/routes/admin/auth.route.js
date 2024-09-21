@@ -12,7 +12,7 @@ import specializationRouter from "./specilization.route.js";
 import contactUsRoutes from "../../routes/contactUs.router.js";
 import { setNewPasswrd } from "../../controllers/admin/user.controller.js";
 import { bookSessionManully } from "../../controllers/admin/sessionsControllers.js";
-import courseRouter from "../admin/course.route.js"
+import courseRouter from "../admin/course.route.js";
 
 const router = Router();
 
@@ -37,9 +37,11 @@ router.use("/transactions", transactionRoutes);
 router.use("/specialization", specializationRouter);
 
 router.use("/dashboard", dashboardRoutes);
-router.put("/set-new-password", setNewPasswrd);
-router.post("/book-session-manully", bookSessionManully);
-router.use("/course", courseRouter);
 
+router.put("/set-new-password", setNewPasswrd);
+
+router.post("/book-session-manully", bookSessionManully);
+
+router.use("/course", courseRouter);
 
 export default router;
