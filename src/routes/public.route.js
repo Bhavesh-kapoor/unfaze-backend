@@ -15,7 +15,10 @@ import {
   refreshToken,
   validateRegister,
 } from "../controllers/admin/user.controller.js";
-import {upload,compressImage} from "../middleware/admin/multer.middleware.js";
+import {
+  upload,
+  compressImage,
+} from "../middleware/admin/multer.middleware.js";
 import customerFeedbackRoutes from "./customerFeedbackRoutes.js";
 import specializationRoutes from "./admin/specilization.route.js";
 import { raiseQuery } from "../controllers/admin/contactUsController.js";
@@ -34,6 +37,7 @@ import {
   forgotPassword,
   verifyOtpAllowAccess,
 } from "../controllers/admin/user.controller.js";
+import { getSeoDataBySlug } from "../controllers/admin/seoController.js";
 
 const router = express.Router();
 
@@ -70,6 +74,8 @@ router.post("/send-mobile-otp", sendMobileOtp);
 
 // User login
 router.post("/login", userlogin);
+
+router.post("/seo", getSeoDataBySlug);
 
 router.use("/email/send-otp", sendOtp);
 

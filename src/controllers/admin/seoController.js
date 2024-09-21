@@ -42,7 +42,7 @@ const createSeoData = asyncHandler(async (req, res) => {
 // update seo data
 
 const updateSeoData = asyncHandler(async (req, res) => {
-  const { title, keyword, descriptions, noIndex } = req.body;
+  const { title, keyword, descriptions, noIndex, slug } = req.body;
   const { _id } = req.params;
   const data = await Seo.findById(_id);
   if (!data) {
@@ -52,6 +52,7 @@ const updateSeoData = asyncHandler(async (req, res) => {
   data.keyword = keyword || data.keyword;
   data.descriptions = descriptions || data.descriptions;
   data.noIndex = noIndex || data.noIndex;
+  data.slug = slug || data.slug;
 
   const updatedData = await data.save();
   return res
@@ -114,6 +115,19 @@ const getSeoDataById = asyncHandler(async (req, res) => {
   }
   return res.status(200).json(new ApiResponse(200, data));
 });
+
+//get Seodata by Slug
+export const getSeoDataBySlug = asyncHandler(async (req, res) => {
+  const { slug } = req.body;
+  try {
+    const data = await Seo.findOne({ slug });
+    if (!data) return res.status(404).json({ message: "Data not found" });
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving data", error });
+  }
+});
+
 export {
   createSeoData,
   updateSeoData,
