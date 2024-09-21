@@ -4,8 +4,6 @@ import { Course } from "../models/courseModel.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
 import { Types } from "mongoose";
-import { Types } from "mongoose";
-
 const validateInput = [
   check("session_offered", " session_count is required").notEmpty(),
   check("usdPrice", "usdPrice Name is required").notEmpty(),
