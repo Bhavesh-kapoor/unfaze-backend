@@ -1,9 +1,9 @@
 import { Router } from "express";
 import {
+  listSeoData,
   createSeoData,
   updateSeoData,
   deleteSeoData,
-  listSeoData,
   getSeoDataById,
   validateSeoData,
 } from "../../controllers/admin/seoController.js";
