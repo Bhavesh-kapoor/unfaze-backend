@@ -10,6 +10,7 @@ import {
 let router = Router();
 
 router.get("/all", getAllSpecialization);
+
 router.get("/get/:_id", getSpecializationById);
 
 router.post("/create", createSpecialization);
