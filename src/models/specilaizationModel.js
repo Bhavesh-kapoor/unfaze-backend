@@ -7,11 +7,15 @@ const SpecializationSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    usdPrice: {
+      type: Number
+    },
+    inrPrice: { type: Number },
   },
   { timestamps: true }
 );
-
 export const Specialization = mongoose.model(
   "Specialization",
   SpecializationSchema
 );
+

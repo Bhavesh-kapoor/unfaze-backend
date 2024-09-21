@@ -15,7 +15,7 @@ import {
   refreshToken,
   validateRegister,
 } from "../controllers/admin/user.controller.js";
-import upload from "../middleware/admin/multer.middleware.js";
+import {upload,compressImage} from "../middleware/admin/multer.middleware.js";
 import customerFeedbackRoutes from "./customerFeedbackRoutes.js";
 import specializationRoutes from "./admin/specilization.route.js";
 import { raiseQuery } from "../controllers/admin/contactUsController.js";
@@ -62,6 +62,7 @@ const handleAuthRedirect = (req, res) => {
 router.post(
   "/register",
   upload.single("profileImage"),
+  compressImage,
   validateRegister,
   register
 );
@@ -114,6 +115,7 @@ router.get("/get-therapist-list-by-category", therapistListByGroup);
 router.post(
   "/therapist/register",
   multipleImages,
+  compressImage,
   therapistValidateRegister,
   therapistRegister
 );

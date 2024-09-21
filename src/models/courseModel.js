@@ -1,16 +1,15 @@
 import mongoose, { Schema } from "mongoose";
 const courseSchema = new Schema(
   {
-    therapist_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Therapist",
-      required: true,
-    },
-    session_count: {
+    session_offered: {
       type: Number,
       required: true,
     },
-    cost: {
+    usdPrice: {
+      type: Number,
+      required: true
+    },
+    inrPrice: {
       type: Number,
       required: true,
     },

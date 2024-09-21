@@ -206,7 +206,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   }
 
   const user = req.body;
-
+  console.log(req.file)
   let profileImage = req.file ? req.file.path : "";
 
   try {
@@ -227,7 +227,6 @@ const updateProfile = asyncHandler(async (req, res) => {
         new: true,
       }
     );
-
     if (!updatedUser) {
       return res.status(404).json(new ApiError(404, "", "User not found"));
     }

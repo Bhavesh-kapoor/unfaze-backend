@@ -2,7 +2,7 @@ import { Router } from "express";
 import slotRoutes from "../slot.route.js";
 import feedbackRoute from "../feeback.route.js";
 import sessionRouter from "./session.routes.js";
-import upload from "../../middleware/admin/multer.middleware.js";
+import { upload, compressImage } from "../../middleware/admin/multer.middleware.js";
 import { userEmailVerify } from "../../controllers/otpController.js";
 import {
   thankyou,
@@ -45,8 +45,8 @@ router.get("/get-transactions", UserTransactions);
 router.put("/set-new-password", setNewPasswrd);
 router.get("/joining-token", generateSessionToken);
 router.put("/session-completed/:sessionId", sessionCompleted);
-router.put("/update-user", upload.single("userAvetar"), updateProfile);
-router.patch("/update-avatar", upload.single("userAvetar"), updateAvatar);
+router.put("/update-user", upload.single("userAvatar"), compressImage, updateProfile);
+router.put("/update-avatar", upload.single("userAvatar"), compressImage, updateAvatar);
 
 
 export default router;

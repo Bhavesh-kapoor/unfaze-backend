@@ -127,5 +127,4 @@ app.use((err, req, res, next) => {
   logger.error(`Error: ${err.message}`);
   res.status(500).json({ message: "An unexpected error occurred." });
 });
-
 export default app;

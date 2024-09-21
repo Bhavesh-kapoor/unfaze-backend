@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import multer from "multer";
+import sharp from "sharp";
 import ApiError from "../../utils/ApiError.js";
 
-// Function to create folder if it doesn't exist
 const createFolder = (folderPath) => {
   try {
     if (!fs.existsSync(folderPath)) {
@@ -14,14 +14,10 @@ const createFolder = (folderPath) => {
     throw new Error(`Failed to create directory at ${folderPath}.`);
   }
 };
-
-// Function to get the part of the email before @
 const getEmailPrefix = (email) => {
   if (email && email.includes("@")) return email.split("@")[0];
   else return email;
 };
-
-// Function to determine the storage folder
 const getFolder = (fieldname, emailPrefix) => {
   const therapistFields = [
     "profileImage",
@@ -73,15 +69,15 @@ const removeExistingFile = (folder, fieldname, req) => {
 // Multer disk storage configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const emailPrefix = getEmailPrefix(req.body.email || req.user.email); // Fallback to req.user.email if body email doesn't exist
+    const emailPrefix = getEmailPrefix(req.body.email || req.user.email);
     const folder = getFolder(file.fieldname, emailPrefix);
 
     try {
-      createFolder(folder); // Ensure folder exists
-      removeExistingFile(folder, file.fieldname, req); // Remove existing file with same fieldname
+      createFolder(folder);
+      removeExistingFile(folder, file.fieldname, req);
       cb(null, folder);
     } catch (error) {
-      cb(new Error("Failed to create directory"), folder); // Handle any folder creation errors
+      cb(new Error("Failed to create directory"), folder);
     }
   },
 
@@ -93,10 +89,10 @@ const storage = multer.diskStorage({
         .split(" ")
         .slice(0, 3)
         .join("-");
-      const uniqueName = `${Date.now()}-${file.fieldname}${createPath}${ext}`; // Generate unique file name
+      const uniqueName = `${Date.now()}-${file.fieldname}${createPath}${ext}`;
       return cb(null, uniqueName);
     }
-    const uniqueName = `${Date.now()}-${file.fieldname}${ext}`; // Generate unique file name
+    const uniqueName = `${Date.now()}-${file.fieldname}${ext}`;
     cb(null, uniqueName);
   },
 });
@@ -112,4 +108,43 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({ storage: storage, fileFilter: fileFilter });
-export default upload;
+
+const compressImage = async (req, res, next) => {
+  if (!req.file) return next();
+
+  const filePath = req.file.path;
+  const emailPrefix = getEmailPrefix(req.body.email || req.user.email);
+  const folder = getFolder(req.file.fieldname, emailPrefix); 
+  createFolder(folder);
+
+  const compressedFilePath = path.join(folder, `compressed-${req.file.filename}`);
+
+  try {
+    await sharp(filePath)
+      .resize(800) // Resize to width 800px
+      .jpeg({ quality: 80 }) // Compress JPEG with 80% quality
+      .toFile(compressedFilePath);
+
+    setTimeout(async () => {
+      try {
+        await fs.promises.unlink(filePath);
+        console.log(`Successfully deleted original file: ${filePath}`);
+      } catch (err) {
+        console.error("Error deleting original file:", err);
+      }
+    }, 1000);
+
+    // Update the file path to the compressed image
+    req.file.path = compressedFilePath;
+    req.file.filename = `compressed-${req.file.filename}`;
+
+    next();
+  } catch (error) {
+    console.error("Error compressing image:", error);
+    next(new ApiError(500, "Error compressing image"));
+  }
+};
+
+
+
+export { upload, compressImage };

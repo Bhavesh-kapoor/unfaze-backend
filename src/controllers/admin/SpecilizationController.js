@@ -9,9 +9,9 @@ const getAllSpecialization = AsyncHandler(async (req, res) => {
   let specializations = await Specialization.find().sort({ _id: -1 });
   res.status(200).json(new ApiResponse(200, specializations));
 });
-//create new speciali
+
 const createSpecialization = AsyncHandler(async (req, res) => {
-  const { name } = req.body;
+  const { name, usdPrice, inrPrice } = req.body;
   if (!name)
     res
       .status(400)
@@ -21,7 +21,7 @@ const createSpecialization = AsyncHandler(async (req, res) => {
   if (createdExist) {
     return res.status(400).json(new ApiError(400, "", "Already created!"));
   }
-  let isCreated = await Specialization.create({ name });
+  let isCreated = await Specialization.create({ name, usdPrice, inrPrice });
   if (isCreated) {
     res
       .status(200)
@@ -32,15 +32,13 @@ const createSpecialization = AsyncHandler(async (req, res) => {
 });
 
 const updateSpecialization = AsyncHandler(async (req, res) => {
-  const { name } = req.body;
+  const { name, usdPrice, inrPrice } = req.body;
   const { _id } = req.params;
-  
-  console.log("check", name, _id);
 
   if (!name || !_id) {
     return res
       .status(400)
-      .json(new ApiError(400, "", "Name and object id are required!"));
+      .json(new ApiError(400, "", "Name and specialization id are required!"));
   }
 
   if (!mongoose.Types.ObjectId.isValid(_id)) {
@@ -53,6 +51,8 @@ const updateSpecialization = AsyncHandler(async (req, res) => {
   }
 
   specialization.name = name;
+  specialization.usdPrice = usdPrice;
+  specialization.inrPrice = inrPrice;
   await specialization.save();
 
   return res

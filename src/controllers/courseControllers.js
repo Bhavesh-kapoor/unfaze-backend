@@ -5,97 +5,85 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
 
 const validateInput = [
-  check("session_count", " session_count is required").notEmpty(),
-  check("cost", "cost Name is required").notEmpty(),
+  check("session_offered", " session_count is required").notEmpty(),
+  check("usdPrice", "usdPrice Name is required").notEmpty(),
+  check("inrPrice", "inrPrice Name is required").notEmpty(),
   check("specialization_id", "specialization is required").notEmpty(),
 ];
 const createCourse = asyncHandler(async (req, res) => {
-  const therapist_id = req.user?._id;
   const errors = validationResult(req);
+
   if (!errors.isEmpty()) {
-    throw new ApiError(400, "validation error");
+    return res.status(400).json(new ApiError(400, "Validation error"));
   }
-  const { session_count, cost, specialization_id } = req.body;
+
+  const { session_offered, usdPrice, inrPrice, specialization_id } = req.body;
+
   try {
     const existingCourse = await Course.findOne({
-      therapist_id,
       specialization_id,
-      session_count,
-      cost,
+      session_offered,
     });
+
     if (existingCourse) {
-      res
-        .status(403)
-        .json(new ApiError(403, "", "course specifications already exist!!"));
+      return res.status(403).json(new ApiError(403, "Course already exists"));
     }
+
     const newCourse = new Course({
-      therapist_id,
-      session_count,
-      cost,
+      session_offered,
+      usdPrice,
+      inrPrice,
       specialization_id,
     });
 
     await newCourse.save();
-    res
-      .status(201)
-      .json(new ApiResponse(201, newCourse, "Course created Successfully"));
+
+    return res.status(201).json(new ApiResponse(201, newCourse, "Course created successfully"));
   } catch (error) {
-    throw new ApiError(501, "Something went wrong while adding a course");
+    return res.status(500).json(new ApiError(500, "Something went wrong"));
   }
 });
 
 const updateCourse = asyncHandler(async (req, res) => {
-  const therapistId = req.user?._id;
   const { _id } = req.params;
+
   try {
-    const course = await Course.findOne({ _id });
+    const updatedCourse = await Course.findByIdAndUpdate(
+      _id,
+      req.body,
+      { new: true, runValidators: true }
+    );
 
-    if (!course.therapist_id.equals(therapistId)) {
-      return res.status(401).json(new ApiError(501,"", "Unauthorized user request!")) 
+    if (!updatedCourse) {
+      throw new ApiError(404, "Course not found");
     }
-const updatedCourse = await Course.findByIdAndUpdate(
-  _id,
-  req.body,
-  { new: true }
-);
 
-if (!updatedCourse) {
-  throw new ApiError(404, "Course not found");
-}
-
-res
-  .status(200)
-  .json(new ApiResponse(200, updatedCourse, "Course updated successfully"));
+    res.status(200).json(new ApiResponse(200, updatedCourse, "Course updated successfully"));
   } catch (error) {
-  console.error("Error updating course:", error);
-  throw new ApiError(501, "Something went wrong while updating the course", error);
-}
+    console.error("Error updating course:", error);
+    throw new ApiError(501, "Something went wrong while updating the course", error);
+  }
 });
 const deleteCourse = asyncHandler(async (req, res) => {
   const { _id } = req.params;
-  const therapist_id = req.user?._id;
 
   try {
-    const course = await Course.findOne({ _id, therapist_id });
-    if (!course.therapist_id.equals(therapist_id)) {
-      throw new ApiError(501, "Unauthorized user request!");
-    }
     const deletedCourse = await Course.findByIdAndDelete(_id);
+
     if (!deletedCourse) {
-      throw new ApiError(404, "Course not found");
+      return res.status(404).json(new ApiResponse(404, null, "Course not found"));
     }
-    res
-      .status(200)
-      .json(new ApiResponse(200, null, "Course deleted successfully"));
+
+    res.status(200).json(new ApiResponse(200, null, "Course deleted successfully"));
   } catch (error) {
     console.error("Error deleting course:", error);
     throw new ApiError(501, "Something went wrong while deleting the course");
   }
 });
+
 const findList = asyncHandler(async (req, res) => {
   try {
     const pipeline = [
-      { $match: { therapist_id: req.user?._id } },
       {
         $lookup: {
           from: "specializations",
@@ -105,33 +93,36 @@ const findList = asyncHandler(async (req, res) => {
         },
       },
       {
-        $unwind: "$specializations",
-      },
-      {
-        $addFields: {
-          category: "$specializations.name",
+        $unwind: {
+          path: "$specializations",
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
         $project: {
           _id: 1,
-          therapist_id: 1,
-          session_count: 1,
+          session_offered: 1,
           category: 1,
-          cost: 1,
+          usdPrice: 1,
+          inrPrice: 1,
+          isActive: 1,
+          inrPrice: 1,
+          category: "$specializations.name"
         },
-      },
+      }
     ];
 
     const getList = await Course.aggregate(pipeline);
-    res
-      .status(200)
-      .json(new ApiResponse(200, getList, "Courses fetched successfully"));
+
+    res.status(200).json(new ApiResponse(200, getList, "Courses fetched successfully"));
   } catch (error) {
-    console.error("Error deleting course:", error);
-    throw new ApiError(501, "Something went wrong while fetching the course");
+    console.error("Error fetching courses:", error);
+    throw new ApiError(501, "Something went wrong while fetching the courses");
   }
 });
 
+const purchaseAcourse = asyncHandler(async (req, res) => {
+  const { courseId } = req.params
+})
 
 export { validateInput, createCourse, updateCourse, deleteCourse, findList };

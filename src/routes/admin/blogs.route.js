@@ -6,7 +6,7 @@ import {
   getAllBlogs,
   findBolgById,
 } from "../../controllers/admin/BlogsController.js";
-import upload from "../../middleware/admin/multer.middleware.js";
+import { upload, compressImage } from "../../middleware/admin/multer.middleware.js";
 
 const router = Router();
 
@@ -16,8 +16,8 @@ router.delete("/delete/:_id", deleteBolg);
 
 router.get("/get-blog/:_id", findBolgById);
 
-router.post("/create", upload.single("blogImageUrl"), createBlog);
+router.post("/create", upload.single("blogImageUrl"), compressImage, createBlog);
 
-router.put("/update/:_id", upload.single("blogImageUrl"), updateBlog);
+router.put("/update/:_id", upload.single("blogImageUrl"), compressImage, updateBlog);
 
 export default router;

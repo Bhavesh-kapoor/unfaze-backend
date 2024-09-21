@@ -13,7 +13,7 @@ import {
   deleteTherapistByID,
   setNewPasswrd
 } from "../../controllers/admin/TherepistController.js";
-import upload from "../../middleware/admin/multer.middleware.js";
+import { upload,compressImage } from "../../middleware/admin/multer.middleware.js";
 import { getTherepistById } from "../../controllers/admin/TherepistController.js";
 import {
   getTherapistRevenue,
@@ -50,13 +50,13 @@ router.get("/get-transactions", therapistTransactions);
 
 router.get("/get-therapist-revenue", getTherapistRevenue);
 
-router.put("/update-profile", multipleImages, updateTherapist);
+router.put("/update-profile", multipleImages, compressImage, updateTherapist);
 
 router.post("/activate-or-deactive/:_id", activateOrDeactivate);
 
-router.post("/register", multipleImages, validateRegister, register);
+router.post("/register", multipleImages,compressImage, validateRegister, register);
 
 router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
-router.put("/set-new-password",setNewPasswrd );
+router.put("/set-new-password", setNewPasswrd);
 
 export default router;
