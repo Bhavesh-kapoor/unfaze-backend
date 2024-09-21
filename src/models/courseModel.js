@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 const courseSchema = new Schema(
   {
-    session_offered: {
+    sessionOffered: {
       type: Number,
       required: true,
     },
@@ -13,7 +13,7 @@ const courseSchema = new Schema(
       type: Number,
       required: true,
     },
-    specialization_id: {
+    specializationId: {
       type: Schema.Types.ObjectId,
       ref: "Specialization",
       required: true,

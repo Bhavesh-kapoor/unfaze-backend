@@ -3,7 +3,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { Course } from "../models/courseModel.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
-import {Types} from "mongoose";
+import { Types } from "mongoose";
 
 const validateInput = [
   check("session_offered", " session_count is required").notEmpty(),
@@ -124,9 +124,11 @@ const findList = asyncHandler(async (req, res) => {
     res.status(200).json(
       new ApiResponse(200, {
         result: getList,
-        currentPage: pageNumber,
-        totalPages: Math.ceil(totalCourses / limitNumber),
-        totalItems: totalCourses,
+        pagination: {
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalCourses / limitNumber),
+          totalItems: totalCourses,
+        }
       }, "Courses fetched successfully")
     );
   } catch (error) {
@@ -197,4 +199,4 @@ const purchaseAcourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params
 })
 
-export { validateInput, createCourse, updateCourse, deleteCourse, findList,findById };
+export { validateInput, createCourse, updateCourse, deleteCourse, findList, findById };

@@ -17,12 +17,14 @@ const getAllSpecialization = AsyncHandler(async (req, res) => {
       .sort({ _id: -1 })
       .skip(skip)
       .limit(limitNumber);
-    
+
     res.status(200).json(new ApiResponse(200, {
       result: specializations,
-      currentPage: pageNumber,
-      totalPages: Math.ceil(totalSpecializations / limitNumber),
-      totalItems: totalSpecializations,
+      pagination: {
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalSpecializations / limitNumber),
+        totalItems: totalSpecializations,
+      }
     }));
   } catch (error) {
     console.error("Error fetching specializations:", error);
@@ -33,7 +35,7 @@ const getAllSpecialization = AsyncHandler(async (req, res) => {
 const getSpecializationById = AsyncHandler(async (req, res) => {
   const { _id } = req.params
   let specialization = await Specialization.findById(_id);
-  res.status(200).json(new ApiResponse(200, {result:specialization}));
+  res.status(200).json(new ApiResponse(200, { result: specialization }));
 });
 const createSpecialization = AsyncHandler(async (req, res) => {
   const { name, usdPrice, inrPrice, description, isActive } = req.body;
