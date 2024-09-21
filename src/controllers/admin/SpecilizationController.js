@@ -4,11 +4,32 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import AsyncHandler from "../../utils/asyncHandler.js";
 import { Specialization } from "../../models/specilaizationModel.js";
 
-// query that find all  spcializations
+
 const getAllSpecialization = AsyncHandler(async (req, res) => {
-  let specializations = await Specialization.find().sort({ _id: -1 });
-  res.status(200).json(new ApiResponse(200, {result:specializations}));
+  const { page = 1, limit = 10 } = req.query;
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  try {
+    const totalSpecializations = await Specialization.countDocuments();
+    const specializations = await Specialization.find()
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limitNumber);
+    
+    res.status(200).json(new ApiResponse(200, {
+      result: specializations,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(totalSpecializations / limitNumber),
+      totalItems: totalSpecializations,
+    }));
+  } catch (error) {
+    console.error("Error fetching specializations:", error);
+    throw new ApiError(501, "Something went wrong while fetching specializations");
+  }
 });
+
 const getSpecializationById = AsyncHandler(async (req, res) => {
   const { _id } = req.params
   let specialization = await Specialization.findById(_id);

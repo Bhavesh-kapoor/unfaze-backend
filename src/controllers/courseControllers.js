@@ -82,6 +82,11 @@ const deleteCourse = asyncHandler(async (req, res) => {
 });
 
 const findList = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
   try {
     const pipeline = [
       {
@@ -102,19 +107,75 @@ const findList = asyncHandler(async (req, res) => {
         $project: {
           _id: 1,
           session_offered: 1,
-          category: 1,
           usdPrice: 1,
           inrPrice: 1,
           isActive: 1,
-          inrPrice: 1,
-          category: "$specializations.name"
+          category: "$specializations.name",
         },
-      }
+      },
+      { $skip: skip },
+      { $limit: limitNumber },
     ];
 
+    const totalCourses = await Course.countDocuments();
     const getList = await Course.aggregate(pipeline);
 
-    res.status(200).json(new ApiResponse(200, getList, "Courses fetched successfully"));
+    res.status(200).json(
+      new ApiResponse(200, {
+        result: getList,
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalCourses / limitNumber),
+        totalItems: totalCourses,
+      }, "Courses fetched successfully")
+    );
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    throw new ApiError(501, "Something went wrong while fetching the courses");
+  }
+});
+
+const findById = asyncHandler(async (req, res) => {
+  const { _id } = req.params
+  if (!_id) {
+    return res.status(400).json(new ApiError(400, null, "course id is required"))
+  }
+  try {
+    const pipeline = [
+      {
+        $match: { _id },
+      },
+      {
+        $lookup: {
+          from: "specializations",
+          localField: "specialization_id",
+          foreignField: "_id",
+          as: "specializations",
+        },
+      },
+      {
+        $unwind: {
+          path: "$specializations",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          session_offered: 1,
+          usdPrice: 1,
+          inrPrice: 1,
+          isActive: 1,
+          category: "$specializations.name",
+        },
+      },
+    ];
+    const course = await Course.aggregate(pipeline);
+    if (!course) {
+      return res.status(404).json(new ApiError(404, null, "Course not found"))
+    }
+    return res.status(200).json(
+      new ApiResponse(200, course, "Courses fetched successfully")
+    );
   } catch (error) {
     console.error("Error fetching courses:", error);
     throw new ApiError(501, "Something went wrong while fetching the courses");
