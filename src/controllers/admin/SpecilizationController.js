@@ -7,9 +7,13 @@ import { Specialization } from "../../models/specilaizationModel.js";
 // query that find all  spcializations
 const getAllSpecialization = AsyncHandler(async (req, res) => {
   let specializations = await Specialization.find().sort({ _id: -1 });
-  res.status(200).json(new ApiResponse(200, specializations));
+  res.status(200).json(new ApiResponse(200, {result:specializations}));
 });
-
+const getSpecializationById = AsyncHandler(async (req, res) => {
+  const { _id } = req.params
+  let specialization = await Specialization.findById(_id);
+  res.status(200).json(new ApiResponse(200, {result:specialization}));
+});
 const createSpecialization = AsyncHandler(async (req, res) => {
   const { name, usdPrice, inrPrice, description, isActive } = req.body;
   if (!name)
@@ -98,4 +102,5 @@ export {
   createSpecialization,
   updateSpecialization,
   deleteSpecialization,
+  getSpecializationById
 };

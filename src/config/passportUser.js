@@ -23,6 +23,7 @@ passport.use(
         if (user && !user?.googleId) {
           user.googleId = profile.id,
             user.profileImage = profile.photos[0].value,
+            user.isEmailVerified = true,
             user.save();
         }
         if (!user) {
@@ -46,7 +47,6 @@ passport.use(
     }
   )
 );
-
 // facebook strategies
 passport.use(
   "facebook-user",
