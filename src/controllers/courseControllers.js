@@ -3,6 +3,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { Course } from "../models/courseModel.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
+import {Types} from "mongoose";
 
 const validateInput = [
   check("session_offered", " session_count is required").notEmpty(),
@@ -134,15 +135,21 @@ const findList = asyncHandler(async (req, res) => {
   }
 });
 
+
+
 const findById = asyncHandler(async (req, res) => {
-  const { _id } = req.params
+  const { _id } = req.params;
+
   if (!_id) {
-    return res.status(400).json(new ApiError(400, null, "course id is required"))
+    return res.status(400).json(new ApiError(400, null, "Course ID is required"));
   }
+
   try {
+    const courseId = new Types.ObjectId(_id);
+
     const pipeline = [
       {
-        $match: { _id },
+        $match: { _id: courseId },
       },
       {
         $lookup: {
@@ -169,21 +176,25 @@ const findById = asyncHandler(async (req, res) => {
         },
       },
     ];
+
     const course = await Course.aggregate(pipeline);
-    if (!course) {
-      return res.status(404).json(new ApiError(404, null, "Course not found"))
+
+    if (!course || course.length === 0) {
+      return res.status(404).json(new ApiError(404, null, "Course not found"));
     }
+
     return res.status(200).json(
-      new ApiResponse(200, course, "Courses fetched successfully")
+      new ApiResponse(200, course[0], "Course fetched successfully")
     );
   } catch (error) {
     console.error("Error fetching courses:", error);
-    throw new ApiError(501, "Something went wrong while fetching the courses");
+    throw new ApiError(501, "Something went wrong while fetching the course");
   }
 });
+
 
 const purchaseAcourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params
 })
 
-export { validateInput, createCourse, updateCourse, deleteCourse, findList };
+export { validateInput, createCourse, updateCourse, deleteCourse, findList,findById };
