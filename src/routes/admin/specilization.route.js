@@ -4,11 +4,13 @@ import {
   getAllSpecialization,
   updateSpecialization,
   deleteSpecialization,
+  getSpecializationById
 } from "../../controllers/admin/SpecilizationController.js";
 
 let router = Router();
 
 router.get("/all", getAllSpecialization);
+router.get("/get/:_id", getSpecializationById);
 
 router.post("/create", createSpecialization);
 
