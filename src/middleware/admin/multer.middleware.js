@@ -56,7 +56,6 @@ const removeExistingFile = (folder, fieldname, req) => {
         }
         const filePath = path.join(folder, file);
         fs.unlinkSync(filePath);
-        console.log(`Removed old file: ${filePath}`);
         break;
       }
     }
@@ -114,10 +113,13 @@ const compressImage = async (req, res, next) => {
 
   const filePath = req.file.path;
   const emailPrefix = getEmailPrefix(req.body.email || req.user.email);
-  const folder = getFolder(req.file.fieldname, emailPrefix); 
+  const folder = getFolder(req.file.fieldname, emailPrefix);
   createFolder(folder);
 
-  const compressedFilePath = path.join(folder, `compressed-${req.file.filename}`);
+  const compressedFilePath = path.join(
+    folder,
+    `compressed-${req.file.filename}`
+  );
 
   try {
     await sharp(filePath)
@@ -128,7 +130,6 @@ const compressImage = async (req, res, next) => {
     setTimeout(async () => {
       try {
         await fs.promises.unlink(filePath);
-        console.log(`Successfully deleted original file: ${filePath}`);
       } catch (err) {
         console.error("Error deleting original file:", err);
       }
@@ -144,7 +145,5 @@ const compressImage = async (req, res, next) => {
     next(new ApiError(500, "Error compressing image"));
   }
 };
-
-
 
 export { upload, compressImage };
