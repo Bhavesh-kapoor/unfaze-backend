@@ -3,6 +3,7 @@ import Feedback from "../models/feedbackModel.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { CustomerFeedback } from "../models/reviewsModal.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import mongoose from "mongoose";
 
 export const createFeedback = asyncHandler(async (req, res) => {
   try {
@@ -24,16 +25,61 @@ export const createFeedback = asyncHandler(async (req, res) => {
 
 export const getAllFeedbacks = async (req, res) => {
   try {
-    const feedbacks = await CustomerFeedback.find()
-      .populate({
-        path: "therapist",
-        select: "_id firstName lastName",
-      })
-      .populate({
-        path: "user",
-        select: "_id firstName lastName email",
-      });
-    res.status(200).json(feedbacks);
+    const feedbacks = await CustomerFeedback.aggregate([
+      {
+        $lookup: {
+          from: "therapists", // Collection name of therapists
+          localField: "therapist",
+          foreignField: "_id",
+          as: "therapist",
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // Collection name of users
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $unwind: {
+          path: "$therapist",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $unwind: {
+          path: "$user",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          therapistName: {
+            $concat: ["$therapist.firstName", " ", "$therapist.lastName"],
+          },
+          userName: { $concat: ["$user.firstName", " ", "$user.lastName"] },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          review: 1,
+          rating: 1,
+          isActive: 1,
+          userName: 1,
+          therapistName: 1,
+          "therapist._id": 1,
+          "user._id": 1,
+        },
+      },
+    ]);
+    res
+      .status(200)
+      .json(
+        new ApiResponse(true, { result: feedbacks }, "Fetched Successfully ")
+      );
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -41,11 +87,70 @@ export const getAllFeedbacks = async (req, res) => {
 
 export const getFeedbackById = async (req, res) => {
   try {
-    const feedback = await CustomerFeedback.findById(req.params.id);
-    if (!feedback) {
+    const feedbackId = req.params.id;
+
+    const feedback = await CustomerFeedback.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(feedbackId) },
+      },
+      {
+        $lookup: {
+          from: "therapists", // Collection name of therapists
+          localField: "therapist",
+          foreignField: "_id",
+          as: "therapist",
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // Collection name of users
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $unwind: {
+          path: "$therapist",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $unwind: {
+          path: "$user",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          therapistName: {
+            $concat: ["$therapist.firstName", " ", "$therapist.lastName"],
+          },
+          userName: { $concat: ["$user.firstName", " ", "$user.lastName"] },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          review: 1,
+          rating: 1,
+          isActive: 1,
+          userName: 1,
+          therapistName: 1,
+          "therapist._id": 1,
+          "user._id": 1,
+        },
+      },
+    ]);
+
+    if (!feedback || feedback.length === 0) {
       return res.status(404).json({ message: "Feedback not found" });
     }
-    res.status(200).json(feedback);
+
+    // Since aggregate returns an array, access the first element
+    res
+      .status(200)
+      .json(new ApiResponse(true, feedback[0], "Fetched Successfully"));
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -61,7 +166,9 @@ export const updateFeedbackById = async (req, res) => {
     if (!feedback) {
       return res.status(404).json({ message: "Feedback not found" });
     }
-    res.status(200).json(feedback);
+    res
+      .status(200)
+      .json(new ApiResponse(true, feedback, "Updated Successfully"));
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
