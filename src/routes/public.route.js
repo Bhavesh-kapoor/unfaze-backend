@@ -5,6 +5,7 @@ import {
   findBolgbySlug,
   therapistDetails,
   therapistListByGroup,
+  getAllTherapistList,
 } from "../controllers/public/public.controller.js";
 import { sendOtp } from "../controllers/otpController.js";
 import { getAllBlogs } from "../controllers/admin/BlogsController.js";
@@ -117,6 +118,8 @@ router.post("/get-checkout", getTherapistSpecialization);
 router.get("/slot/list/:therapist_id/:date", getSlotsByDate);
 
 router.get("/get-therapist-list-by-category", therapistListByGroup);
+
+router.get("/therapist-list", getAllTherapistList);
 
 router.post(
   "/therapist/register",

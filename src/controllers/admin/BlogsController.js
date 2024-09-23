@@ -75,8 +75,15 @@ const getAllBlogs = asyncHandler(async (req, res) => {
 });
 
 const createBlog = asyncHandler(async (req, res) => {
-  const { title, description, isActive, categoryId } = req.body;
-  const BlogData = { title, description, categoryId, isActive };
+  const { title, description, isActive, categoryId, short_description } =
+    req.body;
+  const BlogData = {
+    title,
+    isActive,
+    categoryId,
+    description,
+    short_description,
+  };
 
   if (!mongoose.Types.ObjectId.isValid(categoryId)) {
     return res.status(400).json(new ApiError(400, "", "Invalid Category id"));
@@ -94,7 +101,8 @@ const createBlog = asyncHandler(async (req, res) => {
 
 const updateBlog = asyncHandler(async (req, res) => {
   const blogId = req.params._id;
-  const { title, description, categoryId, isActive } = req.body;
+  const { title, description, categoryId, isActive, short_description } =
+    req.body;
   if (!mongoose.Types.ObjectId.isValid(categoryId)) {
     return res.status(400).json(new ApiError(400, "", "Invalid Category id"));
   }
@@ -108,8 +116,9 @@ const updateBlog = asyncHandler(async (req, res) => {
   }
   blog.title = title;
   blog.isActive = isActive;
-  blog.description = description;
   blog.categoryId = categoryId;
+  blog.description = description;
+  blog.short_description = short_description;
   blog.save();
   return res
     .status(201)

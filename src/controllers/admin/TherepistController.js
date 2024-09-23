@@ -76,8 +76,8 @@ const register = asyncHandler(async (req, res) => {
         existingTherapist?.email === email
           ? "Email"
           : existingTherapist?.mobile === mobile
-            ? "Phone Number"
-            : "";
+          ? "Phone Number"
+          : "";
 
       return res
         .status(400)
@@ -325,7 +325,7 @@ const activateOrDeactivate = asyncHandler(async (req, res) => {
       console.log("Email sent successfully:", info.response);
     }
   });
-  
+
   therapist.isActive = !therapist.isActive;
   therapist.password = password;
   await therapist.save();
@@ -405,6 +405,7 @@ const therapistList = asyncHandler(async (req, res) => {
         isEmailVerified: 1,
         isActive: 1,
         createdAt: 1,
+        mobile: 1,
         specializationDetails: {
           $map: {
             input: "$specializationDetails",
@@ -740,7 +741,7 @@ const dashboard = asyncHandler(async (req, res) => {
           sessions: [
             {
               $match: { status: "upcoming" },
-              $match: { status: "rescheduled" }
+              $match: { status: "rescheduled" },
             },
             {
               $sort: { start_time: 1 },
@@ -807,7 +808,7 @@ const dashboard = asyncHandler(async (req, res) => {
 const forgotPassword = asyncHandler(async (req, res) => {
   try {
     const { email } = req.body;
-    console.log(email)
+    console.log(email);
     const user = await Therapist.findOne({ email: email });
     if (!user) {
       return res
@@ -817,7 +818,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
         );
     }
     const otp = await createAndStoreOTP(email);
-    console.log("otp", otp)
+    console.log("otp", otp);
     const htmlContent = otpContent(otp);
     const options = mailOptions(
       user.email,
@@ -833,9 +834,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(
-        new ApiResponse(200, null, "OTP sent on your registered Email")
-      );
+      .json(new ApiResponse(200, null, "OTP sent on your registered Email"));
   } catch (error) {
     console.log(error);
     return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
@@ -848,13 +847,15 @@ const verifyOtpAllowAccess = asyncHandler(async (req, res) => {
     if (!isVeried) {
       return res.status(201).json(new ApiError(201, "", "Invalid OTP"));
     }
-    const user = await Therapist.findOne({ email: email }).select("-password -refreshToken");
+    const user = await Therapist.findOne({ email: email }).select(
+      "-password -refreshToken"
+    );
     if (!user) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "Invalid email"));
+      return res.status(404).json(new ApiResponse(404, null, "Invalid email"));
     }
-    let { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
+    let { accessToken, refreshToken } = await createAccessOrRefreshToken(
+      user._id
+    );
     const options = {
       httpOnly: true,
       secure: true,
@@ -870,32 +871,38 @@ const verifyOtpAllowAccess = asyncHandler(async (req, res) => {
           {
             accessToken: accessToken,
             refreshToken: refreshToken,
-            user: user
+            user: user,
           },
           "User verified!"
         )
       );
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json(new ApiError(500, error, "failed to verify OTP"));
   }
-})
+});
 const setNewPasswrd = asyncHandler(async (req, res) => {
   try {
-    const userId = req.user?._id
+    const userId = req.user?._id;
     const { password } = req.body;
     if (!password) {
-      return res.status(401).json(new ApiResponse(401, null, "password is required!"));
+      return res
+        .status(401)
+        .json(new ApiResponse(401, null, "password is required!"));
     }
     const user = await Therapist.findById(userId);
     user.password = password;
-    await user.save({ validateBeforeSave: false })
+    await user.save({ validateBeforeSave: false });
     user.password = null;
     user.refreshToken = null;
     const htmlContent = passwordUpdatedEmail(
       `${user?.firstName} ${user?.lastName}`
     );
-    const Emailoptions = mailOptions(user?.email, "Password recovery email", htmlContent);
+    const Emailoptions = mailOptions(
+      user?.email,
+      "Password recovery email",
+      htmlContent
+    );
     transporter.sendMail(Emailoptions, (error, info) => {
       if (error) {
         console.log(error);
@@ -904,12 +911,14 @@ const setNewPasswrd = asyncHandler(async (req, res) => {
     });
     user.password = null;
     user.refreshToken = null;
-    return res.status(200).json(new ApiResponse(200, user, "password updated successfully"))
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "password updated successfully"));
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ "error": error });
+    return res.status(500).json({ error: error });
   }
-})
+});
 export {
   register,
   login,
@@ -924,5 +933,5 @@ export {
   dashboard,
   forgotPassword,
   verifyOtpAllowAccess,
-  setNewPasswrd
+  setNewPasswrd,
 };

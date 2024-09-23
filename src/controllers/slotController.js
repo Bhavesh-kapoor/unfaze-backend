@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import ApiError from "../utils/ApiError.js";
 import { addDays, startOfDay } from "date-fns";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -5,8 +6,10 @@ import { Slot, TimeSlot } from "../models/slotModal.js";
 import { Therapist } from "../models/therapistModel.js";
 
 export const createSlots = async (request, response) => {
-  const therapist_id = request?.user?._id;
-  const { dates, timeslots } = request.body;
+  let therapist_id = request?.user?._id;
+  const { dates, timeslots, id } = request.body;
+  if (id) therapist_id = new mongoose.Types.ObjectId(id);
+
   if (!dates || !therapist_id || !timeslots) {
     return response
       .status(400)
@@ -43,10 +46,10 @@ export const createSlots = async (request, response) => {
       { $push: { timeslots: { $each: timeslotsArray } } }
     );
   } else {
-    const slotDocument = new Slot({
+    const slotDocument = {
       timeslots: timeslotsArray,
       therapist_id: therapist_id,
-    });
+    };
     const slot = new Slot(slotDocument);
     savedSlots = await slot.save();
   }
@@ -58,7 +61,9 @@ export const createSlots = async (request, response) => {
 
 export const getNext10DaysSlots = async (request, response) => {
   try {
-    const therapist_id = request?.user?._id;
+    let therapist_id = request?.user?._id;
+    const id = request.params.id;
+    if (id) therapist_id = new mongoose.Types.ObjectId(id);
 
     if (!therapist_id) {
       return response
@@ -75,7 +80,7 @@ export const getNext10DaysSlots = async (request, response) => {
     }
 
     const today = startOfDay(new Date());
-    const next10Days = addDays(today, 14);
+    const next10Days = addDays(today, id ? 180 : 14);
     const slots = await Slot.aggregate([
       {
         $match: {
@@ -120,6 +125,7 @@ export const getNext10DaysSlots = async (request, response) => {
       .status(200)
       .json(new ApiResponse(200, slots[0], "Slots fetched successfully"));
   } catch (error) {
+    console.log(error);
     return response
       .status(500)
       .json(new ApiError(500, error.message, "Failed to fetch slots"));
@@ -175,10 +181,11 @@ export const deleteSlot = async (request, response) => {
         .json({ error: "Slot not found or no changes made" });
     }
   } catch (error) {
-    return response.status(500).json({ error: "Internal Server Error", details: error.message });
+    return response
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 };
-
 
 export const addMoreSlots = async (req, res) => {
   const { date, startTime, endTime, therapist_id } = req.body;

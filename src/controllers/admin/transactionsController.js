@@ -160,7 +160,8 @@ export const fetchAllTransactions = async (req, res) => {
       pagination: {
         currentPage: pageNumber,
         totalPages: Math.ceil(totalCount / pageSize),
-        totalCount: totalCount,
+        totalItems: totalCount,
+        itemsPerPage: pageSize,
       },
     });
   } catch (error) {
@@ -822,11 +823,11 @@ const getTherapistRevenue = async (req, res) => {
       return result.length > 0
         ? result[0]
         : {
-          totalUSDSales: 0,
-          totalINRSales: 0,
-          countUSDSales: 0,
-          countINRSales: 0,
-        };
+            totalUSDSales: 0,
+            totalINRSales: 0,
+            countUSDSales: 0,
+            countINRSales: 0,
+          };
     };
     const revenue = await calculateRevenue(start, end);
     res
@@ -962,7 +963,9 @@ const getUserSessions = async (req, res) => {
 
     const { status, page = 1, limit = 10 } = req.query;
     if (!userId) {
-      return res.status(400).json(new ApiError(400, null, "User ID is required!"));
+      return res
+        .status(400)
+        .json(new ApiError(400, null, "User ID is required!"));
     }
 
     const pageNumber = parseInt(page, 10);
@@ -1035,7 +1038,7 @@ const getUserSessions = async (req, res) => {
               "$therapist_details.lastName",
             ],
           },
-          therapistId:"$therapist_details._id",
+          therapistId: "$therapist_details._id",
           category: "$category.name",
           amount_USD: "$transactions_details.amount_USD",
           amount_INR: "$transactions_details.amount_INR",
@@ -1076,8 +1079,10 @@ const UserTransactions = asyncHandler(async (req, res) => {
   const skip = (pageNumber - 1) * limitNumber;
   const userTransactions = await Transaction.aggregate([
     {
-      $match: { user_id: user._id,payment_status: { $ne: "PAYMENT_INITIATED" } },
-      
+      $match: {
+        user_id: user._id,
+        payment_status: { $ne: "PAYMENT_INITIATED" },
+      },
     },
     {
       $lookup: {

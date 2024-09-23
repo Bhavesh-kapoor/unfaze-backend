@@ -198,6 +198,19 @@ const therapistListByGroup = asyncHandler(async (req, res) => {
   );
 });
 
+export const getAllTherapistList = asyncHandler(async (req, res) => {
+  const therapist = await Therapist.find(
+    {},
+    { _id: 1, firstName: 1, lastName: 1 }
+  );
+  if (!therapist || therapist.length === 0) {
+    throw new ApiError(404, "", "Blog not found!");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, therapist, "Therapist fetched succsessfully!"));
+});
+
 const findBolgbySlug = asyncHandler(async (req, res) => {
   const { slug } = req.query;
   if (!slug) {

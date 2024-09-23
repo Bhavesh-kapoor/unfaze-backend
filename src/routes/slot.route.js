@@ -9,7 +9,7 @@ import {
 
 const router = Router();
 
-router.get("/list", getNext10DaysSlots);
+router.get("/list/:id?", getNext10DaysSlots);
 
 router.post("/create", createSlots);
 
