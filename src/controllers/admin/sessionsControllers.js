@@ -470,9 +470,120 @@ const getUserSessions = async (req, res) => {
   }
 };
 
-export {
-  sessionCompleted,
-  rescheduleSession,
-  bookSessionManully,
-  getUserSessions,
-};
+const getTherapistSession =asyncHandler(async(req,res)=>{
+  try {
+    const {Id,status} = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    if (!Id) {
+      return res.status(400).json(new ApiError(400, null, "User ID is required!"));
+    }
+
+    const user = await Therapist.findById(Id).select("-password -refreshToken");
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found!"));
+    }
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+    const now = new Date();
+
+    const matchConditions = {
+      therapist_id: new mongoose.Types.ObjectId(Id),
+      status: status
+    };
+
+    if (status === "upcoming") {
+      matchConditions.start_time = { $gt: now };
+    }
+    const totalSessions = await Session.countDocuments(matchConditions);
+    const sessions = await Session.aggregate([
+      { $match: matchConditions },
+      {
+        $lookup: {
+          from: "transactions",
+          localField: "transaction_id",
+          foreignField: "_id",
+          as: "transactions_details",
+        },
+      },
+      { $unwind: "$transactions_details" },
+      {
+        $lookup: {
+          from: "therapists",
+          localField: "transactions_details.therapist_id",
+          foreignField: "_id",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "therapist_details",
+        },
+      },
+      { $unwind: "$therapist_details" },
+      {
+        $lookup: {
+          from: "specializations",
+          localField: "transactions_details.category",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "category",
+        },
+      },
+      { $unwind: "$category" },
+      {
+        $lookup: {
+          from: "users",
+          localField: "transactions_details.user_id",
+          foreignField: "_id",
+          pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+          as: "user_details",
+        },
+      },
+      { $unwind: "$user_details" },
+      {
+        $project: {
+          transactionId: 1,
+          createdAt: 1,
+          userName: {
+            $concat: ["$user_details.firstName", " ", "$user_details.lastName"],
+          },
+          therapistName: {
+            $concat: [
+              "$therapist_details.firstName",
+              " ",
+              "$therapist_details.lastName",
+            ],
+          },
+          therapistId: "$therapist_details._id",
+          category: "$category.name",
+          amount_USD: "$transactions_details.amount_USD",
+          amount_INR: "$transactions_details.amount_INR",
+          start_time: 1,
+          status: 1,
+        },
+      },
+      { $sort: { start_time: 1 } },
+      { $skip: skip },
+      { $limit: limitNumber },
+    ]);
+
+    if (!sessions.length) {
+      return res.status(404).json(new ApiResponse(404, null, "No sessions found"));
+    }
+    const totalPages = Math.ceil(totalSessions / limitNumber);
+
+    res.status(200).json({
+      sessions,
+      pagination: {
+        totalPages,
+        currentPage: pageNumber,
+        itemsPerPage: limitNumber,
+        totalItems: totalSessions,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(new ApiError(500, "Server error"));
+  }
+})
+
+export { sessionCompleted, rescheduleSession, bookSessionManully, getUserSessions ,getTherapistSession};
