@@ -9,21 +9,20 @@ import mongoose from "mongoose";
 import { Slot } from "../../models/slotModal.js";
 import { Transaction } from "../../models/transactionModel.js";
 import { sendNotificationsAndEmails } from "../paymentHandler.js";
-import { User } from "../../models/userModel.js"
-
+import { User } from "../../models/userModel.js";
 
 function convertTo24HourFormat(time12h) {
-  const [time, modifier] = time12h.split(' ');
-  let [hours, minutes] = time.split(':');
+  const [time, modifier] = time12h.split(" ");
+  let [hours, minutes] = time.split(":");
   hours = parseInt(hours, 10);
-  if (modifier === 'AM' && hours === 12) {
+  if (modifier === "AM" && hours === 12) {
     hours = 0;
   }
-  if (modifier === 'PM' && hours !== 12) {
+  if (modifier === "PM" && hours !== 12) {
     hours += 12;
   }
-  const hours24 = hours.toString().padStart(2, '0');
-  const minutes24 = minutes.padStart(2, '0');
+  const hours24 = hours.toString().padStart(2, "0");
+  const minutes24 = minutes.padStart(2, "0");
 
   return `${hours24}:${minutes24}`;
 }
@@ -88,7 +87,7 @@ const availableSlots = async (req, res) => {
 
 const bookaSession = asyncHandler(async (req, res) => {
   const { therapist_id, date, startTime } = req.body;
-  const user_id = req.user?._id
+  const user_id = req.user?._id;
   /*
     const enrolledCourse = await EnrolledCourse.findOne({
       _id: enrolledCourseId,
@@ -128,7 +127,7 @@ const bookaSession = asyncHandler(async (req, res) => {
   if (existingSession) {
     return res.status(400).send({ error: "Slot is already booked!" });
   }
-  //payments 
+  //payments
 
   // Create and save the new session
   try {
@@ -157,15 +156,15 @@ const bookedSessions = asyncHandler(async (req, res) => {
 
   const sessions = await Session.aggregate([
     {
-      $match: { user_id: user_id }
+      $match: { user_id: user_id },
     },
     {
       $lookup: {
         from: "therapists",
         localField: "therapist_id",
         foreignField: "_id",
-        as: "therapist_details"
-      }
+        as: "therapist_details",
+      },
     },
     // {
     //   $unwind: "$therapist"
@@ -188,29 +187,43 @@ const bookedSessions = asyncHandler(async (req, res) => {
     //   }
     // }
   ]);
-  console.log("session-----------s", sessions)
+  console.log("session-----------s", sessions);
 
-  res.status(200).json(new ApiResponse(200, sessions, "Session fetched successfully!"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, sessions, "Session fetched successfully!"));
 });
 // ----------------------------------------------------------------------------------------
 const sessionCompleted = asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   if (!sessionId) {
-    return res.status(400).json(new ApiResponse(400, null, "Invalid Session ID"));
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Invalid Session ID"));
   }
   const user = req.user;
-  const session = await Session.findByIdAndUpdate(sessionId, { status: "completed" }, { new: true });
-  return res.status(200).json(new ApiResponse(200, session, "Session completed successfully!"));
-})
+  const session = await Session.findByIdAndUpdate(
+    sessionId,
+    { status: "completed" },
+    { new: true }
+  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, session, "Session completed successfully!"));
+});
 
 const rescheduleSession = asyncHandler(async (req, res) => {
   const { session_id, slot_id } = req.body;
   if (!session_id || !slot_id) {
-    return res.status(400).json(new ApiResponse(400, null, "Invalid Session ID or Slot ID"));
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Invalid Session ID or Slot ID"));
   }
   const session = await Session.findOne({ _id: session_id, status: "missed" });
   if (!session) {
-    return res.status(400).json(new ApiError(400, null, "You cant't reschedule this session!"));
+    return res
+      .status(400)
+      .json(new ApiError(400, null, "You cant't reschedule this session!"));
   }
   const timeSlots = await Slot.aggregate([
     {
@@ -245,9 +258,13 @@ const rescheduleSession = asyncHandler(async (req, res) => {
   }
   const { date, startTime, endTime } = timeSlots[0];
   const formattedDate = format(new Date(date), "yyyy-MM-dd");
-  const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
-  const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
-  console.log(formattedDate, startDateTime, endDateTime)
+  const startDateTime = new Date(
+    `${formattedDate}T${convertTo24HourFormat(startTime)}`
+  );
+  const endDateTime = new Date(
+    `${formattedDate}T${convertTo24HourFormat(endTime)}`
+  );
+  console.log(formattedDate, startDateTime, endDateTime);
   if (!isValid(startDateTime) || !isValid(endDateTime)) {
     console.error("Invalid date-time format:", startDateTime, endDateTime);
     return res
@@ -256,40 +273,52 @@ const rescheduleSession = asyncHandler(async (req, res) => {
   }
 
   if (startDateTime >= endDateTime) {
-    return res
-      .status(400)
-      .send({ error: "End time must be after start time" });
+    return res.status(400).send({ error: "End time must be after start time" });
   }
   session.start_time = startDateTime;
   session.end_time = endDateTime;
   session.status = "rescheduled";
   const rescheduled = await session.save();
-  await Slot.updateOne({
-    therapist_id: new mongoose.Types.ObjectId(session.therapist_id),
-    "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-  }, {
-    $set: {
-      "timeslots.$.isBooked": true,
+  await Slot.updateOne(
+    {
+      therapist_id: new mongoose.Types.ObjectId(session.therapist_id),
+      "timeslots._id": new mongoose.Types.ObjectId(slot_id),
     },
-  })
-  console.log(rescheduled)
-  res.status(201).json(new ApiResponse(201, rescheduled, "session recheduled"))
-})
+    {
+      $set: {
+        "timeslots.$.isBooked": true,
+      },
+    }
+  );
+  console.log(rescheduled);
+  res.status(201).json(new ApiResponse(201, rescheduled, "session recheduled"));
+});
 const bookSessionManully = asyncHandler(async (req, res) => {
   try {
     const { transactionId } = req.body;
     if (!transactionId) {
-      return res.status(400).json(new ApiResponse(400, null, "transaction Id required!"));
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "transaction Id required!"));
     }
-    const transaction = await Transaction.findOne({ transactionId: transactionId, payment_status: "successful" })
+    const transaction = await Transaction.findOne({
+      transactionId: transactionId,
+      payment_status: "successful",
+    });
     if (!transaction) {
-      return res.status(400).json(new ApiResponse(400, null, "Transaction not found or payment failed!"));
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(400, null, "Transaction not found or payment failed!")
+        );
     }
     const user = await User.findById(transaction.user_id);
     const therapist = await Therapist.findById(transaction.therapist_id);
-    const session = await Session.findOne({ transaction_id: transaction._id })
+    const session = await Session.findOne({ transaction_id: transaction._id });
     if (session) {
-      return res.status(400).json(new ApiResponse(400, null, "Session already booked!"));
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Session already booked!"));
     }
     const newSession = new Session({
       user_id: transaction.user_id,
@@ -298,8 +327,8 @@ const bookSessionManully = asyncHandler(async (req, res) => {
       end_time: transaction.end_time,
       transaction_id: transaction.transactionId,
       status: "upcoming",
-    })
-    let channelName = newSession._id.toString().slice(-10)
+    });
+    let channelName = newSession._id.toString().slice(-10);
     channelName = `session_${channelName}`;
     session.channelName = channelName;
     await session.save();
@@ -308,23 +337,27 @@ const bookSessionManully = asyncHandler(async (req, res) => {
       .status(201)
       .json(new ApiResponse(201, session, "Session booked successfully"));
   } catch (error) {
-    console.log(error)
-    throw new ApiError(500, error, "something went wrong")
+    console.log(error);
+    throw new ApiError(500, error, "something went wrong");
   }
-})
+});
 // for admin----------------------
 const getUserSessions = async (req, res) => {
   try {
-    const {userId,status} = req.params;
+    const { userId, status } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
     if (!userId) {
-      return res.status(400).json(new ApiError(400, null, "User ID is required!"));
+      return res
+        .status(400)
+        .json(new ApiError(400, null, "User ID is required!"));
     }
 
     const user = await User.findById(userId).select("-password -refreshToken");
     if (!user) {
-      return res.status(404).json(new ApiResponse(404, null, "User not found!"));
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "User not found!"));
     }
 
     const pageNumber = parseInt(page, 10);
@@ -334,7 +367,7 @@ const getUserSessions = async (req, res) => {
 
     const matchConditions = {
       user_id: new mongoose.Types.ObjectId(userId),
-      status: status
+      status: status,
     };
 
     if (status === "upcoming") {
@@ -414,7 +447,9 @@ const getUserSessions = async (req, res) => {
     ]);
 
     if (!sessions.length) {
-      return res.status(404).json(new ApiResponse(404, null, "No sessions found"));
+      return res
+        .status(200)
+        .json(new ApiResponse(200, null, "No sessions found"));
     }
 
     // Calculate total pages
@@ -435,7 +470,9 @@ const getUserSessions = async (req, res) => {
   }
 };
 
-
-
-
-export { sessionCompleted, rescheduleSession, bookSessionManully, getUserSessions };
+export {
+  sessionCompleted,
+  rescheduleSession,
+  bookSessionManully,
+  getUserSessions,
+};
