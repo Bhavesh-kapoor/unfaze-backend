@@ -629,7 +629,11 @@ export const deleteTherapistByID = asyncHandler(async (req, res) => {
 
 const dashboard = asyncHandler(async (req, res) => {
   const therapist = req.user;
-  if (!therapist?._id) {
+  let therapist_id = therapist._id;
+  const { id } = req.params;
+  if (id) therapist_id = new mongoose.Types.ObjectId(id);
+
+  if (!therapist_id) {
     return res.status(400).json({ message: "Therapist ID is required." });
   }
 
@@ -639,7 +643,7 @@ const dashboard = asyncHandler(async (req, res) => {
     const lastDayOfMonth = min([endOfMonth(currentDate), currentDate]);
     const [result] = await Session.aggregate([
       {
-        $match: { therapist_id: therapist._id },
+        $match: { therapist_id: therapist_id },
       },
       {
         $lookup: {
