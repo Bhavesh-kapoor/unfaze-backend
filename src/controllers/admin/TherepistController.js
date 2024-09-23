@@ -76,8 +76,8 @@ const register = asyncHandler(async (req, res) => {
         existingTherapist?.email === email
           ? "Email"
           : existingTherapist?.mobile === mobile
-          ? "Phone Number"
-          : "";
+            ? "Phone Number"
+            : "";
 
       return res
         .status(400)
@@ -631,8 +631,8 @@ const dashboard = asyncHandler(async (req, res) => {
   const therapist = req.user;
   let therapist_id = therapist._id;
   const { id } = req.params;
-  if (id) therapist_id = new mongoose.Types.ObjectId(id);
 
+  if (id) therapist_id = new mongoose.Types.ObjectId(id);
   if (!therapist_id) {
     return res.status(400).json({ message: "Therapist ID is required." });
   }
@@ -641,6 +641,7 @@ const dashboard = asyncHandler(async (req, res) => {
     const currentDate = new Date();
     const firstDayOfMonth = startOfMonth(currentDate);
     const lastDayOfMonth = min([endOfMonth(currentDate), currentDate]);
+
     const [result] = await Session.aggregate([
       {
         $match: { therapist_id: therapist_id },
@@ -744,8 +745,7 @@ const dashboard = asyncHandler(async (req, res) => {
           ],
           sessions: [
             {
-              $match: { status: "upcoming" },
-              $match: { status: "rescheduled" },
+              $match: { status: { $in: ["upcoming", "rescheduled"] } },
             },
             {
               $sort: { start_time: 1 },
@@ -779,21 +779,15 @@ const dashboard = asyncHandler(async (req, res) => {
         },
       },
     ]);
-    const amount = result.earnings[0] || { amount_USD: 0, amount_INR: 0 };
-    const currentMonthEarnings = result.currentMonthEarnings[0] || {
-      amount_USD: 0,
-      amount_INR: 0,
-    };
+
+    // Handle empty earnings, currentMonthEarnings, and session count
+    const amount = (result.earnings && result.earnings[0]) || { amount_USD: 0, amount_INR: 0 };
+    const currentMonthEarnings = (result.currentMonthEarnings && result.currentMonthEarnings[0]) || { amount_USD: 0, amount_INR: 0 };
     const upcomingSessionCount = result.upcomingSessionCount[0]?.count || 0;
     const completedSessionCount = result.completedSessionCount[0]?.count || 0;
-    const sessions = result.sessions;
+    const sessions = result.sessions || [];
 
-    if (!sessions.length) {
-      return res
-        .status(404)
-        .json({ message: "No sessions found for the given therapist." });
-    }
-
+    // Return the result
     return res.status(200).json({
       amount,
       currentMonthEarnings,
@@ -803,9 +797,7 @@ const dashboard = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching therapist dashboard data:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
