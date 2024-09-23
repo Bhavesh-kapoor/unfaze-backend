@@ -19,7 +19,7 @@ const createSeoData = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiError(400, "Validation Error", errors.array()));
   }
-  const { title, keyword, descriptions, noIndex } = req.body;
+  const { title, keyword, descriptions, noIndex, slug } = req.body;
   const existingSeoData = await Seo.findOne({ title });
   if (existingSeoData) {
     return res
@@ -28,19 +28,18 @@ const createSeoData = asyncHandler(async (req, res) => {
   }
   const newSeo = new Seo({
     title,
+    slug,
     keyword,
-    descriptions,
     noIndex,
+    descriptions,
   });
   const savedSeo = await newSeo.save();
-  console.log("SEO Data Created:", savedSeo);
   res
     .status(200)
     .json(new ApiResponse(200, savedSeo, "Seo Data has been created!..."));
 });
 
 // update seo data
-
 const updateSeoData = asyncHandler(async (req, res) => {
   const { title, keyword, descriptions, noIndex, slug } = req.body;
   const { _id } = req.params;
@@ -121,7 +120,7 @@ export const getSeoDataBySlug = asyncHandler(async (req, res) => {
   const { slug } = req.body;
   try {
     const data = await Seo.findOne({ slug });
-    if (!data) return res.status(404).json({ message: "Data not found" });
+    if (!data) return res.status(200).json({ message: "Data not found" });
     res.json(data);
   } catch (error) {
     res.status(500).json({ message: "Error retrieving data", error });

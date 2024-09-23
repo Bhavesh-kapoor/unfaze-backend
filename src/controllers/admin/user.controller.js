@@ -494,6 +494,40 @@ export const getAdminDetails = asyncHandler(async (req, res) => {
   }
 });
 
+export const getUserDetails = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOne(
+      { _id: id, role: "user" },
+      {
+        _id: 1,
+        dateOfBirth: 1,
+        email: 1,
+        mobile: 1,
+        lastName: 1,
+        firstName: 1,
+        gender: 1,
+        country: 1,
+        city: 1,
+        state: 1,
+        isEmailVerified: 1,
+        isMobileVerified: 1,
+      }
+    );
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    console.error("Error fetching admin user:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 export const updateAdminDetails = asyncHandler(async (req, res) => {
   try {
     let profileImagePath;

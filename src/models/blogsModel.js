@@ -27,6 +27,11 @@ const BlogSchema = new mongoose.Schema(
       type: Schema.Types.ObjectId,
       ref: "Category",
     },
+    short_description: {
+      trim: true,
+      type: String,
+      required: true,
+    },
     isActive: {
       type: Boolean,
       default: false,
@@ -35,11 +40,8 @@ const BlogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
-BlogSchema.pre('save', function (next) {
-
+BlogSchema.pre("save", function (next) {
   if (this.isNew) {
-
     this.slug = slugify(this.title, { lower: true, strict: true });
   }
   next();
