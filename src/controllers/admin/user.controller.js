@@ -602,7 +602,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     const htmlContent = otpContent(otp);
     const options = mailOptions(
       user.email,
-      "Email verification code - Unfaze",
+      "Email verification code - Unfazed",
       htmlContent
     );
     transporter.sendMail(options, (error, info) => {
