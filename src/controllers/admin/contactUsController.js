@@ -27,7 +27,7 @@ const raiseQuery = asyncHandler(async (req, res) => {
   /*--------------------------------send mail notification to admin--------------------------------------------------*/
   const htmlContent = contactUsContent(senderName, senderEmail, query, senderMobile);
   const options = mailOptions(
-    "adarshsrivastav375@gmail.com",
+    "contact@unfazed.in",
     "Query raised from unfazed user",
     htmlContent
   );
