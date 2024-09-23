@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 const transactionSchema = new mongoose.Schema(
   {
+    courseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      required: function () {
+        return this.type === 'course';
+      }
+    },
     transactionId: {
       type: "string",
       required: true,
@@ -40,13 +47,29 @@ const transactionSchema = new mongoose.Schema(
     payment_status: {
       type: String,
     },
+    type: {
+      type: String,
+      enum: ['single', 'course']
+    },
     slotId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Slot",
-      required: true,
+      required: function () {
+        return this.type === 'single';
+      }
     },
-    start_time: { type: Date, required: true },
-    end_time: { type: Date, required: true },
+    start_time: {
+      type: Date,
+      required: function () {
+        return this.type === 'single';
+      }
+    },
+    end_time: {
+      type: Date,
+      required: function () {
+        return this.type === 'single';
+      }
+    },
   },
   { timestamps: true }
 );

@@ -9,6 +9,7 @@ import Cashfree from "../../config/cashfree.config.js";
 import mongoose from "mongoose";
 import getExchangeRate from "../../utils/currencyConverter.js";
 import { Slot } from "../../models/slotModal.js";
+import { Course } from "../../models/courseModel.js";
 import axios from "axios";
 function convertTo24HourFormat(time12h) {
   const [time, modifier] = time12h.split(' ');
@@ -26,7 +27,7 @@ function convertTo24HourFormat(time12h) {
   return `${hours24}:${minutes24}`;
 }
 
-const SESSION_DURATION_MINUTES = 60;
+// const SESSION_DURATION_MINUTES = 60;
 const createOrder = asyncHandler(async (req, res) => {
   const { therapist_id, specialization_id, slot_id } = req.body;
   let order_currency;
@@ -167,7 +168,84 @@ const createOrder = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, error, "failed to book slot"));
   }
 });
+const createOrderForCourse = asyncHandler(async (req, res) => {
+  const { therapist_id, courseId, type = "course" } = req.body;
+  const user = req.user;
+  let order_currency;
+  if (process.env.DEV_MODE == "dev") {
+    order_currency = "INR"
+  } else {
+    order_currency = "USD"
+  }
 
+  if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "", "Invalid therapist id!!!"));
+  }
+
+  const therapist = await Therapist.findOne({ _id: therapist_id });
+  if (!therapist) {
+    return res
+      .status(404)
+      .json(new ApiError(404, "", "Invalid therapist !!!"));
+  }
+  const course = await Course.findById(courseId);
+  if (!course) {
+    throw new ApiError(404, "Course not found or invalid!")
+  }
+  let transactionId
+  transactionId = uniqid();
+  transactionId = `unfazed${transactionId}`;
+  let request = {
+    order_amount: `${course.inrPrice}`,
+    order_currency: `${order_currency}`,
+    order_id: `${transactionId}`,
+    customer_details: {
+      customer_id: `${user._id}`,
+      customer_phone: `${user.mobile}`,
+    },
+    order_meta: {
+      return_url: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
+    },
+  };
+  try {
+    const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+    const paymentSessionId = response.data.payment_session_id;
+    const order_id = response.data.order_id;
+    const rate = await getExchangeRate("USD", "INR");
+    let rate_USD = rate * 100;
+    const initiatedTransaction = new Transaction({
+      courseId,
+      category: course.specializationId,
+      type,
+      transactionId: order_id,
+      user_id: user._id,
+      therapist_id,
+      amount_USD: course.usdPrice,
+      rate_USD: rate_USD,
+      payment_status: "PAYMENT_INITIATED",
+    });
+    await initiatedTransaction.save();
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { paymentSessionId, order_id },
+          "order Inialized successfully"
+        )
+      );
+  } catch (error) {
+    console.error(
+      "Error creating order:",
+      error.response ? error.response.data : error.message
+    );
+    return res
+      .status(500)
+      .json(new ApiResponse(500, error, "failed to book slot"));
+  }
+});
 const verifyPayment = asyncHandler(async (req, res, next) => {
   const { order_id } = req.query;
   if (!order_id) {
@@ -177,7 +255,12 @@ const verifyPayment = asyncHandler(async (req, res, next) => {
   }
   try {
     const response = await Cashfree.PGFetchOrder("2023-08-01", order_id);
+    console.log(response)
+    if (response.data.order_status === "ACTIVE") {
+      return res.status(200).json(new ApiResponse(200, response.data, "order has been initiated and still active"))
+    }
     const transaction = await Transaction.findOne({ transactionId: order_id });
+
     req.paymentDetails = response.data;
     req.transaction = transaction;
     next();
@@ -186,4 +269,4 @@ const verifyPayment = asyncHandler(async (req, res, next) => {
     return res.status(500).json(new ApiError(500, "", "something went wrong!"));
   }
 });
-export { createOrder, verifyPayment };
+export { createOrder, verifyPayment, createOrderForCourse };

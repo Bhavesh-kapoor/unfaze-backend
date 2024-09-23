@@ -6,10 +6,15 @@ import { transporter } from "../config/nodeMailer.js";
 import { Therapist } from "../models/therapistModel.js";
 import { Session } from "../models/sessionsModel.js";
 import { Slot } from "../models/slotModal.js";
-
-export const sendNotificationsAndEmails = async (transaction, user,therapist) => {
+import { sessionBookingConfirmation } from "../static/emailcontent.js";
+function convertUTCtoIST(utcDate) {
+  const date = new Date(utcDate);
+  const istDateTime = date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const [istDate, istTime] = istDateTime.split(', ');
+  return { date: istDate, time: istTime };
+}
+export const sendNotificationsAndEmails = async (transaction, user, therapist, htmlContent, message, subject) => {
   const receiverId = transaction.therapist_id;
-  const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
   const payload = {
     therapist_id: transaction.therapist_id,
     user_id: user._id,
@@ -30,9 +35,9 @@ export const sendNotificationsAndEmails = async (transaction, user,therapist) =>
 
   const mailOptions = {
     from: `Unfaze <${process.env.GMAIL}>`,
-    to:therapist.email,
-    subject: "Course Enrollment Confirmation",
-    html: `<p>${user.firstName} ${user.lastName} has successfully booked a session.</p>`,
+    to: therapist.email,
+    subject: subject,
+    html: htmlContent
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
@@ -145,8 +150,11 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       channelName = `session_${channelName}`;
       session.channelName = channelName;
       await session.save();
-      await sendNotificationsAndEmails(transaction, user,therapist);
-
+      // const { date, time } = convertUTCtoIST(transaction.start_time);
+      const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
+      const subject = "Session Booking Confirmation";
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+      await sendNotificationsAndEmails(transaction, user, therapist, htmlContent, message, subject);
       res
         .status(201)
         .json(new ApiResponse(201, session, "Session booked successfully"));
@@ -217,7 +225,10 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       channelName = `session_${channelName}`;
       session.channelName = channelName;
       await session.save();
-      await sendNotificationsAndEmails(transaction, user);
+      const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
+      const subject = "Session Booking Confirmation";
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+      await sendNotificationsAndEmails(transaction, user, therapist, htmlContent, message, subject);
 
       return res
         .status(201)

@@ -13,6 +13,7 @@ import contactUsRoutes from "../../routes/contactUs.router.js";
 import { setNewPasswrd } from "../../controllers/admin/user.controller.js";
 import { bookSessionManully } from "../../controllers/admin/sessionsControllers.js";
 import courseRouter from "../admin/course.route.js";
+import { getUserSessions } from "../../controllers/admin/sessionsControllers.js";
 
 const router = Router();
 
@@ -44,4 +45,6 @@ router.post("/book-session-manully", bookSessionManully);
 
 router.use("/course", courseRouter);
 
+// userdetails---------------------------
+router.get("/user-sessions/:userId/:status", getUserSessions)
 export default router;

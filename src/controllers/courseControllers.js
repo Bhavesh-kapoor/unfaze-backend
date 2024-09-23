@@ -5,10 +5,10 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { check, validationResult } from "express-validator";
 import { Types } from "mongoose";
 const validateInput = [
-  check("session_offered", " session_count is required").notEmpty(),
+  check("sessionOffered", " session_count is required").notEmpty(),
   check("usdPrice", "usdPrice Name is required").notEmpty(),
   check("inrPrice", "inrPrice Name is required").notEmpty(),
-  check("specialization_id", "specialization is required").notEmpty(),
+  check("specializationId", "specialization is required").notEmpty(),
 ];
 const createCourse = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
@@ -17,12 +17,12 @@ const createCourse = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "Validation error"));
   }
 
-  const { session_offered, usdPrice, inrPrice, specialization_id } = req.body;
+  const { sessionOffered, usdPrice, inrPrice, specializationId } = req.body;
 
   try {
     const existingCourse = await Course.findOne({
-      specialization_id,
-      session_offered,
+      specializationId,
+      sessionOffered,
     });
 
     if (existingCourse) {
@@ -30,10 +30,10 @@ const createCourse = asyncHandler(async (req, res) => {
     }
 
     const newCourse = new Course({
-      session_offered,
+      sessionOffered,
       usdPrice,
       inrPrice,
-      specialization_id,
+      specializationId,
     });
 
     await newCourse.save();
@@ -103,7 +103,7 @@ const findList = asyncHandler(async (req, res) => {
       {
         $lookup: {
           from: "specializations",
-          localField: "specialization_id",
+          localField: "specializationId",
           foreignField: "_id",
           as: "specializations",
         },
@@ -117,11 +117,12 @@ const findList = asyncHandler(async (req, res) => {
       {
         $project: {
           _id: 1,
-          session_offered: 1,
+          sessionOffered: 1,
           usdPrice: 1,
           inrPrice: 1,
           isActive: 1,
           category: "$specializations.name",
+          categoryId:"$specializations._id"
         },
       },
       { $skip: skip },
@@ -166,7 +167,7 @@ const findById = asyncHandler(async (req, res) => {
       {
         $lookup: {
           from: "specializations",
-          localField: "specialization_id",
+          localField: "specializationId",
           foreignField: "_id",
           as: "specializations",
         },
@@ -180,12 +181,12 @@ const findById = asyncHandler(async (req, res) => {
       {
         $project: {
           _id: 1,
-          session_offered: 1,
+          sessionOffered: 1,
           usdPrice: 1,
           inrPrice: 1,
           isActive: 1,
           category: "$specializations.name",
-          specialization_id: "$specializations._id",
+          specializationId: "$specializations._id",
         },
       },
     ];

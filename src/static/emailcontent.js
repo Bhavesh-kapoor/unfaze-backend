@@ -98,5 +98,68 @@ const passwordUpdatedEmail = (name) => `
   </div>
 `;
 
+const sessionBookingConfirmation = (name, therapist) => {
+  return (
+    `<div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+  <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+    
+    <div style="background-color: #007bff; color: #ffffff; padding: 15px; text-align: center; border-radius: 8px 8px 0 0;">
+      <h2>Your Therapy Session with Unfazed is Confirmed!</h2>
+    </div>
+    
+    <div style="padding: 20px;">
+      <p>Dear <strong>${name}</strong>,</p>
+      <p>Congratulations on taking the first step towards a stronger, more fulfilling relationship! Your journey with Unfazed begins now, and we are thrilled to have you on board.</p>
+      
+      <p>Your one-to-one therapy session has been successfully booked.</p>
+      
+      <div style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+        <p><strong>Therapist:</strong>${therapist}</p>
+      </div>
+      
+      <p>If you have any questions, feel free to reach out to us at support@unfazed.com.</p>
+      <p>We look forward to helping you on your journey!</p>
+      
+      <p>Warm regards,</p>
+      <p>The Unfazed Team</p>
+    </div>
+    
+  </div>
+</div>`
 
-export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail }
+  )
+}
+
+const courseEnrollmentConfirmation = (name, therapist) => {
+  return (
+    `<div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+  <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+    
+    <div style="background-color: #007bff; color: #ffffff; padding: 15px; text-align: center; border-radius: 8px 8px 0 0;">
+      <h2>Your Therapy Session with Unfazed is Confirmed!</h2>
+    </div>
+    
+    <div style="padding: 20px;">
+      <p>Dear <strong>${name}</strong>,</p>
+      <p>Congratulations on taking the first step towards a stronger, more fulfilling relationship! Your journey with Unfazed begins now, and we are thrilled to have you on board.</p>
+      
+      <p>You successfully enrolled in the course.</p>
+      
+      <div style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+        <p><strong>Therapist:</strong>${therapist}</p>
+      </div>
+      
+      <p>If you have any questions, feel free to reach out to us at support@unfazed.com.</p>
+      <p>We look forward to helping you on your journey!</p>
+      
+      <p>Warm regards,</p>
+      <p>The Unfazed Team</p>
+    </div>
+    
+  </div>
+</div>`
+
+  )
+}
+
+export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation }

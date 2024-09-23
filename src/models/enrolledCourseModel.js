@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const EnrolledcourseSchema = new mongoose.Schema({
-    transactionId:{
+    transactionId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Transaction',
         required: true
@@ -16,7 +16,7 @@ const EnrolledcourseSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    therapistId:{
+    therapistId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Therapist',
         required: true
@@ -28,6 +28,9 @@ const EnrolledcourseSchema = new mongoose.Schema({
     remainingSessions: {
         type: Number,
         default: 0
+    },
+    isActive: {
+        type: Boolean,
     }
 })
 export const EnrolledCourse = mongoose.model('EnrolledCourse', EnrolledcourseSchema);
