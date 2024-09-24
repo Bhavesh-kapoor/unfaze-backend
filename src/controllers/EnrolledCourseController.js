@@ -130,21 +130,33 @@ const getEnrolledCashfree = asyncHandler(async (req, res) => {
   }
 })
 const enrolledCourseList = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
   const user = req.user;
-  let userId
-  if (user?.role == "admin" || "therapist") {
+  let userId;
+
+  if (user?.role == "admin" || user?.role == "therapist") {
     userId = req.query.userId;
+  } else {
+    userId = req.user?._id;  // Otherwise, use the current logged-in user's ID
   }
-  userId = req.user?._id;
 
   if (!userId) {
     return res.status(401).json({ message: "User not authenticated" });
   }
+
   try {
+    const totalCourses = await EnrolledCourse.countDocuments({ userId });
+
     const enrolledCourses = await EnrolledCourse.find({ userId })
+      .skip(skip)
+      .limit(limitNumber)
       .populate({
         path: "courseId",
-        select: " specialisationId",
+        select: "specialisationId",
         populate: {
           path: "specializationId",
           select: "name",
@@ -154,10 +166,11 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
       .populate("userId", "firstName lastName")
       .populate("transactionId", "amount_USD amount_INR")
       .exec();
-    console.log(enrolledCourses)
+
     if (!enrolledCourses.length) {
       return res.status(404).json({ message: "No enrolled courses found for this user" });
     }
+
     const flattenedCourses = enrolledCourses.map((course) => ({
       _id: course._id,
       transactionId: course.transactionId._id,
@@ -166,16 +179,23 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
       courseId: course.courseId._id,
       category: course.courseId.specializationId.name,
       therapistId: course.therapistId._id,
-      therapistName: `${course.therapistId.firstName} ${course.therapistId.lastName} `,
+      therapistName: `${course.therapistId.firstName} ${course.therapistId.lastName}`,
       userId: course.userId._id,
-      userName: `${course.userId.firstName}  ${course.userId.lastName}`,
+      userName: `${course.userId.firstName} ${course.userId.lastName}`,
       remainingSessions: course.remainingSessions,
       isActive: course.isActive,
       enrollmentDate: course.enrollmentDate,
     }));
+
     return res.status(200).json({
       message: "Enrolled courses retrieved successfully",
       result: flattenedCourses,
+      pagination: {
+        totalItems: totalCourses,
+        totalPages: Math.ceil(totalCourses / limitNumber),
+        currentPage: pageNumber,
+        pageSize: limitNumber,
+      },
     });
   } catch (error) {
     console.error("Error retrieving enrolled courses:", error);
@@ -184,5 +204,6 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
       error: error.message,
     });
   }
-})
+});
+
 export { findById, getEnrolledInCourse, getEnrolledCashfree, enrolledCourseList }
