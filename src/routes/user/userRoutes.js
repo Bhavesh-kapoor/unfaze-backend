@@ -60,5 +60,4 @@ router.post("/get-enrolled-cashfree",createOrderForCourse);
 router.get("/validate-payment-cashfree",verifyPayment,getEnrolledCashfree);
 router.post("/course-book-session",BookSessionFromCourse);
 router.use("/enrolled-course",enrolledCourseRoutes);
-
 export default router;
