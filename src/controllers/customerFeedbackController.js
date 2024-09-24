@@ -24,11 +24,16 @@ export const createFeedback = asyncHandler(async (req, res) => {
 });
 
 export const getAllFeedbacks = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+  const skip = (pageNumber - 1) * limitNumber;
+
   try {
     const feedbacks = await CustomerFeedback.aggregate([
       {
         $lookup: {
-          from: "therapists", // Collection name of therapists
+          from: "therapists",
           localField: "therapist",
           foreignField: "_id",
           as: "therapist",
@@ -36,7 +41,7 @@ export const getAllFeedbacks = async (req, res) => {
       },
       {
         $lookup: {
-          from: "users", // Collection name of users
+          from: "users",
           localField: "user",
           foreignField: "_id",
           as: "user",
@@ -74,16 +79,31 @@ export const getAllFeedbacks = async (req, res) => {
           "user._id": 1,
         },
       },
+      {
+        $skip: skip,
+      },
+      {
+        $limit: limitNumber,
+      },
     ]);
-    res
-      .status(200)
-      .json(
-        new ApiResponse(true, { result: feedbacks }, "Fetched Successfully ")
-      );
+
+    const totalFeedbacks = await CustomerFeedback.countDocuments();
+
+    return res.status(200).json(
+      new ApiResponse(true, {
+        result: feedbacks,
+        pagenation: {
+          totalPages: Math.ceil(totalFeedbacks / limitNumber),
+          currentPage: pageNumber,
+          totalItems: totalFeedbacks,
+        }
+      }, "feedback Fetched Successfully ")
+    );
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
+
 
 export const getFeedbackById = async (req, res) => {
   try {
