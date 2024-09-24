@@ -4,6 +4,7 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import Blog from "../../models/blogsModel.js";
 import { Course } from "../../models/courseModel.js";
+import { CustomerFeedback } from "../../models/reviewsModal.js";
 
 const therapistList = asyncHandler(async (req, res) => {
   const {
@@ -228,10 +229,9 @@ const findBolgbySlug = asyncHandler(async (req, res) => {
 const therapistDetails = asyncHandler(async (req, res) => {
   let { slug } = req.params;
   slug = `${slug}@`;
-  // console.log(slug);
-  if (!slug) {
-    throw new ApiError(400, "", "slug is required!");
-  }
+
+  if (!slug) throw new ApiError(400, "", "slug is required!");
+
   const therapist = await Therapist.findOne({
     email: { $regex: slug, $options: "i" },
   })
@@ -240,18 +240,45 @@ const therapistDetails = asyncHandler(async (req, res) => {
       select: "name",
     })
     .select("-password -refreshToken");
-  // console.log(therapist);
+
   if (!therapist) {
     return res
       .status(404)
       .json(new ApiError(404, "", "failed to get therapist"));
   }
-  const result = {
-    therapist: therapist,
-  };
+  const reviews = await CustomerFeedback.aggregate([
+    { $match: { therapist: therapist._id } },
+    { $match: { isActive: true } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+        as: "userDetails",
+      },
+    },
+    { $unwind: "$userDetails" },
+    {
+      $project: {
+        _id: 1,
+        rating: 1,
+        review: 1,
+        userName: {
+          $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"],
+        },
+      },
+    },
+  ]);
   return res
     .status(200)
-    .json(new ApiResponse(200, result, "therapist fetched successfully!"));
+    .json(
+      new ApiResponse(
+        200,
+        { therapist: therapist, reviews },
+        "therapist fetched successfully!"
+      )
+    );
 });
 export {
   therapistList,

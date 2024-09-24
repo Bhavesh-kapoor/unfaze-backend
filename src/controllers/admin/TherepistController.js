@@ -13,6 +13,7 @@ import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { generateTempPassword } from "../../utils/tempPasswordGenerator.js";
 import { verifyOTP, createAndStoreOTP } from "../otpController.js";
 import { otpContent, passwordUpdatedEmail } from "../../static/emailcontent.js";
+import { CustomerFeedback } from "../../models/reviewsModal.js";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -76,8 +77,8 @@ const register = asyncHandler(async (req, res) => {
         existingTherapist?.email === email
           ? "Email"
           : existingTherapist?.mobile === mobile
-            ? "Phone Number"
-            : "";
+          ? "Phone Number"
+          : "";
 
       return res
         .status(400)
@@ -262,7 +263,31 @@ export const getTherapistSpecialization = asyncHandler(
           .json(new ApiError(404, "Specialization not found!"));
       }
       delete therapist.specialization;
-      const result = { therapist, specialization };
+      const reviews = await CustomerFeedback.aggregate([
+        { $match: { therapist: therapist._id } },
+        { $match: { isActive: true } },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
+            as: "userDetails",
+          },
+        },
+        { $unwind: "$userDetails" },
+        {
+          $project: {
+            _id: 1,
+            rating: 1,
+            review: 1,
+            userName: {
+              $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"],
+            },
+          },
+        },
+      ]);
+      const result = { therapist, specialization, reviews };
       return response
         .status(200)
         .json(new ApiResponse(200, result, "Data fetched successfully"));
@@ -781,8 +806,12 @@ const dashboard = asyncHandler(async (req, res) => {
     ]);
 
     // Handle empty earnings, currentMonthEarnings, and session count
-    const amount = (result.earnings && result.earnings[0]) || { amount_USD: 0, amount_INR: 0 };
-    const currentMonthEarnings = (result.currentMonthEarnings && result.currentMonthEarnings[0]) || { amount_USD: 0, amount_INR: 0 };
+    const amount = (result.earnings && result.earnings[0]) || {
+      amount_USD: 0,
+      amount_INR: 0,
+    };
+    const currentMonthEarnings = (result.currentMonthEarnings &&
+      result.currentMonthEarnings[0]) || { amount_USD: 0, amount_INR: 0 };
     const upcomingSessionCount = result.upcomingSessionCount[0]?.count || 0;
     const completedSessionCount = result.completedSessionCount[0]?.count || 0;
     const sessions = result.sessions || [];
@@ -797,7 +826,9 @@ const dashboard = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching therapist dashboard data:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 });
 
