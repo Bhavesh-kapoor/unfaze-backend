@@ -56,7 +56,7 @@ const getEnrolledInCourse = asyncHandler(async (req, res) => {
       const message = `${user.firstName} ${user.lastName} has successfully enrolled in a course.`;
       const htmlContent = courseEnrollmentConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
       const subject = "course enrollment confirmation"
-      await sendNotificationsAndEmails(transaction, user, therapist, htmlContent, message, subject);
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
       res
         .status(201)
         .json(new ApiResponse(201, enrolledCourse, "You enrolled in course successfully"));
@@ -112,7 +112,7 @@ const getEnrolledCashfree = asyncHandler(async (req, res) => {
       const message = `${user.firstName} ${user.lastName} has successfully enrolled in a course.`;
       const htmlContent = courseEnrollmentConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
       const subject = "course enrollment confirmation"
-      await sendNotificationsAndEmails(transaction, user, therapist, htmlContent, message, subject);
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
       res
         .status(201)
         .json(new ApiResponse(201, enrolledCourse, "You enrolled in course successfully"));
@@ -129,4 +129,60 @@ const getEnrolledCashfree = asyncHandler(async (req, res) => {
 
   }
 })
-export { findById, getEnrolledInCourse, getEnrolledCashfree }
+const enrolledCourseList = asyncHandler(async (req, res) => {
+  const user = req.user;
+  let userId
+  if (user?.role == "admin" || "therapist") {
+    userId = req.query.userId;
+  }
+  userId = req.user?._id;
+
+  if (!userId) {
+    return res.status(401).json({ message: "User not authenticated" });
+  }
+  try {
+    const enrolledCourses = await EnrolledCourse.find({ userId })
+      .populate({
+        path: "courseId",
+        select: " specialisationId",
+        populate: {
+          path: "specializationId",
+          select: "name",
+        },
+      })
+      .populate("therapistId", "firstName lastName")
+      .populate("userId", "firstName lastName")
+      .populate("transactionId", "amount_USD amount_INR")
+      .exec();
+    console.log(enrolledCourses)
+    if (!enrolledCourses.length) {
+      return res.status(404).json({ message: "No enrolled courses found for this user" });
+    }
+    const flattenedCourses = enrolledCourses.map((course) => ({
+      _id: course._id,
+      transactionId: course.transactionId._id,
+      amount_USD: course.transactionId.amountUSD,
+      amount_INR: course.transactionId.amountINR,
+      courseId: course.courseId._id,
+      category: course.courseId.specializationId.name,
+      therapistId: course.therapistId._id,
+      therapistName: `${course.therapistId.firstName} ${course.therapistId.lastName} `,
+      userId: course.userId._id,
+      userName:`${course.userId.firstName}  ${course.userId.lastName}`,
+      remainingSessions: course.remainingSessions,
+      isActive: course.isActive,
+      enrollmentDate: course.enrollmentDate,
+    }));
+    return res.status(200).json({
+      message: "Enrolled courses retrieved successfully",
+      result: flattenedCourses,
+    });
+  } catch (error) {
+    console.error("Error retrieving enrolled courses:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+})
+export { findById, getEnrolledInCourse, getEnrolledCashfree, enrolledCourseList }

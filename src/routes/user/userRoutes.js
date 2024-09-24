@@ -19,13 +19,12 @@ import {
   sendMobileOtp,
   mobileVerify,
 } from "../../controllers/otpController.js";
-import { sessionCompleted } from "../../controllers/admin/sessionsControllers.js";
+import { sessionCompleted,BookSessionFromCourse } from "../../controllers/admin/sessionsControllers.js";
 import { setNewPasswrd } from "../../controllers/admin/user.controller.js";
 import { processPaymentForcourse,validatePayment } from "../../middleware/admin/phonePayConfig.js";
-import { getEnrolledInCourse } from "../../controllers/EnrolledCourseController.js"; 
-import { createOrderForCourse } from "../../controllers/payment/cashfree.controller.js";
-import { verifyPayment } from "../../controllers/payment/cashfree.controller.js";
-import { getEnrolledCashfree } from "../../controllers/EnrolledCourseController.js";
+import { getEnrolledInCourse,getEnrolledCashfree } from "../../controllers/EnrolledCourseController.js"; 
+import { createOrderForCourse,verifyPayment } from "../../controllers/payment/cashfree.controller.js";
+import enrolledCourseRoutes from "../enrolledCourseRoutes.js"
 const router = Router();
 
 router.use("/slot", slotRoutes);
@@ -59,5 +58,7 @@ router.post("/get-enrolled-phonepay", processPaymentForcourse);
 router.get("/validate-payment-phonepay/:merchantTransactionId", validatePayment,getEnrolledInCourse);
 router.post("/get-enrolled-cashfree",createOrderForCourse);
 router.get("/validate-payment-cashfree",verifyPayment,getEnrolledCashfree);
+router.post("/course-book-session",BookSessionFromCourse);
+router.use("/enrolled-course",enrolledCourseRoutes);
 
 export default router;

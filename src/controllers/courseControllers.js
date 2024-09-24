@@ -122,7 +122,7 @@ const findList = asyncHandler(async (req, res) => {
           inrPrice: 1,
           isActive: 1,
           category: "$specializations.name",
-          categoryId:"$specializations._id"
+          categoryId: "$specializations._id"
         },
       },
       { $skip: skip },

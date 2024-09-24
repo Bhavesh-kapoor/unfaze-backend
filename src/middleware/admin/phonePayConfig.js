@@ -7,27 +7,13 @@ import { Slot } from "../../models/slotModal.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
-import { parseISO, isValid, addMinutes, format } from "date-fns";
+import { parseISO, isValid, addMinutes, format, addDays } from "date-fns";
 import { Course } from "../../models/courseModel.js";
 import dotenv from "dotenv"
 dotenv.config()
+import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
 // import { Course } from "../../models/courseModel.js";
 // import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
-function convertTo24HourFormat(time12h) {
-  const [time, modifier] = time12h.split(' ');
-  let [hours, minutes] = time.split(':');
-  hours = parseInt(hours, 10);
-  if (modifier === 'AM' && hours === 12) {
-    hours = 0;
-  }
-  if (modifier === 'PM' && hours !== 12) {
-    hours += 12;
-  }
-  const hours24 = hours.toString().padStart(2, '0');
-  const minutes24 = minutes.padStart(2, '0');
-
-  return `${hours24}:${minutes24}`;
-}
 
 export async function processPayment(req, res) {
   try {
@@ -67,8 +53,14 @@ export async function processPayment(req, res) {
     const { date, startTime, endTime } = timeSlots[0];
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
     const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
+    const [start_Time, startModifier] = startTime.split(' ');
+    const [end_Time, endModifier] = endTime.split(' ');
     const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
-
+    if (startModifier == 'PM' && endModifier == "AM") {
+      if (startModifier === 'PM' && endModifier === 'AM') {
+        endDateTime = addDays(endDateTime, 1);
+      }
+    }
     if (!isValid(startDateTime) || !isValid(endDateTime)) {
       console.error("Invalid date-time format:", startDateTime, endDateTime);
       return res

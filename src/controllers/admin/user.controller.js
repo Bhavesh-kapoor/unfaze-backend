@@ -667,9 +667,6 @@ const setNewPasswrd = asyncHandler(async (req, res) => {
     const user = await User.findById(userId);
     user.password = password;
     await user.save({ validateBeforeSave: false });
-
-    user.password = null;
-    user.refreshToken = null;
     // let { accessToken, refreshToken } = await createAccessOrRefreshToken(
     //   user._id
     // );
