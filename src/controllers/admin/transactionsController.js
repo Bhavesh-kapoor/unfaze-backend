@@ -1254,6 +1254,23 @@ const thankyou = asyncHandler(async (req, res) => {
     new ApiResponse(200, transaction, "Transactions retrieved successfully.")
   );
 });
+const initiateRefund = asyncHandler(async (req,res)=>{
+  const { transactionId } = req.query;
+  const transaction = await Transaction.findOneAndUpdate(
+    { transactionId: transactionId },
+    { payment_status: "REFUND_INITIATED" },
+    { new: true }
+  );
+  if (!transaction) {
+    return res
+     .status(404)
+     .json(new ApiResponse(404, [], "No transactions found for this user"));
+  }
+  return res.json(
+    new ApiResponse(200, transaction, "Refund initiated successfully.")
+  );
+})
+
 export {
   calculateTotalSales,
   TotalSalesList,
@@ -1265,4 +1282,5 @@ export {
   UserTransactions,
   therapistTransactions,
   thankyou,
+  initiateRefund
 };

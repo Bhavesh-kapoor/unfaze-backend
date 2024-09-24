@@ -232,23 +232,21 @@ const therapistDetails = asyncHandler(async (req, res) => {
 
   if (!slug) throw new ApiError(400, "", "slug is required!");
 
-  const therapist = await Therapist.findOne({
+  let therapist = await Therapist.findOne({
     email: { $regex: slug, $options: "i" },
   })
     .populate({
       path: "specialization",
+      select: "name description inrPrice usdPrice ",
     })
     .select("-password -refreshToken");
 
   if (!therapist) {
-    return res
-      .status(404)
-      .json(new ApiError(404, "", "failed to get therapist"));
+    return res.status(404).json(new ApiError(404, "", "failed to get therapist"));
   }
 
   const reviews = await CustomerFeedback.aggregate([
-    { $match: { therapist: therapist._id } },
-    { $match: { isActive: true } },
+    { $match: { therapist: therapist._id, isActive: true } },
     {
       $lookup: {
         from: "users",
@@ -270,28 +268,29 @@ const therapistDetails = asyncHandler(async (req, res) => {
       },
     },
   ]);
-
-  // Ensure reviews is an empty array if no reviews found
-  if (!reviews || reviews.length === 0) {
-    reviews = [];
-  }
-
   const specializationIds = therapist.specialization.map(spec => spec._id);
   const courses = await Course.find({
     specializationId: { $in: specializationIds },
-    isActive: true
-  }).populate("specializationId","name");
+    isActive: true,
+  }).populate("specializationId", "name");
+
+  const flattenedCourses = courses.map(course => ({
+    _id: course._id,
+    usdPrice: course.usdPrice,
+    inrPrice: course.inrPrice,
+    isActive: course.isActive,
+    sessionOffered: course.sessionOffered,
+    specializationName: course.specializationId.name,
+  }));
+  const therapistCopy = JSON.parse(JSON.stringify(therapist));
+  therapistCopy.courses = flattenedCourses;
+  therapistCopy.reviews = reviews;
 
   return res.status(200).json(
-    new ApiResponse(
-      true,
-      { therapist, reviews, courses },
-      "Therapist fetched successfully!"
-    )
+    new ApiResponse(200, { therapistDetails: therapistCopy }, "therapist fetched successfully!")
   );
 });
 
-export default therapistDetails;
 export {
   therapistList,
   findBolgbySlug,
