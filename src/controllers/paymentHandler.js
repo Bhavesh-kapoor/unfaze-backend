@@ -229,7 +229,6 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       const subject = "Session Booking Confirmation";
       const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
       await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
-
       return res
         .status(201)
         .json(new ApiResponse(201, session, "Session booked successfully"));

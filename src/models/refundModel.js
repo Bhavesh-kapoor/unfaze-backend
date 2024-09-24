@@ -12,7 +12,6 @@ const RefundSchema = new mongoose.Schema({
     },
     refundDate: {
         type: Date,
-        required: true,
     },
     refundStatus: {
         type: String,
