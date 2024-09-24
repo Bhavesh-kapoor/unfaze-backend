@@ -14,6 +14,7 @@ import { generateTempPassword } from "../../utils/tempPasswordGenerator.js";
 import { verifyOTP, createAndStoreOTP } from "../otpController.js";
 import { otpContent, passwordUpdatedEmail } from "../../static/emailcontent.js";
 import { CustomerFeedback } from "../../models/reviewsModal.js";
+import { Course } from "../../models/courseModel.js";
 
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
@@ -77,8 +78,8 @@ const register = asyncHandler(async (req, res) => {
         existingTherapist?.email === email
           ? "Email"
           : existingTherapist?.mobile === mobile
-          ? "Phone Number"
-          : "";
+            ? "Phone Number"
+            : "";
 
       return res
         .status(400)
@@ -224,14 +225,16 @@ const login = asyncHandler(async (req, res) => {
 export const getTherapistSpecialization = asyncHandler(
   async (request, response) => {
     try {
-      const { therapist_id, specialization_id } = request.body;
-      if (!therapist_id || !specialization_id) {
+      const { therapist_id, specialization_id, course_id } = request.body;
+
+      if (!therapist_id) {
         return response
           .status(400)
           .json(
             new ApiError(400, "Therapist id and specialization id required!")
           );
       }
+
       const therapist = await Therapist.findById(therapist_id, {
         _id: 1,
         ratings: 1,
@@ -247,7 +250,7 @@ export const getTherapistSpecialization = asyncHandler(
         usdPrice: 1,
       }).populate({
         path: "specialization",
-        select: "name",
+        select: "name usdPrice inrPrice",
       });
       if (!therapist) {
         return response
@@ -262,6 +265,7 @@ export const getTherapistSpecialization = asyncHandler(
           .status(404)
           .json(new ApiError(404, "Specialization not found!"));
       }
+
       delete therapist.specialization;
       const reviews = await CustomerFeedback.aggregate([
         { $match: { therapist: therapist._id } },
@@ -287,7 +291,16 @@ export const getTherapistSpecialization = asyncHandler(
           },
         },
       ]);
-      const result = { therapist, specialization, reviews };
+      const course = await Course.findById(course_id).populate("specializationId", "name");
+      const flattenedCourses = course.map(course => ({
+        _id: course._id,
+        usdPrice: course.usdPrice,
+        inrPrice: course.inrPrice,
+        isActive: course.isActive,
+        sessionOffered: course.sessionOffered,
+        sessionName: course.specializationId.name,
+      }));
+      const result = { therapist, specialization, reviews, course: flattenedCourses };
       return response
         .status(200)
         .json(new ApiResponse(200, result, "Data fetched successfully"));
