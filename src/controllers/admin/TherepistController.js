@@ -78,8 +78,8 @@ const register = asyncHandler(async (req, res) => {
         existingTherapist?.email === email
           ? "Email"
           : existingTherapist?.mobile === mobile
-            ? "Phone Number"
-            : "";
+          ? "Phone Number"
+          : "";
 
       return res
         .status(400)
@@ -257,13 +257,16 @@ export const getTherapistSpecialization = asyncHandler(
           .status(404)
           .json(new ApiError(404, "Therapist not found!"));
       }
-      const specialization = therapist.specialization.find(
-        (item) => item._id.toString() === specialization_id.toString()
-      );
-      if (!specialization) {
-        return response
-          .status(404)
-          .json(new ApiError(404, "Specialization not found!"));
+      let specialization = {};
+      if (specialization_id) {
+        specialization = therapist.specialization.find(
+          (item) => item._id.toString() === specialization_id.toString()
+        );
+        if (!specialization) {
+          return response
+            .status(404)
+            .json(new ApiError(404, "Specialization not found!"));
+        }
       }
 
       delete therapist.specialization;
@@ -291,16 +294,34 @@ export const getTherapistSpecialization = asyncHandler(
           },
         },
       ]);
-      const course = await Course.findById(course_id).populate("specializationId", "name");
-      const flattenedCourses = course.map(course => ({
-        _id: course._id,
-        usdPrice: course.usdPrice,
-        inrPrice: course.inrPrice,
-        isActive: course.isActive,
-        sessionOffered: course.sessionOffered,
-        sessionName: course.specializationId.name,
-      }));
-      const result = { therapist, specialization, reviews, course: flattenedCourses };
+      let result;
+      if (course_id) {
+        const course = await Course.findOne({ _id: course_id }).populate(
+          "specializationId",
+          "name"
+        );
+        const flattenedCourses = {
+          _id: course?._id,
+          usdPrice: course?.usdPrice,
+          inrPrice: course?.inrPrice,
+          isActive: course?.isActive,
+          sessionOffered: course?.sessionOffered,
+          sessionName: course?.specializationId?.name,
+        };
+        result = {
+          therapist,
+          specialization,
+          reviews,
+          course: flattenedCourses,
+        };
+      } else {
+        result = {
+          therapist,
+          specialization,
+          reviews,
+          course: {},
+        };
+      }
       return response
         .status(200)
         .json(new ApiResponse(200, result, "Data fetched successfully"));
