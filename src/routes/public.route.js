@@ -38,7 +38,10 @@ import {
   forgotPassword,
   verifyOtpAllowAccess,
 } from "../controllers/admin/user.controller.js";
-import { getSeoDataBySlug } from "../controllers/admin/seoController.js";
+import {
+  getFAQDataBySlug,
+  getSeoDataBySlug,
+} from "../controllers/admin/seoController.js";
 
 const router = express.Router();
 
@@ -77,6 +80,8 @@ router.post("/send-mobile-otp", sendMobileOtp);
 router.post("/login", userlogin);
 
 router.post("/seo", getSeoDataBySlug);
+
+router.post("/faq", getFAQDataBySlug);
 
 router.use("/email/send-otp", sendOtp);
 

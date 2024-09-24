@@ -3,6 +3,7 @@ import ApiError from "../../utils/ApiError.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { check, validationResult } from "express-validator";
+import { Faq } from "../../models/faqModel.js";
 
 const validateSeoData = [
   check("title", " title is required!").notEmpty(),
@@ -120,6 +121,18 @@ export const getSeoDataBySlug = asyncHandler(async (req, res) => {
   const { slug } = req.body;
   try {
     const data = await Seo.findOne({ slug });
+    if (!data) return res.status(200).json({ message: "Data not found" });
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving data", error });
+  }
+});
+
+//get Seodata by Slug
+export const getFAQDataBySlug = asyncHandler(async (req, res) => {
+  const { slug } = req.body;
+  try {
+    const data = await Faq.find({ url: slug });
     if (!data) return res.status(200).json({ message: "Data not found" });
     res.json(data);
   } catch (error) {
