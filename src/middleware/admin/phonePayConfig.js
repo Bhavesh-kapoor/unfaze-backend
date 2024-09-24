@@ -55,7 +55,7 @@ export async function processPayment(req, res) {
     const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
     const [start_Time, startModifier] = startTime.split(' ');
     const [end_Time, endModifier] = endTime.split(' ');
-    const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+    let endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
 
     if (startModifier === 'PM' && endModifier === 'AM') {
       endDateTime = addDays(endDateTime, 1);
