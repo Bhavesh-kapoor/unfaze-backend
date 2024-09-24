@@ -56,10 +56,9 @@ export async function processPayment(req, res) {
     const [start_Time, startModifier] = startTime.split(' ');
     const [end_Time, endModifier] = endTime.split(' ');
     const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
-    if (startModifier == 'PM' && endModifier == "AM") {
-      if (startModifier === 'PM' && endModifier === 'AM') {
-        endDateTime = addDays(endDateTime, 1);
-      }
+
+    if (startModifier === 'PM' && endModifier === 'AM') {
+      endDateTime = addDays(endDateTime, 1);
     }
     if (!isValid(startDateTime) || !isValid(endDateTime)) {
       console.error("Invalid date-time format:", startDateTime, endDateTime);
@@ -67,7 +66,6 @@ export async function processPayment(req, res) {
         .status(400)
         .json(new ApiError(400, "", "Invalid date or time format"));
     }
-
     if (startDateTime >= endDateTime) {
       return res
         .status(400)
