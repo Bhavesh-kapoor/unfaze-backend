@@ -10,22 +10,9 @@ import { Slot } from "../../models/slotModal.js";
 import { Transaction } from "../../models/transactionModel.js";
 import { sendNotificationsAndEmails } from "../paymentHandler.js";
 import { User } from "../../models/userModel.js";
-
-function convertTo24HourFormat(time12h) {
-  const [time, modifier] = time12h.split(" ");
-  let [hours, minutes] = time.split(":");
-  hours = parseInt(hours, 10);
-  if (modifier === "AM" && hours === 12) {
-    hours = 0;
-  }
-  if (modifier === "PM" && hours !== 12) {
-    hours += 12;
-  }
-  const hours24 = hours.toString().padStart(2, "0");
-  const minutes24 = minutes.padStart(2, "0");
-
-  return `${hours24}:${minutes24}`;
-}
+import { EnrolledCourse } from "../../models/enrolledCourseModel.js";
+import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
+import { sessionBookingConfirmation } from "../../static/emailcontent.js";
 
 const SESSION_DURATION_MINUTES = 30;
 const GAP_BETWEEN_SESSIONS_MINUTES = 15;
@@ -214,6 +201,7 @@ const sessionCompleted = asyncHandler(async (req, res) => {
 
 const rescheduleSession = asyncHandler(async (req, res) => {
   const { session_id, slot_id } = req.body;
+  const user = req.user
   if (!session_id || !slot_id) {
     return res
       .status(400)
@@ -224,6 +212,12 @@ const rescheduleSession = asyncHandler(async (req, res) => {
     return res
       .status(400)
       .json(new ApiError(400, null, "You cant't reschedule this session!"));
+  }
+  const therapist = await Therapist.findById(session.therapist_id);
+  if (!therapist) {
+    return res
+      .status(404)
+      .json(new ApiError(404, null, "Therapist not found"));
   }
   const timeSlots = await Slot.aggregate([
     {
@@ -264,14 +258,12 @@ const rescheduleSession = asyncHandler(async (req, res) => {
   const endDateTime = new Date(
     `${formattedDate}T${convertTo24HourFormat(endTime)}`
   );
-  console.log(formattedDate, startDateTime, endDateTime);
   if (!isValid(startDateTime) || !isValid(endDateTime)) {
     console.error("Invalid date-time format:", startDateTime, endDateTime);
     return res
       .status(400)
       .json(new ApiError(400, "", "Invalid date or time format"));
   }
-
   if (startDateTime >= endDateTime) {
     return res.status(400).send({ error: "End time must be after start time" });
   }
@@ -290,7 +282,12 @@ const rescheduleSession = asyncHandler(async (req, res) => {
       },
     }
   );
-  console.log(rescheduled);
+  if (process.env.DEV_MODE === 'prod') {
+    const message = `${user.firstName} ${user.lastName} has reschedule a session.`;
+    const subject = "Session Reschedule Confirmation";
+    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+  }
   res.status(201).json(new ApiResponse(201, rescheduled, "session recheduled"));
 });
 const bookSessionManully = asyncHandler(async (req, res) => {
@@ -332,7 +329,12 @@ const bookSessionManully = asyncHandler(async (req, res) => {
     channelName = `session_${channelName}`;
     session.channelName = channelName;
     await session.save();
-    await sendNotificationsAndEmails(transaction, user, therapist);
+    if (process.env.DEV_MODE === 'prod') {
+      const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
+      const subject = "Session Booking Confirmation";
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+    }
     res
       .status(201)
       .json(new ApiResponse(201, session, "Session booked successfully"));
@@ -470,9 +472,9 @@ const getUserSessions = async (req, res) => {
   }
 };
 
-const getTherapistSession =asyncHandler(async(req,res)=>{
+const getTherapistSession = asyncHandler(async (req, res) => {
   try {
-    const {Id,status} = req.params;
+    const { Id, status } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
     if (!Id) {
@@ -586,4 +588,110 @@ const getTherapistSession =asyncHandler(async(req,res)=>{
   }
 })
 
-export { sessionCompleted, rescheduleSession, bookSessionManully, getUserSessions ,getTherapistSession};
+const BookSessionFromCourse = asyncHandler(async (req, res) => {
+  try {
+    const { enrolledCourseId, slotId } = req.query
+    const user = req.user
+    if (!enrolledCourseId || !slotId) {
+      return res.status(400).json(new ApiError(400, "", "enrolledCourseId and slotId is required!"))
+    }
+    const course = await EnrolledCourse.findOne({
+      _id: new mongoose.Types.ObjectId(enrolledCourseId),
+      userId: user._id
+    });
+    if (!course) {
+      return res.status(404).json(new ApiResponse(404, null, "Course not found"));
+    }
+    if (!course.remainingSessions) {
+      return res.status(200).json(new ApiResponse(200, null, "you have already taken all your sessions"))
+    }
+    const therapist = await Therapist.findById(course.therapistId)
+    const timeSlots = await Slot.aggregate([
+      {
+        $match: {
+          therapist_id: new mongoose.Types.ObjectId(course.therapistId),
+        },
+      },
+      {
+        $unwind: "$timeslots",
+      },
+      {
+        $match: {
+          "timeslots._id": new mongoose.Types.ObjectId(slotId),
+          "timeslots.isBooked": false,
+        },
+      },
+      {
+        $project: {
+          _id: "$timeslots._id",
+          therapist_id: 1,
+          date: "$timeslots.date",
+          startTime: "$timeslots.startTime",
+          endTime: "$timeslots.endTime",
+          isBooked: "$timeslots.isBooked",
+        },
+      },
+    ]);
+    if (timeSlots.length === 0) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "Timeslot not found or already booked"));
+    }
+    const { date, startTime, endTime } = timeSlots[0];
+    const formattedDate = format(new Date(date), "yyyy-MM-dd");
+    const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
+    const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+
+    if (!isValid(startDateTime) || !isValid(endDateTime)) {
+      console.error("Invalid date-time format:", startDateTime, endDateTime);
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Invalid date or time format"));
+    }
+
+    if (startDateTime >= endDateTime) {
+      return res
+        .status(400)
+        .send({ error: "End time must be after start time" });
+    }
+    await Slot.updateOne({
+      therapist_id: new mongoose.Types.ObjectId(course.therapistId),
+      "timeslots._id": new mongoose.Types.ObjectId(slotId),
+    }, {
+      $set: {
+        "timeslots.$.isBooked": true,
+      },
+    })
+    const session = new Session({
+      transaction_id: course.transactionId,
+      therapist_id: course.therapistId,
+      user_id: user._id,
+      start_time: startDateTime,
+      end_time: endDateTime,
+    });
+
+    let channelName = session._id.toString().slice(-10)
+    channelName = `session_${channelName}`;
+    session.channelName = channelName;
+    await session.save();
+    course.remainingSessions -= 1
+    if (course.remainingSessions === 0) {
+      course.isActive = false;
+      await course.save();
+    }
+    await course.save();
+    // if (process.env.DEV_MODE === 'prod') {
+      const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
+      const subject = "Session Booking Confirmation";
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+    // }
+    return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
+  } catch (error) {
+    console.log(error)
+    res.status(500).json(new ApiError(500, "somthingwent wrong", [error]))
+  }
+}
+);
+
+export { sessionCompleted, rescheduleSession, bookSessionManully, getUserSessions, getTherapistSession, BookSessionFromCourse }

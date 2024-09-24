@@ -69,10 +69,14 @@ const createOrder = asyncHandler(async (req, res) => {
   }
   const { date, startTime, endTime } = timeSlots[0];
   const formattedDate = format(new Date(date), "yyyy-MM-dd");
-  // console.log(formattedDate);
-  // console.log(convertTo24HourFormat(startTime))
   const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
+  const [start_Time, startModifier] = startTime.split(' ');
+  const [end_Time, endModifier] = endTime.split(' ');
   const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+
+  if (startModifier === 'PM' && endModifier === 'AM') {
+    endDateTime = addDays(endDateTime, 1);
+  }
 
   if (!isValid(startDateTime) || !isValid(endDateTime)) {
     console.error("Invalid date-time format:", startDateTime, endDateTime);

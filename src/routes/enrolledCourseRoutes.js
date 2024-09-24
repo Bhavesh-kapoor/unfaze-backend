@@ -1,5 +1,5 @@
 import express from 'express';
+import { enrolledCourseList } from '../controllers/EnrolledCourseController.js';
 const router = express.Router();
-router.get("/get-list",)
-
+router.get("/list", enrolledCourseList)
 export default router

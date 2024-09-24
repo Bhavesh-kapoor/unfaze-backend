@@ -13,10 +13,10 @@ function convertUTCtoIST(utcDate) {
   const [istDate, istTime] = istDateTime.split(', ');
   return { date: istDate, time: istTime };
 }
-export const sendNotificationsAndEmails = async (transaction, user, therapist, htmlContent, message, subject) => {
-  const receiverId = transaction.therapist_id;
+export const sendNotificationsAndEmails = async (user, therapist, htmlContent, message, subject) => {
+  const receiverId = therapist._id;
   const payload = {
-    therapist_id: transaction.therapist_id,
+    therapist_id: therapist._id,
     user_id: user._id,
     email: user.email,
     mobile: user.mobile,
@@ -154,7 +154,7 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
       const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-      await sendNotificationsAndEmails(transaction, user, therapist, htmlContent, message, subject);
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
       res
         .status(201)
         .json(new ApiResponse(201, session, "Session booked successfully"));
@@ -228,7 +228,7 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
       const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-      await sendNotificationsAndEmails(transaction, user, therapist, htmlContent, message, subject);
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
 
       return res
         .status(201)
