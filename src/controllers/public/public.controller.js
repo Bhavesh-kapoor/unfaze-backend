@@ -237,7 +237,6 @@ const therapistDetails = asyncHandler(async (req, res) => {
   })
     .populate({
       path: "specialization",
-      select: "name",
     })
     .select("-password -refreshToken");
 
@@ -246,6 +245,7 @@ const therapistDetails = asyncHandler(async (req, res) => {
       .status(404)
       .json(new ApiError(404, "", "failed to get therapist"));
   }
+
   const reviews = await CustomerFeedback.aggregate([
     { $match: { therapist: therapist._id } },
     { $match: { isActive: true } },
@@ -270,16 +270,28 @@ const therapistDetails = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { therapist: therapist, reviews },
-        "therapist fetched successfully!"
-      )
-    );
+
+  // Ensure reviews is an empty array if no reviews found
+  if (!reviews || reviews.length === 0) {
+    reviews = [];
+  }
+
+  const specializationIds = therapist.specialization.map(spec => spec._id);
+  const courses = await Course.find({
+    specializationId: { $in: specializationIds },
+    isActive: true
+  }).populate("specializationId","name");
+
+  return res.status(200).json(
+    new ApiResponse(
+      true,
+      { therapist, reviews, courses },
+      "Therapist fetched successfully!"
+    )
+  );
 });
+
+export default therapistDetails;
 export {
   therapistList,
   findBolgbySlug,
