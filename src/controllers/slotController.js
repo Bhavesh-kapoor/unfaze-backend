@@ -245,12 +245,19 @@ export const getSlotsByDate = async (req, res) => {
   }
   try {
     // Convert date to ISO format for comparison
-    const isoDate = new Date(date).toISOString().split("T")[0]; // Format date as YYYY-MM-DD
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0); // Set time to 12:00 AM
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999); // Set time to 11:59 PM
+    // const isoDate = new Date().toISOString().split("T")[0]; // Format date as YYYY-MM-DD
 
     // Find the Slot document for the given therapist_id and date
     const slot = await Slot.findOne({
       therapist_id: therapist_id,
-      "timeslots.date": isoDate,
+      "timeslots.date": {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      },
     });
 
     if (!slot) {
@@ -258,13 +265,13 @@ export const getSlotsByDate = async (req, res) => {
     }
 
     // Filter timeslots for the specified date
-    const slotsForDate = slot.timeslots.filter(
-      (ts) => ts.date.toISOString().split("T")[0] === isoDate
+    const slotsForDay = slot.timeslots.filter(
+      (ts) => ts.date >= startOfDay && ts.date < endOfDay
     );
 
     return res
       .status(200)
-      .json(new ApiResponse(200, slotsForDate, "Slots retrieved successfully"));
+      .json(new ApiResponse(200, slotsForDay, "Slots retrieved successfully"));
   } catch (error) {
     console.error("Error retrieving slots:", error);
     return res
