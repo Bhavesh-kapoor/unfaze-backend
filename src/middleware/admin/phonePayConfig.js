@@ -9,15 +9,16 @@ import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format, addDays } from "date-fns";
 import { Course } from "../../models/courseModel.js";
-import dotenv from "dotenv"
-dotenv.config()
+import dotenv from "dotenv";
+dotenv.config();
 import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
+import { Specialization } from "../../models/specilaizationModel.js";
 // import { Course } from "../../models/courseModel.js";
 // import { EnrolledCourse } from "../../models/enrolledCourse.model.js";
 
 export async function processPayment(req, res) {
   try {
-    const user = req.user
+    const user = req.user;
     const { therapist_id, specialization_id, slot_id } = req.body;
     const timeSlots = await Slot.aggregate([
       {
@@ -52,12 +53,16 @@ export async function processPayment(req, res) {
     }
     const { date, startTime, endTime } = timeSlots[0];
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
-    const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
-    const [start_Time, startModifier] = startTime.split(' ');
-    const [end_Time, endModifier] = endTime.split(' ');
-    let endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+    const startDateTime = new Date(
+      `${formattedDate}T${convertTo24HourFormat(startTime)}`
+    );
+    const [start_Time, startModifier] = startTime.split(" ");
+    const [end_Time, endModifier] = endTime.split(" ");
+    let endDateTime = new Date(
+      `${formattedDate}T${convertTo24HourFormat(endTime)}`
+    );
 
-    if (startModifier === 'PM' && endModifier === 'AM') {
+    if (startModifier === "PM" && endModifier === "AM") {
       endDateTime = addDays(endDateTime, 1);
     }
     if (!isValid(startDateTime) || !isValid(endDateTime)) {
@@ -86,13 +91,14 @@ export async function processPayment(req, res) {
         .status(404)
         .json(new ApiError(404, "", "Invalid therapist !!!"));
     }
-    // const existingTransaction = await Transaction.findOne({
+
+    // const existingT=ransaction = await Transaction.findOne({
     //   user_id: user._id,
     //   therapist_id: new mongoose.Types.ObjectId(therapist_id),
     //   specialization_id: new mongoose.Types.ObjectId(specialization_id),
     //   payment_status: { $ne: "successful" }
     // })
-    let transactionId
+    let transactionId;
     transactionId = uniqid();
     transactionId = `unfazed${transactionId}`;
     // if (existingTransaction) {
@@ -101,12 +107,13 @@ export async function processPayment(req, res) {
     //   transactionId = uniqid();
     //   transactionId = `unfazed${transactionId}`;
     // }
+    const specialization = await Specialization.findById(specialization_id);
 
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
       merchantUserId: `MUID_${user._id}`,
-      amount: therapist.inrPrice * 100,
+      amount: specialization?.inrPrice * 100,
       redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
@@ -160,7 +167,6 @@ export async function processPayment(req, res) {
       //   });
       //   await initiatedTransaction.save();
       // }
-
       const initiatedTransaction = new Transaction({
         transactionId,
         user_id: user._id,
@@ -173,14 +179,17 @@ export async function processPayment(req, res) {
         end_time: endDateTime,
       });
       await initiatedTransaction.save();
-      await Slot.updateOne({
-        therapist_id: new mongoose.Types.ObjectId(therapist_id),
-        "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-      }, {
-        $set: {
-          "timeslots.$.isBooked": true,
+      await Slot.updateOne(
+        {
+          therapist_id: new mongoose.Types.ObjectId(therapist_id),
+          "timeslots._id": new mongoose.Types.ObjectId(slot_id),
         },
-      })
+        {
+          $set: {
+            "timeslots.$.isBooked": true,
+          },
+        }
+      );
       res.status(200).json(
         new ApiResponse(200, {
           redirect_url: response.data.data.instrumentResponse.redirectInfo.url,
@@ -204,7 +213,7 @@ export async function processPayment(req, res) {
 
 export async function processPaymentForcourse(req, res) {
   try {
-    const user = req.user
+    const user = req.user;
     const { therapist_id, courseId, type = "course" } = req.body;
     if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
       return res
@@ -220,9 +229,9 @@ export async function processPaymentForcourse(req, res) {
     }
     const course = await Course.findById(courseId);
     if (!course) {
-      throw new ApiError(404, "Course not found or invalid!")
+      throw new ApiError(404, "Course not found or invalid!");
     }
-    let transactionId
+    let transactionId;
     transactionId = uniqid();
     transactionId = `unfazed${transactionId}`;
     const normalPayLoad = {
@@ -259,7 +268,7 @@ export async function processPaymentForcourse(req, res) {
 
     try {
       const response = await axios.request(options);
-      console.log("category ", course.specializationId)
+      console.log("category ", course.specializationId);
       const initiatedTransaction = new Transaction({
         transactionId,
         user_id: user._id,
@@ -268,7 +277,7 @@ export async function processPaymentForcourse(req, res) {
         category: course.specializationId,
         amount_INR: course.inrPrice,
         payment_status: "PAYMENT_INITIATED",
-        type
+        type,
       });
 
       await initiatedTransaction.save();
@@ -401,7 +410,6 @@ export async function processPaymentForcourse(req, res) {
 //       );
 //   }
 // }
-
 
 export const validatePayment = async (req, res, next) => {
   const { merchantTransactionId } = req.params;
