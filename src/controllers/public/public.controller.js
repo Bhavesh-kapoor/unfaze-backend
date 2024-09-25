@@ -76,6 +76,7 @@ const therapistList = asyncHandler(async (req, res) => {
           totalItems: totalTherapists,
           totalPages: Math.ceil(totalTherapists / limitNumber),
           currentPage: pageNumber,
+          itemsPerPage: limitNumber,
         },
         result: therapistListData,
       },
@@ -191,6 +192,7 @@ const therapistListByGroup = asyncHandler(async (req, res) => {
           totalItems: totalGroups,
           totalPages: Math.ceil(totalGroups / limitNumber),
           currentPage: pageNumber,
+          itemsPerPage: limitNumber,
         },
         result: therapistListData,
       },
@@ -242,7 +244,9 @@ const therapistDetails = asyncHandler(async (req, res) => {
     .select("-password -refreshToken");
 
   if (!therapist) {
-    return res.status(404).json(new ApiError(404, "", "failed to get therapist"));
+    return res
+      .status(404)
+      .json(new ApiError(404, "", "failed to get therapist"));
   }
 
   const reviews = await CustomerFeedback.aggregate([
@@ -268,13 +272,13 @@ const therapistDetails = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  const specializationIds = therapist.specialization.map(spec => spec._id);
+  const specializationIds = therapist.specialization.map((spec) => spec._id);
   const courses = await Course.find({
     specializationId: { $in: specializationIds },
     isActive: true,
   }).populate("specializationId", "name");
 
-  const flattenedCourses = courses.map(course => ({
+  const flattenedCourses = courses.map((course) => ({
     _id: course._id,
     usdPrice: course.usdPrice,
     inrPrice: course.inrPrice,
@@ -286,9 +290,15 @@ const therapistDetails = asyncHandler(async (req, res) => {
   therapistCopy.courses = flattenedCourses;
   therapistCopy.reviews = reviews;
 
-  return res.status(200).json(
-    new ApiResponse(200, { therapistDetails: therapistCopy }, "therapist fetched successfully!")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { therapistDetails: therapistCopy },
+        "therapist fetched successfully!"
+      )
+    );
 });
 
 export {

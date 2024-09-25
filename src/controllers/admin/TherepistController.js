@@ -496,6 +496,7 @@ const therapistList = asyncHandler(async (req, res) => {
           totalItems: totalTherapists,
           totalPages: Math.ceil(totalTherapists / limitNumber),
           currentPage: pageNumber,
+          itemsPerPage: limitNumber,
         },
         result: therapistListData,
       },

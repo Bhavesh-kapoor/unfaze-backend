@@ -1,8 +1,16 @@
 import express from "express";
-import { getOverview } from "../../controllers/admin/dashboardController.js";
+import {
+  getOverview,
+  getOverviewByRevenue,
+  getOverviewBySessions,
+} from "../../controllers/admin/dashboardController.js";
 
 const router = express.Router();
 
 router.get("/overview", getOverview);
+
+router.get("/overview-revenue", getOverviewByRevenue);
+
+router.get("/overview-sessions", getOverviewBySessions);
 
 export default router;
