@@ -4,7 +4,6 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import AsyncHandler from "../../utils/asyncHandler.js";
 import { Specialization } from "../../models/specilaizationModel.js";
 
-
 const getAllSpecialization = AsyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const pageNumber = parseInt(page);
@@ -18,22 +17,28 @@ const getAllSpecialization = AsyncHandler(async (req, res) => {
       .skip(skip)
       .limit(limitNumber);
 
-    res.status(200).json(new ApiResponse(200, {
-      result: specializations,
-      pagination: {
-        currentPage: pageNumber,
-        totalPages: Math.ceil(totalSpecializations / limitNumber),
-        totalItems: totalSpecializations,
-      }
-    }));
+    res.status(200).json(
+      new ApiResponse(200, {
+        result: specializations,
+        pagination: {
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalSpecializations / limitNumber),
+          totalItems: totalSpecializations,
+          itemsPerPage: limitNumber,
+        },
+      })
+    );
   } catch (error) {
     console.error("Error fetching specializations:", error);
-    throw new ApiError(501, "Something went wrong while fetching specializations");
+    throw new ApiError(
+      501,
+      "Something went wrong while fetching specializations"
+    );
   }
 });
 
 const getSpecializationById = AsyncHandler(async (req, res) => {
-  const { _id } = req.params
+  const { _id } = req.params;
   let specialization = await Specialization.findById(_id);
   res.status(200).json(new ApiResponse(200, { result: specialization }));
 });
@@ -125,5 +130,5 @@ export {
   createSpecialization,
   updateSpecialization,
   deleteSpecialization,
-  getSpecializationById
+  getSpecializationById,
 };

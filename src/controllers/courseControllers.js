@@ -122,7 +122,7 @@ const findList = asyncHandler(async (req, res) => {
           inrPrice: 1,
           isActive: 1,
           category: "$specializations.name",
-          categoryId: "$specializations._id"
+          categoryId: "$specializations._id",
         },
       },
       { $skip: skip },
@@ -133,14 +133,19 @@ const findList = asyncHandler(async (req, res) => {
     const getList = await Course.aggregate(pipeline);
 
     res.status(200).json(
-      new ApiResponse(200, {
-        result: getList,
-        pagination: {
-          currentPage: pageNumber,
-          totalPages: Math.ceil(totalCourses / limitNumber),
-          totalItems: totalCourses,
-        }
-      }, "Courses fetched successfully")
+      new ApiResponse(
+        200,
+        {
+          result: getList,
+          pagination: {
+            currentPage: pageNumber,
+            totalPages: Math.ceil(totalCourses / limitNumber),
+            totalItems: totalCourses,
+            itemsPerPage: limitNumber,
+          },
+        },
+        "Courses fetched successfully"
+      )
     );
   } catch (error) {
     console.error("Error fetching courses:", error);
@@ -210,4 +215,11 @@ const purchaseAcourse = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
 });
 
-export { validateInput, createCourse, updateCourse, deleteCourse, findList, findById };
+export {
+  validateInput,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  findList,
+  findById,
+};

@@ -9,12 +9,14 @@ import { sendNotificationsAndEmails } from "./paymentHandler.js";
 import { courseEnrollmentConfirmation } from "../static/emailcontent.js";
 
 const findById = asyncHandler(async (req, res) => {
-  const { _id } = req.params
-  const enrolledCourse = await EnrolledCourse.findById(Types.ObjectId(_id)).populate(transactionId)
+  const { _id } = req.params;
+  const enrolledCourse = await EnrolledCourse.findById(
+    Types.ObjectId(_id)
+  ).populate(transactionId);
   if (!enrolledCourse) {
     return res.status(404).json(new ApiError(404, "", "Course not found"));
   }
-})
+});
 const getEnrolledInCourse = asyncHandler(async (req, res) => {
   const mapPaymentStatus = (responseCode) => {
     const statusMap = {
@@ -32,9 +34,15 @@ const getEnrolledInCourse = asyncHandler(async (req, res) => {
     if (!therapist) {
       return res.status(404).json({ error: "Therapist not found" });
     }
-    const existingenrollment = await EnrolledCourse.findOne({ transactionId: transaction._id })
+    const existingenrollment = await EnrolledCourse.findOne({
+      transactionId: transaction._id,
+    });
     if (existingenrollment) {
-      return res.status(409).json(new ApiError(409, "", "course enrolled already with this transaction"))
+      return res
+        .status(409)
+        .json(
+          new ApiError(409, "", "course enrolled already with this transaction")
+        );
     }
     const order_status = mapPaymentStatus(paymentDetails?.data?.responseCode);
     transaction.payment_details = paymentDetails;
@@ -52,14 +60,29 @@ const getEnrolledInCourse = asyncHandler(async (req, res) => {
         remainingSessions: course.sessionOffered,
         isActive: true,
       });
-      enrolledCourse.save()
+      enrolledCourse.save();
       const message = `${user.firstName} ${user.lastName} has successfully enrolled in a course.`;
-      const htmlContent = courseEnrollmentConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-      const subject = "course enrollment confirmation"
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+      const htmlContent = courseEnrollmentConfirmation(
+        `${user.firstName} ${user.lastName}`,
+        `${therapist.firstName} ${therapist.lastName}`
+      );
+      const subject = "course enrollment confirmation";
+      await sendNotificationsAndEmails(
+        user,
+        therapist,
+        htmlContent,
+        message,
+        subject
+      );
       res
         .status(201)
-        .json(new ApiResponse(201, enrolledCourse, "You enrolled in course successfully"));
+        .json(
+          new ApiResponse(
+            201,
+            enrolledCourse,
+            "You enrolled in course successfully"
+          )
+        );
     } else {
       res.status(200).json(new ApiResponse(200, null, paymentDetails.message));
     }
@@ -89,9 +112,15 @@ const getEnrolledCashfree = asyncHandler(async (req, res) => {
     if (!therapist) {
       return res.status(404).json({ error: "Therapist not found" });
     }
-    const existingenrollment = await EnrolledCourse.findOne({ transactionId: transaction._id })
+    const existingenrollment = await EnrolledCourse.findOne({
+      transactionId: transaction._id,
+    });
     if (existingenrollment) {
-      return res.status(409).json(new ApiError(409, "", "course enrolled already with this transaction"))
+      return res
+        .status(409)
+        .json(
+          new ApiError(409, "", "course enrolled already with this transaction")
+        );
     }
     const order_status = mapPaymentStatus(paymentDetails.order_status);
     transaction.payment_details = paymentDetails.data;
@@ -108,14 +137,29 @@ const getEnrolledCashfree = asyncHandler(async (req, res) => {
         remainingSessions: course.sessionOffered,
         isActive: true,
       });
-      enrolledCourse.save()
+      enrolledCourse.save();
       const message = `${user.firstName} ${user.lastName} has successfully enrolled in a course.`;
-      const htmlContent = courseEnrollmentConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-      const subject = "course enrollment confirmation"
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+      const htmlContent = courseEnrollmentConfirmation(
+        `${user.firstName} ${user.lastName}`,
+        `${therapist.firstName} ${therapist.lastName}`
+      );
+      const subject = "course enrollment confirmation";
+      await sendNotificationsAndEmails(
+        user,
+        therapist,
+        htmlContent,
+        message,
+        subject
+      );
       res
         .status(201)
-        .json(new ApiResponse(201, enrolledCourse, "You enrolled in course successfully"));
+        .json(
+          new ApiResponse(
+            201,
+            enrolledCourse,
+            "You enrolled in course successfully"
+          )
+        );
     } else {
       return res
         .status(200)
@@ -126,9 +170,8 @@ const getEnrolledCashfree = asyncHandler(async (req, res) => {
     return res
       .status(500)
       .json(new ApiResponse(500, null, "Internal Server Error."));
-
   }
-})
+});
 const enrolledCourseList = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const pageNumber = parseInt(page);
@@ -141,7 +184,7 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
   if (user?.role == "admin" || user?.role == "therapist") {
     userId = req.query.userId;
   } else {
-    userId = req.user?._id;  // Otherwise, use the current logged-in user's ID
+    userId = req.user?._id; // Otherwise, use the current logged-in user's ID
   }
 
   if (!userId) {
@@ -168,7 +211,9 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
       .exec();
 
     if (!enrolledCourses.length) {
-      return res.status(404).json({ message: "No enrolled courses found for this user" });
+      return res
+        .status(404)
+        .json({ message: "No enrolled courses found for this user" });
     }
 
     const flattenedCourses = enrolledCourses.map((course) => ({
@@ -194,7 +239,7 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
         totalItems: totalCourses,
         totalPages: Math.ceil(totalCourses / limitNumber),
         currentPage: pageNumber,
-        pageSize: limitNumber,
+        itemsPerPage: limitNumber,
       },
     });
   } catch (error) {
@@ -206,4 +251,9 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
   }
 });
 
-export { findById, getEnrolledInCourse, getEnrolledCashfree, enrolledCourseList }
+export {
+  findById,
+  getEnrolledInCourse,
+  getEnrolledCashfree,
+  enrolledCourseList,
+};

@@ -90,20 +90,24 @@ export const getAllFeedbacks = async (req, res) => {
     const totalFeedbacks = await CustomerFeedback.countDocuments();
 
     return res.status(200).json(
-      new ApiResponse(true, {
-        result: feedbacks,
-        pagenation: {
-          totalPages: Math.ceil(totalFeedbacks / limitNumber),
-          currentPage: pageNumber,
-          totalItems: totalFeedbacks,
-        }
-      }, "feedback Fetched Successfully ")
+      new ApiResponse(
+        true,
+        {
+          result: feedbacks,
+          pagination: {
+            totalPages: Math.ceil(totalFeedbacks / limitNumber),
+            currentPage: pageNumber,
+            totalItems: totalFeedbacks,
+            itemsPerPage: limitNumber,
+          },
+        },
+        "feedback Fetched Successfully "
+      )
     );
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
-
 
 export const getFeedbackById = async (req, res) => {
   try {

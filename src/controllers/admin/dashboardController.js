@@ -254,3 +254,21 @@ export const getOverview = asyncHandler(async (req, res) => {
     throw new ApiError(500, error.message);
   }
 });
+
+export const getOverviewByRevenue = asyncHandler(async (req, res) => {
+  try {
+    const {
+      dateRange = "today",
+      status = "successful",
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Data fetched successfully!"));
+  } catch (error) {
+    console.error(error);
+    throw new ApiError(500, error.message);
+  }
+});
