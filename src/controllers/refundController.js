@@ -13,7 +13,7 @@ const initiateRefund = asyncHandler(async (req, res) => {
         const user = req.user;
         const { transactionId, refundReason } = req.body;
         if (!transactionId || !refundReason) {
-            return res.status()
+            return res.status(403).json((new ApiError(403, "", "transactionId and refundReason is required!")))
         }
         const transaction = await Transaction.findById(transactionId);
         if (!transaction) {
@@ -83,16 +83,15 @@ const getRefundList = asyncHandler(async (req, res) => {
         const pageNumber = parseInt(page, 10);
         const limitNumber = parseInt(limit, 10);
         const skip = (pageNumber - 1) * limitNumber;
-        let matchCondition = {};
 
-        // Set the match condition based on the user role
-        if (user.role === "user") {
-            matchCondition = { "transaction.user_id": new mongoose.Types.ObjectId(req.user._id) };
-        } else if (user.role === "therapist") {
-            matchCondition = { "transaction.therapist_id": new mongoose.Types.ObjectId(req.user._id) };
-        }
 
-        const refundList = await Refund.aggregate([
+        const matchCondition = user.role === "user"
+            ? { "transaction.user_id": new mongoose.Types.ObjectId(req.user._id) }
+            : user.role === "therapist"
+                ? { "transaction.therapist_id": new mongoose.Types.ObjectId(req.user._id) }
+                : {};
+
+        const [refundResults] = await Refund.aggregate([
             {
                 $lookup: {
                     from: "transactions",
@@ -109,7 +108,7 @@ const getRefundList = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
-                    from: "users", // Assuming 'users' is the name of the users collection
+                    from: "users",
                     localField: "transaction.user_id",
                     foreignField: "_id",
                     as: "userDetails",
@@ -120,7 +119,7 @@ const getRefundList = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
-                    from: "therapists", // Assuming 'therapists' is the name of the therapists collection
+                    from: "therapists",
                     localField: "transaction.therapist_id",
                     foreignField: "_id",
                     as: "therapistDetails",
@@ -130,44 +129,90 @@ const getRefundList = asyncHandler(async (req, res) => {
                 $unwind: "$therapistDetails",
             },
             {
-                $project: {
-                    _id: 1,
-                    transactionId: "$transactionId",
-                    refundReason: 1,
-                    refundDate: 1,
-                    refundStatus: 1,
-                    amountUSD: "$transaction.amount_USD",
-                    amountINR: "$transaction.amount_INR",
-                    paymentStatus: "$transaction.payment_status",
-                    userName: { $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"] },
-                    therapistName: { $concat: ["$therapistDetails.firstName", " ", "$therapistDetails.lastName"] },
+                $sort: { updatedAt: -1 },
+            },
+            {
+                $facet: {
+                    total: [
+                        { $count: "total" },
+                    ],
+                    refunds: [
+                        { $skip: skip },
+                        { $limit: limitNumber },
+                        {
+                            $project: {
+                                _id: 1,
+                                transactionId: "$transactionId",
+                                refundReason: 1,
+                                refundDate: 1,
+                                refundStatus: 1,
+                                amountUSD: "$transaction.amount_USD",
+                                amountINR: "$transaction.amount_INR",
+                                paymentStatus: "$transaction.payment_status",
+                                userName: { $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"] },
+                                therapistName: { $concat: ["$therapistDetails.firstName", " ", "$therapistDetails.lastName"] },
+                            },
+                        },
+                    ],
                 },
             },
-            {
-                $sort: { updatedAt: -1 }
-            },
-            {
-                $skip: skip,
-            },
-            {
-                $limit: limitNumber,
-            },
         ]);
-        const totalRefunds = await Refund.countDocuments(matchCondition);
-        const response = {
-            currentPage: page,
-            totalPages: Math.ceil(totalRefunds / limit),
-            totalRefunds,
-            refunds: refundList,
-        };
 
-        console.log(refundList);
-        res.status(200).json(new ApiResponse(200, response, "Refund list fetched successfully!"));
+        const totalItems = refundResults.total.length > 0 ? refundResults.total[0].total : 0;
+        const refundList = refundResults.refunds;
+        res.status(200).json(new ApiResponse(200, {
+            result: refundList,
+            pagination: {
+                currentPage: pageNumber,
+                totalPages: Math.ceil(totalItems / limitNumber),
+                totalItems,
+                itemsPerPage: limitNumber,
+            },
+        }, "Refund list fetched successfully!"));
     } catch (error) {
         console.error(error);
         res.status(500).json(new ApiError(500, "Something went wrong!", error.message));
     }
 });
 
+const acceptRefund = asyncHandler(async (req, res) => {
+    const { refundStatus } = req.body;
+    const user = req.user;
+    console.log()
+    if (user.role !== "admin") {
+        return res.status(403).json(new ApiError(403, "", "Only admin can accept refund"));
+    }
+    try {
+        const { refundId } = req.params
+        if (!refundId) {
+            return res.status(400).json(new ApiError(400, "", "Refund id is required!"))
+        }
+        const refund = await Refund.findById(refundId)
+        if (!refund) {
+            return res.status(404).json(new ApiError(404, "", "Refund not found!"))
+        }
+        const transaction = await Transaction.findById(refund.transactionId)
+        if (!transaction) {
+            return res.status(404).json(new ApiError(404, "", "Transaction not found!"))
+        }
+        if (refund.refundStatus === "approved") {
+            refund.refundStatus = "approved"
+            await refund.save()
+            transaction.payment_status = "refunded"
+            await transaction.save()
+            return res.status(200).json(new ApiResponse(200, { refund }, "Refund request marked as approved!"))
+        } else if (refund.refundStatus === "rejected") {
+            refund.refundStatus = "rejected"
+            await refund.save()
+            transaction.payment_status = "successful"
+            await transaction.save()
+            return res.status(200).json(new ApiResponse(200, { refund }, " refund request marked as rejected!"))
+        }
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(new ApiError(500, "something went wrong in acceptRefund request"))
+    }
+})
 
-export { initiateRefund, getRefundList }
+
+export { initiateRefund, getRefundList, acceptRefund }

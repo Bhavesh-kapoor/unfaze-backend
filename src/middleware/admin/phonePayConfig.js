@@ -412,6 +412,7 @@ export async function processPaymentForcourse(req, res) {
 //   }
 // }
 
+
 export const validatePayment = async (req, res, next) => {
   const { merchantTransactionId } = req.params;
   if (!merchantTransactionId) {
