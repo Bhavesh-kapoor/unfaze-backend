@@ -25,14 +25,19 @@ const initiateRefund = asyncHandler(async (req, res) => {
 
         const refund = await Refund.create({
             transactionId: transactionId,
-            refundReason: req.body.reason
+            refundReason: reason,
         });
         if (!refund) {
             res.status(200).json(new ApiResponse(200, refund, "Refund initiated successfully"));
         }
+        transaction.payment_status = "REFUND_INITIATED"
+        await transaction.save();
+        res.status(200).json(new ApiResponse(200, refund, "Refund initiated successfully"));
     } catch (error) {
        console.log(error)
        res.status(500).json(new ApiError(500, "something went wrong!", error.message))
     }
 
 })
+
+export {initiateRefund}

@@ -92,10 +92,11 @@ export const getAllFeedbacks = async (req, res) => {
     return res.status(200).json(
       new ApiResponse(true, {
         result: feedbacks,
-        pagenation: {
+        pagination: {
           totalPages: Math.ceil(totalFeedbacks / limitNumber),
           currentPage: pageNumber,
           totalItems: totalFeedbacks,
+          itemsPerPage: limitNumber,
         }
       }, "feedback Fetched Successfully ")
     );
