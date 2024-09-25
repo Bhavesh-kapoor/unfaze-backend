@@ -1,12 +1,21 @@
-import asyncHandler from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/ApiError.js";
-import ApiResponse from "../../utils/ApiResponse.js";
-import { Notification } from "../../models/notification.Model.js";
-import { Therapist } from "../../models/therapistModel.js";
-import { Session } from "../../models/sessionsModel.js";
-import { Transaction } from "../../models/transactionModel.js";
 import { User } from "../../models/userModel.js";
-import { startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
+import ApiResponse from "../../utils/ApiResponse.js";
+import asyncHandler from "../../utils/asyncHandler.js";
+import { Session } from "../../models/sessionsModel.js";
+import { Therapist } from "../../models/therapistModel.js";
+import { endOfDay, startOfYear, endOfYear } from "date-fns";
+import { Transaction } from "../../models/transactionModel.js";
+import { Notification } from "../../models/notification.Model.js";
+import { Specialization } from "../../models/specilaizationModel.js";
+
+// Function to generate a random RGB color
+const getRandomColor = () => {
+  const r = Math.floor(Math.random() * 255);
+  const g = Math.floor(Math.random() * 255);
+  const b = Math.floor(Math.random() * 255);
+  return `rgba(${r}, ${g}, ${b}, 0.5)`; // Adding 0.5 opacity for background colors
+};
 
 export const getOverview = asyncHandler(async (req, res) => {
   try {
@@ -257,18 +266,141 @@ export const getOverview = asyncHandler(async (req, res) => {
 
 export const getOverviewByRevenue = asyncHandler(async (req, res) => {
   try {
-    const {
-      dateRange = "today",
-      status = "successful",
-      page = 1,
-      limit = 10,
-    } = req.query;
+    const { currency = "amount_INR" } = req.query;
+    const data = await Transaction.aggregate([
+      {
+        $match: {
+          payment_status: "successful",
+          createdAt: {
+            $gte: startOfYear(new Date()), // Start from the beginning of the year
+            $lte: endOfYear(new Date()), // End at the end of the year
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            month: { $month: "$createdAt" }, // Group by the month of `createdAt`
+            category_id: "$category", // Group by `category_id`
+          },
+          totalRevenue: { $sum: `$${currency}` }, // Sum the revenue
+        },
+      },
+      { $sort: { "_id.month": 1 } }, // Sort by month
+    ]);
+
+    const categoryIds = [...new Set(data.map((item) => item._id.category_id))];
+    const categories = await Specialization.find({
+      _id: { $in: categoryIds },
+    }).select("_id name");
+
+    // Prepare the final structure for the response
+    const categoryMap = {};
+    categories.forEach((category) => {
+      categoryMap[category._id] = {
+        name: category.name,
+        revenueData: Array(12).fill(0), // Initialize an array for 12 months
+        backgroundColor: getRandomColor(), // Assign a random color
+      };
+    });
+
+    // Populate the revenue data in the corresponding category and month
+    data.forEach(({ _id, totalRevenue }) => {
+      const categoryId = _id.category_id;
+      if (categoryMap[categoryId]) {
+        categoryMap[categoryId].revenueData[_id.month - 1] = totalRevenue;
+      }
+    });
+
+    // Convert categoryMap into an array format for the final response
+    const finalData = Object.values(categoryMap).map((category) => ({
+      label: category.name,
+      data: category.revenueData,
+      backgroundColor: category.backgroundColor, // Include color in the response
+    }));
 
     return res
       .status(200)
-      .json(new ApiResponse(200, {}, "Data fetched successfully!"));
+      .json(
+        new ApiResponse(
+          200,
+          { finalData },
+          "Revenue data by category fetched successfully!"
+        )
+      );
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching revenue overview by category:", error);
+    throw new ApiError(500, error.message);
+  }
+});
+
+export const getOverviewBySessions = asyncHandler(async (req, res) => {
+  try {
+    const statuses = ["missed", "rescheduled", "upcoming", "completed"];
+    const data = await Session.aggregate([
+      { $match: { status: { $in: statuses } } },
+      {
+        $group: {
+          _id: {
+            therapist_id: "$therapist_id", // Group by `therapist_id`
+            status: "$status", // Group by `status`
+          },
+          count: { $sum: 1 }, // Count the number of sessions for each group
+        },
+      },
+      {
+        $lookup: {
+          from: "therapists", // Collection name for therapists
+          localField: "_id.therapist_id",
+          foreignField: "_id",
+          as: "therapist_info",
+        },
+      },
+      {
+        $unwind: "$therapist_info", // Unwind therapist info for easier access
+      },
+      {
+        $sort: { "_id.therapist_id": 1, "_id.status": 1 }, // Sort by therapist and status
+      },
+    ]);
+
+    // Initialize session data structure for each status
+    const sessionData = statuses.reduce((acc, status) => {
+      acc[status] = {
+        labels: [], // Therapist names
+        datasets: [
+          {
+            label: `${
+              status.charAt(0).toUpperCase() + status.slice(1)
+            } Sessions`,
+            data: [],
+            backgroundColor: getRandomColor(), // Generate a random color for the background
+            hoverOffset: 4,
+          },
+        ],
+      };
+      return acc;
+    }, {});
+
+    data.forEach(({ _id, count, therapist_info }) => {
+      const { status } = _id;
+      sessionData[status].labels.push(
+        therapist_info.firstName + " " + therapist_info?.lastName
+      );
+      sessionData[status].datasets[0].data.push(count);
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          sessionData,
+          "Successfully fetched session overview!"
+        )
+      );
+  } catch (error) {
+    console.error("Error fetching session overview:", error);
     throw new ApiError(500, error.message);
   }
 });
