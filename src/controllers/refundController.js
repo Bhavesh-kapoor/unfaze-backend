@@ -26,55 +26,89 @@ const initiateRefund = asyncHandler(async (req, res) => {
             const currentTime = new Date();
             const startTime = transaction.start_time;
 
-            if (isBefore(startTime, currentTime)) {
-                return res.status(400).json(
-                    new ApiError(400, "", "refund can only be initiated before session start"))
-            }
-            const timeDifference = differenceInHours(startTime, currentTime);
+      if (isBefore(startTime, currentTime)) {
+        return res
+          .status(400)
+          .json(
+            new ApiError(
+              400,
+              "",
+              "refund can only be initiated before session start"
+            )
+          );
+      }
+      const timeDifference = differenceInHours(startTime, currentTime);
 
-
-            if (timeDifference < 2) {
-                return res.status(400).json(
-                    new ApiError(400, "", "refund can only be initiated before 2 hour of session start")
-                );
-            }
-            const session = await Session.findOne({ transaction_id: new mongoose.Types.ObjectId(transactionId) });
-            if (!session) {
-                return res.status(404).json(new ApiError(404, "", "no session found for this transaction "));
-            }
-            session.status = "cancelled";
-            await session.save()
-            await Slot.updateOne({
-                therapist_id: transaction.therapist_id,
-                "timeslots._id": transaction.slotId,
-            }, {
-                $set: {
-                    "timeslots.$.isBooked": false,
-                },
-            });
+      if (timeDifference < 2) {
+        return res
+          .status(400)
+          .json(
+            new ApiError(
+              400,
+              "",
+              "refund can only be initiated before 2 hour of session start"
+            )
+          );
+      }
+      const session = await Session.findOne({
+        transaction_id: new mongoose.Types.ObjectId(transactionId),
+      });
+      if (!session) {
+        return res
+          .status(404)
+          .json(
+            new ApiError(404, "", "no session found for this transaction ")
+          );
+      }
+      session.status = "cancelled";
+      await session.save();
+      await Slot.updateOne(
+        {
+          therapist_id: transaction.therapist_id,
+          "timeslots._id": transaction.slotId,
+        },
+        {
+          $set: {
+            "timeslots.$.isBooked": false,
+          },
         }
-        if (transaction.type === "course") {
-            const session = await Session.findOne({ transactionId: new mongoose.Types.ObjectId(transactionId) })
-            if (session) {
-                return res.status(404).json(new ApiError(404, "", " refund can't be processed if any of the session booked or attended "));
-            }
-        }
-        transaction.payment_status = "refund-prosessing";
-        await transaction.save()
-        const refund = await Refund.create({
-            transactionId: transactionId,
-            refundReason: refundReason
-        });
-        if (!refund) {
-            throw new ApiError(500, "something went wrong in refund !")
-        }
-        res.status(200).json(new ApiResponse(200, { refund }, "Refund initiated successfully"));
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(new ApiError(500, "something went wrong!", error.message))
+      );
     }
-
-})
+    if (transaction.type === "course") {
+      const session = await Session.findOne({
+        transactionId: new mongoose.Types.ObjectId(transactionId),
+      });
+      if (session) {
+        return res
+          .status(404)
+          .json(
+            new ApiError(
+              404,
+              "",
+              " refund can't be processed if any of the session booked or attended "
+            )
+          );
+      }
+    }
+    transaction.payment_status = "refund-prosessing";
+    await transaction.save();
+    const refund = await Refund.create({
+      transactionId: transactionId,
+      refundReason: refundReason,
+    });
+    if (!refund) {
+      throw new ApiError(500, "something went wrong in refund !");
+    }
+    res
+      .status(200)
+      .json(new ApiResponse(200, { refund }, "Refund initiated successfully"));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json(new ApiError(500, "something went wrong!", error.message));
+  }
+});
 
 const getRefundList = asyncHandler(async (req, res) => {
     try {
