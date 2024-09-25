@@ -12,7 +12,7 @@ import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
 import "./jobs/transactionJobs.js";
-import "./jobs/sessionJobs.js"
+import "./jobs/sessionJobs.js";
 
 // Load environment variables
 dotenv.config();
@@ -48,8 +48,8 @@ app.use(helmet());
 app.use(cors(corsOptions));
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 250,
+  windowMs: 30 * 1000,
+  max: 1000,
   message: "Too many requests from this IP, please try again later.",
 });
 app.use(limiter);
