@@ -50,7 +50,7 @@ export const generateSessionToken = asyncHandler(async (req, res) => {
         new ApiError(400, "", "Session has expired. Token cannot be generated.")
       );
   }
-  if (process.env.NODE_ENV == "production") {
+  if (process.env.NODE_ENV == "prod") {
     const timeDifferenceInMilliseconds = sessionStartTime - currentTime;
     if (timeDifferenceInMilliseconds > 15 * 60 * 1000) {
       const hoursRemaining = Math.floor(

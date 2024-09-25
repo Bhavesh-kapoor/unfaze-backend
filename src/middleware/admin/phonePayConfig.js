@@ -173,10 +173,11 @@ export async function processPayment(req, res) {
         therapist_id,
         slotId: slot_id,
         category: specialization_id,
-        amount_INR: therapist.inrPrice,
+        amount_INR: specialization.inrPrice,
         payment_status: "PAYMENT_INITIATED",
         start_time: startDateTime,
         end_time: endDateTime,
+        type: "single"
       });
       await initiatedTransaction.save();
       await Slot.updateOne(

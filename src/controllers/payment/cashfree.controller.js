@@ -100,10 +100,11 @@ const createOrder = asyncHandler(async (req, res) => {
       .status(404)
       .json(new ApiError(404, "", "Invalid therapist !!!"));
   }
+  const specialization = await Specialization.findById(specialization_id);
   let transactionId = uniqid();
   transactionId = `unfazed${transactionId}`;
   let request = {
-    order_amount: `${therapist.usdPrice}`,
+    order_amount: `${specialization?.usdPrice}`,
     order_currency: `${order_currency}`,
     order_id: `${transactionId}`,
     customer_details: {
@@ -126,7 +127,7 @@ const createOrder = asyncHandler(async (req, res) => {
       therapist_id,
       slotId: slot_id,
       category: specialization_id,
-      amount_USD: therapist.usdPrice,
+      amount_USD: specialization.usdPrice,
       rate_USD: rate_USD,
       payment_status: "PAYMENT_INITIATED",
       start_time: startDateTime,
