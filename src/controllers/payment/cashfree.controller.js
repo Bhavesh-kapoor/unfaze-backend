@@ -3,119 +3,117 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
-import { parseISO, isValid, addMinutes, format } from "date-fns";
+import { parseISO, isValid, addMinutes, format, addDays } from "date-fns";
 import uniqid from "uniqid";
 import Cashfree from "../../config/cashfree.config.js";
 import mongoose from "mongoose";
 import getExchangeRate from "../../utils/currencyConverter.js";
 import { Slot } from "../../models/slotModal.js";
 import { Course } from "../../models/courseModel.js";
-import axios from "axios";
-function convertTo24HourFormat(time12h) {
-  const [time, modifier] = time12h.split(' ');
-  let [hours, minutes] = time.split(':');
-  hours = parseInt(hours, 10);
-  if (modifier === 'AM' && hours === 12) {
-    hours = 0;
-  }
-  if (modifier === 'PM' && hours !== 12) {
-    hours += 12;
-  }
-  const hours24 = hours.toString().padStart(2, '0');
-  const minutes24 = minutes.padStart(2, '0');
-
-  return `${hours24}:${minutes24}`;
-}
+// import axios from "axios";
+import { Specialization } from "../../models/specilaizationModel.js";
+import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
 
 // const SESSION_DURATION_MINUTES = 60;
 const createOrder = asyncHandler(async (req, res) => {
-  const { therapist_id, specialization_id, slot_id } = req.body;
-  let order_currency;
-  if (process.env.DEV_MODE == "dev") {
-    order_currency = "INR"
-  } else {
-    order_currency = "USD"
-  }
-  const user = req.user;
-  const timeSlots = await Slot.aggregate([
-    {
-      $match: {
-        therapist_id: new mongoose.Types.ObjectId(therapist_id),
-      },
-    },
-    {
-      $unwind: "$timeslots",
-    },
-    {
-      $match: {
-        "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-        "timeslots.isBooked": false,
-      },
-    },
-    {
-      $project: {
-        _id: "$timeslots._id",
-        therapist_id: 1,
-        date: "$timeslots.date",
-        startTime: "$timeslots.startTime",
-        endTime: "$timeslots.endTime",
-        isBooked: "$timeslots.isBooked",
-      },
-    },
-  ]);
-  // console.log(timeSlots)
-  if (timeSlots.length === 0) {
-    return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
-  }
-  const { date, startTime, endTime } = timeSlots[0];
-  const formattedDate = format(new Date(date), "yyyy-MM-dd");
-  const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
-  const [start_Time, startModifier] = startTime.split(' ');
-  const [end_Time, endModifier] = endTime.split(' ');
-  const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
-
-  if (startModifier === 'PM' && endModifier === 'AM') {
-    endDateTime = addDays(endDateTime, 1);
-  }
-
-  if (!isValid(startDateTime) || !isValid(endDateTime)) {
-    console.error("Invalid date-time format:", startDateTime, endDateTime);
-    return res.status(400).json(new ApiError(400, "", "Invalid date or time format"));
-  }
-
-  if (startDateTime >= endDateTime) {
-    return res.status(400).send({ error: "End time must be after start time" });
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "", "Invalid therapist id!!!"));
-  }
-
-  const therapist = await Therapist.findOne({ _id: therapist_id });
-  // console.log(therapist);
-  if (!therapist) {
-    return res
-      .status(404)
-      .json(new ApiError(404, "", "Invalid therapist !!!"));
-  }
-  const specialization = await Specialization.findById(specialization_id);
-  let transactionId = uniqid();
-  transactionId = `unfazed${transactionId}`;
-  let request = {
-    order_amount: `${specialization?.usdPrice}`,
-    order_currency: `${order_currency}`,
-    order_id: `${transactionId}`,
-    customer_details: {
-      customer_id: `${user._id}`,
-      customer_phone: `${user.mobile}`,
-    },
-    order_meta: {
-      return_url: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
-    },
-  };
   try {
+    const { therapist_id, specialization_id, slot_id } = req.body;
+    let order_currency;
+    if (process.env.DEV_MODE == "dev") {
+      order_currency = "INR"
+    } else {
+      order_currency = "USD"
+    }
+    const user = req.user;
+    const timeSlots = await Slot.aggregate([
+      {
+        $match: {
+          therapist_id: new mongoose.Types.ObjectId(therapist_id),
+        },
+      },
+      {
+        $unwind: "$timeslots",
+      },
+      {
+        $match: {
+          "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+          "timeslots.isBooked": false,
+        },
+      },
+      {
+        $project: {
+          _id: "$timeslots._id",
+          therapist_id: 1,
+          date: "$timeslots.date",
+          startTime: "$timeslots.startTime",
+          endTime: "$timeslots.endTime",
+          isBooked: "$timeslots.isBooked",
+        },
+      },
+    ]);
+    // console.log(timeSlots)
+    if (timeSlots.length === 0) {
+      return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
+    }
+    const { date, startTime, endTime } = timeSlots[0];
+    const formattedDate = format(new Date(date), "yyyy-MM-dd");
+    const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
+    const [start_Time, startModifier] = startTime.split(' ');
+    const [end_Time, endModifier] = endTime.split(' ');
+    let endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+
+    if (startModifier === 'PM' && endModifier === 'AM') {
+      endDateTime = addDays(endDateTime, 1);
+    }
+
+    if (!isValid(startDateTime) || !isValid(endDateTime)) {
+      console.error("Invalid date-time format:", startDateTime, endDateTime);
+      return res.status(400).json(new ApiError(400, "", "Invalid date or time format"));
+    }
+
+    if (startDateTime >= endDateTime) {
+      return res.status(400).send({ error: "End time must be after start time" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Invalid therapist id!!!"));
+    }
+    const therapist = await Therapist.findOne({ _id: therapist_id });
+    // console.log(therapist);
+    if (!therapist) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "Invalid therapist !!!"));
+    }
+    const specialization = await Specialization.findById(specialization_id);
+    let transactionId = uniqid();
+
+    // book the slot first to avoid collisions
+
+    await Slot.updateOne({
+      therapist_id: new mongoose.Types.ObjectId(therapist_id),
+      "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+    }, {
+      $set: {
+        "timeslots.$.isBooked": true,
+      },
+    })
+    transactionId = `unfazed${transactionId}`;
+    let request = {
+      order_amount: `${specialization?.usdPrice}`,
+      order_currency: `${order_currency}`,
+      order_id: `${transactionId}`,
+      customer_details: {
+        customer_id: `${user._id}`,
+        customer_phone: `${user.mobile}`,
+      },
+      order_meta: {
+        return_url: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
+      },
+    };
+
     const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
@@ -146,14 +144,7 @@ const createOrder = asyncHandler(async (req, res) => {
     //     },
     //   }
     // );
-    await Slot.updateOne({
-      therapist_id: new mongoose.Types.ObjectId(therapist_id),
-      "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-    }, {
-      $set: {
-        "timeslots.$.isBooked": true,
-      },
-    })
+    
     return res
       .status(200)
       .json(
@@ -164,6 +155,7 @@ const createOrder = asyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
+    console.log(error);
     console.error(
       "Error creating order:",
       error.response ? error.response.data : error.message

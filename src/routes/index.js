@@ -9,6 +9,7 @@ import verifyJwtToken from "../middleware/admin/verifyJwtToken.js";
 import publicAdminRoute from "../routes/admin/adminpublic.route.js";
 import therapistRoute from "../routes/therapist/therapist.route.js";
 import refundRoutes from "./refundRoute.js"
+import { callback } from "../middleware/admin/phonePayConfig.js";
 
 // Initialize the router
 const router = express.Router();
@@ -29,7 +30,9 @@ router.use("/auth/user", verifyJwtToken, userRoutes);
 router.use("/auth/therapist", verifyJwtToken, therapistRoute);
 
 // handle payment routes
+
 router.use("/payment", verifyJwtToken, paymentRoutes);
+router.post("/payment/callback/:transactionId", callback);
 
 // Get current user data when JWT token is valid
 router.get(

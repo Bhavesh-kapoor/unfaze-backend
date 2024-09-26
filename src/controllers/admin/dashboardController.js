@@ -357,10 +357,10 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
         },
       },
       {
-        $unwind: "$therapist_info", // Unwind therapist info for easier access
+        $unwind: "$therapist_info", 
       },
       {
-        $sort: { "_id.therapist_id": 1, "_id.status": 1 }, // Sort by therapist and status
+        $sort: { "_id.therapist_id": 1, "_id.status": 1 }, 
       },
     ]);
 

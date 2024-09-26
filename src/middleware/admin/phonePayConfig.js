@@ -116,7 +116,7 @@ export async function processPayment(req, res) {
       merchantUserId: `MUID_${user._id}`,
       amount: specialization?.inrPrice * 100,
       redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
-      // callbackUrl: `${process.env.BACKEND_URL}/api/payment/callback/${transactionId}`,
+      callbackUrl: `${process.env.BACKEND_URL}/api/payment/callback/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
       paymentInstrument: {
@@ -142,7 +142,6 @@ export async function processPayment(req, res) {
         request: base64EncodedPayload,
       },
     };
-
     try {
       const response = await axios.request(options);
       // if (existingTransaction) {
@@ -326,7 +325,7 @@ export const validatePayment = async (req, res, next) => {
       headers: {
         "Content-Type": "application/json",
         "X-VERIFY": xVerifyChecksum,
-        "X-MERCHANT-ID": merchantTransactionId,
+        "X-MERCHANT-ID": `${process.env.MERCHANT_ID}`,
         accept: "application/json",
       },
     });
@@ -343,15 +342,13 @@ export const validatePayment = async (req, res, next) => {
 };
 export const callback = asyncHandler(async (req, res) => {
   const { transactionId } = req.params;
-
+  console.log(transactionId);
   try {
     // Find the transaction by transactionId
     const transaction = await Transaction.findOne({ transactionId });
-
     if (!transaction) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
-
     const { status, amount, paymentMode } = req.body;
     console.log("call back response-------------", req.body)
 
