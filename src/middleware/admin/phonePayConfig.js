@@ -10,6 +10,7 @@ import { Transaction } from "../../models/transactionModel.js";
 import { parseISO, isValid, addMinutes, format, addDays } from "date-fns";
 import { Course } from "../../models/courseModel.js";
 import dotenv from "dotenv";
+import asyncHandler from "../../utils/asyncHandler.js";
 dotenv.config();
 import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
 import { Specialization } from "../../models/specilaizationModel.js";
@@ -32,7 +33,7 @@ export async function processPayment(req, res) {
       {
         $match: {
           "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-          "timeslots.isBooked": false, // Ensure the timeslot is not booked
+          "timeslots.isBooked": false,
         },
       },
       {
@@ -115,6 +116,7 @@ export async function processPayment(req, res) {
       merchantUserId: `MUID_${user._id}`,
       amount: specialization?.inrPrice * 100,
       redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
+      // callbackUrl: `${process.env.BACKEND_URL}/api/payment/callback/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
       paymentInstrument: {
@@ -211,7 +213,6 @@ export async function processPayment(req, res) {
       );
   }
 }
-
 export async function processPaymentForcourse(req, res) {
   try {
     const user = req.user;
@@ -302,116 +303,6 @@ export async function processPaymentForcourse(req, res) {
       );
   }
 }
-// export async function processPayment(req, res) {
-//   try {
-
-//     const { therapist_id, specialization_id, date, time } = req.body;
-//     const formattedDate = format(date, "yyyy-MM-dd");
-//     console.log(formattedDate);
-//     const user = req.user;
-//     const startDateTime = new Date(`${formattedDate}T${time}`);
-//     console.log(startDateTime);
-//     if (!isValid(startDateTime)) {
-//       console.error("Invalid date-time format:", startDateTime);
-//       return res
-//         .status(400)
-//         .json(new ApiError(400, "", "Invalid date or time format"));
-//     }
-//     const endDateTime = addMinutes(startDateTime, SESSION_DURATION_MINUTES);
-//     if (startDateTime >= endDateTime) {
-//       return res
-//         .status(400)
-//         .send({ error: "End time must be after start time" });
-//     }
-//     // Validate therapist_id
-//     if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
-//       return res
-//         .status(400)
-//         .json(new ApiError(400, "", "Invalid therapist id!!!"));
-//     }
-
-//     // Find therapist
-//     const therapist = await Therapist.findOne({ _id: therapist_id });
-//     console.log(therapist);
-//     if (!therapist) {
-//       return res
-//         .status(404)
-//         .json(new ApiError(404, "", "Invalid therapist !!!"));
-//     }
-//     let transactionId = uniqid();
-//     transactionId = `unfazed${transactionId}`;
-//     const normalPayLoad = {
-//       merchantId: process.env.MERCHANT_ID,
-//       merchantTransactionId: transactionId,
-//       merchantUserId: `MUID_${user._id}`,
-//       amount: therapist.inrPrice * 100,
-//       redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
-//       redirectMode: "REDIRECT",
-//       mobileNumber: user.mobile,
-//       paymentInstrument: {
-//         type: "PAY_PAGE",
-//       },
-//       payMode: "PAY_PAGE",
-//     };
-
-//     const bufferObj = Buffer.from(JSON.stringify(normalPayLoad), "utf8");
-//     const base64EncodedPayload = bufferObj.toString("base64");
-//     const string = base64EncodedPayload + "/pg/v1/pay" + process.env.SALT_KEY;
-//     const sha256_val = sha256(string);
-//     const xVerifyChecksum = sha256_val + "###" + process.env.SALT_INDEX;
-
-//     const options = {
-//       method: "post",
-//       url: "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay",
-//       headers: {
-//         "Content-Type": "application/json",
-//         "X-VERIFY": xVerifyChecksum,
-//         accept: "application/json",
-//       },
-//       data: {
-//         request: base64EncodedPayload,
-//       },
-//     };
-
-//     try {
-//       const response = await axios.request(options);
-//       console.log(
-//         "redirect",
-//         response.data.data.instrumentResponse.redirectInfo.url
-//       );
-//       const initiatedTransaction = new Transaction({
-//         transactionId,
-//         user_id: user._id,
-//         therapist_id,
-//         category: specialization_id,
-//         amount_INR: therapist.inrPrice,
-//         status: "PAYMENT_INITIATED",
-//         start_time: startDateTime,
-//         end_time: endDateTime,
-//       });
-
-//       await initiatedTransaction.save();
-//       res.status(200).json(
-//         new ApiResponse(200, {
-//           redirect_url: response.data.data.instrumentResponse.redirectInfo.url,
-//         })
-//       );
-//     } catch (error) {
-//       console.error("Payment request error:", error);
-//       return res
-//         .status(500)
-//         .json(new ApiError(500, "", "Payment initialization failed"));
-//     }
-//   } catch (error) {
-//     console.log("error in payment initialization", error);
-//     return res
-//       .status(500)
-//       .json(
-//         new ApiError(500, "", "An error occurred during payment processing")
-//       );
-//   }
-// }
-
 
 export const validatePayment = async (req, res, next) => {
   const { merchantTransactionId } = req.params;
@@ -450,3 +341,31 @@ export const validatePayment = async (req, res, next) => {
     res.status(500).json({ "Error while validating the payment": error });
   }
 };
+export const callback = asyncHandler(async (req, res) => {
+  const { transactionId } = req.params;
+
+  try {
+    // Find the transaction by transactionId
+    const transaction = await Transaction.findOne({ transactionId });
+
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    const { status, amount, paymentMode } = req.body;
+    console.log("call back response-------------", req.body)
+
+    // Verify the status and update the transaction accordingly
+    if (status === 'SUCCESS') {
+      transaction.payment_status = 'successful';
+    } else if (status === 'FAILURE') {
+      transaction.payment_status = 'failed';
+      // You might also want to roll back any booking or slot reservation here
+    }
+
+    res.status(200).json({ message: 'Payment status updated' });
+  } catch (error) {
+    console.error('Error handling payment callback:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}) 

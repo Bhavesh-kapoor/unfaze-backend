@@ -16,6 +16,7 @@ const router = Router();
 
 // Course enrollment routes
 router.post("/pay", processPayment);
+router.post("/callback/:transactionId", processPayment);
 
 router.post("/create-order", createOrder);
 
