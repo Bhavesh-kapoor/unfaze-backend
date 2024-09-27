@@ -10,6 +10,7 @@ import publicAdminRoute from "../routes/admin/adminpublic.route.js";
 import therapistRoute from "../routes/therapist/therapist.route.js";
 import refundRoutes from "./refundRoute.js"
 import { callback } from "../middleware/admin/phonePayConfig.js";
+import chatRoute from "./message.routes.js"
 
 // Initialize the router
 const router = express.Router();
@@ -44,6 +45,8 @@ router.get(
       .json(new ApiResponse(200, req.user, "User fetched successfully"));
   })
 );
-router.use("/refund", verifyJwtToken, refundRoutes)
+router.use("/refund", verifyJwtToken, refundRoutes);
+router.use("/chat", verifyJwtToken, chatRoute);
+
 
 export default router;
