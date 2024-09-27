@@ -3,7 +3,7 @@ import { Server } from "socket.io";
 import dotenv from "dotenv";
 dotenv.config();
 
-const users = {}; // { userId (MongoDB ObjectId): socketId }
+const users = {}; 
 
 export const configureSocket = (httpServer, app) => {
   const io = new Server(httpServer, {
@@ -20,7 +20,7 @@ export const configureSocket = (httpServer, app) => {
 
     socket.on("register", (userId) => {
       if (users[userId] && users[userId] !== socket.id) {
-        io.to(users[userId]).emit("forceDisconnect");  // Force previous connection to disconnect
+        io.to(users[userId]).emit("forceDisconnect");
       }
 
       users[userId] = socket.id;
