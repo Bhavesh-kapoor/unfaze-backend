@@ -46,7 +46,7 @@ router.get(
   })
 );
 router.use("/refund", verifyJwtToken, refundRoutes);
-router.use("/chat", verifyJwtToken, chatRoute);
+router.use("/chat", chatRoute);
 
 
 export default router;
