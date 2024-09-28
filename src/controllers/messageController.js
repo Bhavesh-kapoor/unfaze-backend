@@ -31,22 +31,53 @@ const sendNewMessage = asyncHandler(async (req, res) => {
 
 const getChatHistory = asyncHandler(async (req, res) => {
     const { receiverId } = req.params;
-    const senderId = req.user?._id
+    const senderId = req.user?._id;
+    const { page = 1, limit = 20 } = req.query;
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
 
     try {
+        const totalMessages = await Message.countDocuments({
+            $or: [
+                { senderId, receiverId },
+                { senderId: receiverId, receiverId: senderId },
+            ],
+        });
+        // Get the paginated messages
         const messages = await Message.find({
             $or: [
                 { senderId, receiverId },
                 { senderId: receiverId, receiverId: senderId },
             ],
-        }).sort({ timestamp: 1 });
-        res.status(200).json(messages);
+        })
+            .select("-createdAt -updatedAt")
+            .sort({ timestamp: 1 })
+            .skip(skip)
+            .limit(limit);
+
+        if (!messages || messages.length === 0) {
+            return res.status(404).json({ error: "No messages found" });
+        }
+
+        const formattedMessages = messages.map(message => ({
+            ...message._doc, 
+            isSender: message.senderId.toString() === senderId.toString(), 
+        }));
+        res.status(200).json({
+            result: formattedMessages,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalMessages / limit),
+                totalItems: totalMessages,
+                itemsPerPage: limit,
+            },
+        });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         res.status(500).json({ error: "Error fetching messages" });
     }
 });
-
 
 const getConversationList = async (req, res) => {
     try {
@@ -111,7 +142,6 @@ const getConversationList = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
-
 const getAllConversationList = asyncHandler(async (req, res) => {
     try {
         const messages = await Message.aggregate([

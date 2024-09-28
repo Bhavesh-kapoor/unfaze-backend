@@ -402,3 +402,7 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
     throw new ApiError(500, error.message);
   }
 });
+
+export const revenueAndSessionCount = asyncHandler(async (req, res) => {
+
+})
