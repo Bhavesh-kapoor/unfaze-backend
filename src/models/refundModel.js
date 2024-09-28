@@ -6,7 +6,11 @@ const RefundSchema = new mongoose.Schema({
         ref: "Transaction",
         required: true,
     },
-    refundReason: {
+    reason: {
+        type: String,
+        required: true,
+    },
+    details:{
         type: String,
         required: true,
     },

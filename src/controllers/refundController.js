@@ -247,5 +247,83 @@ const acceptRefund = asyncHandler(async (req, res) => {
     }
 })
 
+const getRefundById = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = req.user;
 
-export { initiateRefund, getRefundList, acceptRefund }
+        const matchCondition = user.role === "user"
+            ? { "transaction.user_id": new mongoose.Types.ObjectId(req.user._id) }
+            : user.role === "therapist"
+                ? { "transaction.therapist_id": new mongoose.Types.ObjectId(req.user._id) }
+                : {};
+
+        const [refundResult] = await Refund.aggregate([
+            {
+                $match: { _id: new mongoose.Types.ObjectId(id) }
+            },
+            {
+                $lookup: {
+                    from: "transactions",
+                    localField: "transactionId",
+                    foreignField: "_id",
+                    as: "transaction",
+                },
+            },
+            {
+                $unwind: "$transaction",
+            },
+            {
+                $match: matchCondition,  // Ensure that the user/therapist can only view refunds related to them
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "transaction.user_id",
+                    foreignField: "_id",
+                    as: "userDetails",
+                },
+            },
+            {
+                $unwind: "$userDetails",
+            },
+            {
+                $lookup: {
+                    from: "therapists",
+                    localField: "transaction.therapist_id",
+                    foreignField: "_id",
+                    as: "therapistDetails",
+                },
+            },
+            {
+                $unwind: "$therapistDetails",
+            },
+            {
+                $project: {
+                    _id: 1,
+                    transactionId: "$transactionId",
+                    refundReason: 1,
+                    refundDate: 1,
+                    refundStatus: 1,
+                    amountUSD: "$transaction.amount_USD",
+                    amountINR: "$transaction.amount_INR",
+                    paymentStatus: "$transaction.payment_status",
+                    userName: { $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"] },
+                    therapistName: { $concat: ["$therapistDetails.firstName", " ", "$therapistDetails.lastName"] },
+                },
+            },
+        ]);
+
+        if (!refundResult) {
+            return res.status(404).json(new ApiError(404, "Refund not found"));
+        }
+
+        res.status(200).json(new ApiResponse(200, refundResult, "Refund details fetched successfully!"));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json(new ApiError(500, "Something went wrong!", error.message));
+    }
+});
+
+
+export { initiateRefund, getRefundList, acceptRefund, getRefundById }

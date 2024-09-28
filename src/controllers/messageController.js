@@ -368,15 +368,15 @@ const getAllConversationList = asyncHandler(async (req, res) => {
 
         const totalPages = Math.ceil(totalConversations.length / limitNumber);
 
-        res.status(200).json({
-            conversations: sortedConversations,
+        res.status(200).json(new ApiResponse(200,{
+            result: sortedConversations,
             pagination: {
                 itemsPerPage: limitNumber,
                 totalItems: totalConversations.length,
                 totalPages,
                 currentPage: pageNumber,
             },
-        });
+        },"conversation list fatched!"));
     } catch (error) {
         console.error("Error fetching conversation list:", error);
         res.status(500).json({ error: "Internal Server Error" });
@@ -412,15 +412,15 @@ const getChatHistoryForAdmin = asyncHandler(async (req, res) => {
 
         const totalPages = Math.ceil(totalMessages / limitNumber);
         const reversedMessages = messages.reverse();
-        res.status(200).json({
-            reversedMessages,
+        res.status(200).json(new ApiResponse(200, {
+            result: reversedMessages,
             pagination: {
                 currentPage: pageNumber,
                 totalPages,
                 totalMessages,
                 itemsPerPage: limitNumber,
-            },
-        });
+            }
+        }, "chat fatched successfully!"));
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: "Error fetching messages" });
