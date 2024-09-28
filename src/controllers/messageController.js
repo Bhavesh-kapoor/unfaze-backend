@@ -51,7 +51,7 @@ const getChatHistory = asyncHandler(async (req, res) => {
       ],
     })
       .select("-createdAt -updatedAt")
-      .sort({ timestamp: 1 })
+      .sort({ timestamp: -1 })
       .skip(skip)
       .limit(limit);
 
