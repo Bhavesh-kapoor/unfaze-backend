@@ -11,7 +11,8 @@ import { Slot } from "../models/slotModal.js";
 const initiateRefund = asyncHandler(async (req, res) => {
     try {
         const user = req.user;
-        const { transactionId, refundReason } = req.body;
+        console.log(user)
+        const { transactionId, refundReason, reason, details } = req.body;
         if (!transactionId || !refundReason) {
             return res.status(403).json((new ApiError(403, "", "transactionId and refundReason is required!")))
         }
@@ -50,29 +51,29 @@ const initiateRefund = asyncHandler(async (req, res) => {
                         )
                     );
             }
-            const session = await Session.findOne({
-                transaction_id: new mongoose.Types.ObjectId(transactionId),
-            });
-            if (!session) {
-                return res
-                    .status(404)
-                    .json(
-                        new ApiError(404, "", "no session found for this transaction ")
-                    );
-            }
-            session.status = "cancelled";
-            await session.save();
-            await Slot.updateOne(
-                {
-                    therapist_id: transaction.therapist_id,
-                    "timeslots._id": transaction.slotId,
-                },
-                {
-                    $set: {
-                        "timeslots.$.isBooked": false,
-                    },
-                }
-            );
+            // const session = await Session.findOne({
+            //     transaction_id: new mongoose.Types.ObjectId(transactionId),
+            // });
+            // if (!session) {
+            //     return res
+            //         .status(404)
+            //         .json(
+            //             new ApiError(404, "", "no session found for this transaction ")
+            //         );
+            // }
+            // session.status = "cancelled";
+            // await session.save();
+            // await Slot.updateOne(
+            //     {
+            //         therapist_id: transaction.therapist_id,
+            //         "timeslots._id": transaction.slotId,
+            //     },
+            //     {
+            //         $set: {
+            //             "timeslots.$.isBooked": false,
+            //         },
+            //     }
+            // );
         }
         if (transaction.type === "course") {
             const session = await Session.findOne({
@@ -92,10 +93,7 @@ const initiateRefund = asyncHandler(async (req, res) => {
         }
         transaction.payment_status = "refund-prosessing";
         await transaction.save();
-        const refund = await Refund.create({
-            transactionId: transactionId,
-            refundReason: refundReason,
-        });
+        const refund = await Refund.create({ transactionId, refundReason, reason, details });
         if (!refund) {
             throw new ApiError(500, "something went wrong in refund !");
         }
@@ -324,6 +322,7 @@ const getRefundById = asyncHandler(async (req, res) => {
         res.status(500).json(new ApiError(500, "Something went wrong!", error.message));
     }
 });
+
 
 
 export { initiateRefund, getRefundList, acceptRefund, getRefundById }

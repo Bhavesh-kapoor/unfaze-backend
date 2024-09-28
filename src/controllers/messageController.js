@@ -368,7 +368,7 @@ const getAllConversationList = asyncHandler(async (req, res) => {
 
         const totalPages = Math.ceil(totalConversations.length / limitNumber);
 
-        res.status(200).json(new ApiResponse(200,{
+        res.status(200).json(new ApiResponse(200, {
             result: sortedConversations,
             pagination: {
                 itemsPerPage: limitNumber,
@@ -376,7 +376,7 @@ const getAllConversationList = asyncHandler(async (req, res) => {
                 totalPages,
                 currentPage: pageNumber,
             },
-        },"conversation list fatched!"));
+        }, "conversation list fatched!"));
     } catch (error) {
         console.error("Error fetching conversation list:", error);
         res.status(500).json({ error: "Internal Server Error" });
@@ -385,7 +385,7 @@ const getAllConversationList = asyncHandler(async (req, res) => {
 const getChatHistoryForAdmin = asyncHandler(async (req, res) => {
     const { chatId } = req.params;
     const participentArray = chatId.split("-");
-    const { page = 1, limit = 20 } = req.query;  // Default values for page and limit
+    const { page = 1, limit = 20 } = req.query;
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
     const skip = (pageNumber - 1) * limitNumber;
@@ -402,16 +402,18 @@ const getChatHistoryForAdmin = asyncHandler(async (req, res) => {
             .skip(skip)
             .limit(limitNumber);
 
-        // Get total number of messages for pagination info
         const totalMessages = await Message.countDocuments({
             $or: [
                 { senderId: participentArray[0], receiverId: participentArray[1] },
                 { senderId: participentArray[1], receiverId: participentArray[0] },
             ],
         });
-
         const totalPages = Math.ceil(totalMessages / limitNumber);
-        const reversedMessages = messages.reverse();
+        const formattedMessages = messages.map((message) => ({
+            ...message._doc,
+            isSender: message.senderId.toString() === participentArray[1].toString(),
+        }));
+        const reversedMessages = formattedMessages.reverse();
         res.status(200).json(new ApiResponse(200, {
             result: reversedMessages,
             pagination: {
@@ -429,7 +431,6 @@ const getChatHistoryForAdmin = asyncHandler(async (req, res) => {
 
 const deleteMessagebyId = asyncHandler(async (req, res) => {
     const { _id } = req.params;
-
     try {
         const deletedMessage = await Message.findByIdAndDelete(_id);
         if (!deletedMessage) {
