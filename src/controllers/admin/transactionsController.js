@@ -1312,7 +1312,15 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
         }
       }
     ]);
-    res.status(200).json({ therapists });
+    if (!therapists.length) {
+      return res.status(404).json({ message: 'No therapists found with successful transactions' });
+    }
+    const user = {
+      _id: req.user._id,
+      email: req.user.email,
+      fullName: req.user.firstName + " " + req.user.lastName
+    }
+    res.status(200).json({ user, therapists });
   } catch (error) {
     console.error('Error fetching therapists with successful transactions:', error);
     res.status(500).json({ message: 'Internal server error' });
