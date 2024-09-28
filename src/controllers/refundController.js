@@ -231,6 +231,29 @@ const acceptRefund = asyncHandler(async (req, res) => {
             await refund.save()
             transaction.payment_status = "refunded"
             await transaction.save()
+            const session = await Session.findOne({
+                transaction_id: new mongoose.Types.ObjectId(transaction._id),
+            });
+            if (!session) {
+                return res
+                    .status(404)
+                    .json(
+                        new ApiError(404, "", "no session found for this transaction ")
+                    );
+            }
+            session.status = "cancelled";
+            await session.save();
+            await Slot.updateOne(
+                {
+                    therapist_id: transaction.therapist_id,
+                    "timeslots._id": transaction.slotId,
+                },
+                {
+                    $set: {
+                        "timeslots.$.isBooked": false,
+                    },
+                }
+            );
             return res.status(200).json(new ApiResponse(200, { refund }, "Refund request marked as approved!"))
         } else if (refundStatus === "rejected") {
             refund.refundStatus = "rejected"
