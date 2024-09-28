@@ -3,8 +3,19 @@ import { Server } from "socket.io";
 import dotenv from "dotenv";
 dotenv.config();
 
-const users = {}; 
+let users = [];
+const addUser = (userId, socketId) => {
+  !users.some((user) => user.userId === userId) &&
+    users.push({ userId, socketId });
+};
 
+const removeUser = (socketId) => {
+  users = users.filter((user) => user.socketId !== socketId);
+};
+
+const getUser = (userId) => {
+  return users.find((user) => user.userId === userId);
+};
 export const configureSocket = (httpServer, app) => {
   const io = new Server(httpServer, {
     cors: {
@@ -14,54 +25,29 @@ export const configureSocket = (httpServer, app) => {
   });
 
   app.set("socketio", io);
-
   io.on("connection", (socket) => {
-    console.log(`New client connected: ${socket.id}`);
+    //when connect
+    console.log("a user connected.");
 
-    socket.on("register", (userId) => {
-      if (users[userId] && users[userId] !== socket.id) {
-        io.to(users[userId]).emit("forceDisconnect");
-      }
-
-      users[userId] = socket.id;
-      console.log(`User with MongoDB ID ${userId} registered with socket ID: ${socket.id}`);
-      console.log(users)
+    //take userId and socketId from user
+    socket.on("addUser", (userId) => {
+      addUser(userId, socket.id);
+      io.emit("getUsers", users);
     });
 
-    socket.on("forceDisconnect", () => {
-      socket.disconnect();
+    //send and get message
+    socket.on("sendMessage", ({ senderId, receiverId, text }) => {
+      const user = getUser(receiverId);
+      io.to(user.socketId).emit("getMessage", {
+        senderId,
+        text,
+      });
     });
-
-    // Handle typing event
-    socket.on("typing", (data) => {
-      socket.broadcast.emit("user-typing", data);
-    });
-
-    // Handle incoming chat messages
-    socket.on("chatMessage", ({ senderId, receiverId, message }) => {
-      console.log(`Message from ${senderId} to ${receiverId}: ${message}`);
-
-      const receiverSocketId = users[receiverId];
-
-      if (receiverSocketId) {
-        // Emit the message only to the specific receiver
-        io.to(receiverSocketId).emit("receiveMessage", { senderId, message });
-        console.log(`Message sent to user ${receiverId}`);
-      } else {
-        console.log(`User ${receiverId} is not connected.`);
-      }
-    });
-
     // Handle user disconnection
     socket.on("disconnect", () => {
-      console.log(`Client disconnected: ${socket.id}`);
-      for (const userId in users) {
-        if (users[userId] === socket.id) {
-          delete users[userId];
-          console.log(`User with MongoDB ID ${userId} disconnected and removed from active users.`);
-          break;
-        }
-      }
+      console.log("a user disconnected!");
+      removeUser(socket.id);
+      io.emit("getUsers", users);
     });
   });
 };

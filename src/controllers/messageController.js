@@ -21,8 +21,8 @@ const sendNewMessage = asyncHandler(async (req, res) => {
             message,
         });
         await chatMessage.save();
-        const io = req.app.get("socketio");
-        io.to(receiverId).emit("receiveMessage", { senderId, message });
+        // const io = req.app.get("socketio");
+        // io.to(receiverId).emit("receiveMessage", { senderId, message });
         res.status(201).json({ message: "Message sent successfully", chatMessage });
     } catch (error) {
         res.status(500).json({ error: "Error sending message" });

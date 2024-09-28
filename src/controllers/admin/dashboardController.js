@@ -294,7 +294,6 @@ export const getOverviewByRevenue = asyncHandler(async (req, res) => {
       _id: { $in: categoryIds },
     }).select("_id name");
 
-    // Prepare the final structure for the response
     const categoryMap = {};
     categories.forEach((category) => {
       categoryMap[category._id] = {
@@ -342,25 +341,25 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: {
-            therapist_id: "$therapist_id", // Group by `therapist_id`
-            status: "$status", // Group by `status`
+            therapist_id: "$therapist_id",
+            status: "$status",
           },
-          count: { $sum: 1 }, // Count the number of sessions for each group
+          count: { $sum: 1 },
         },
       },
       {
         $lookup: {
-          from: "therapists", // Collection name for therapists
+          from: "therapists",
           localField: "_id.therapist_id",
           foreignField: "_id",
           as: "therapist_info",
         },
       },
       {
-        $unwind: "$therapist_info", 
+        $unwind: "$therapist_info",
       },
       {
-        $sort: { "_id.therapist_id": 1, "_id.status": 1 }, 
+        $sort: { "_id.therapist_id": 1, "_id.status": 1 },
       },
     ]);
 
@@ -370,9 +369,8 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
         labels: [], // Therapist names
         datasets: [
           {
-            label: `${
-              status.charAt(0).toUpperCase() + status.slice(1)
-            } Sessions`,
+            label: `${status.charAt(0).toUpperCase() + status.slice(1)
+              } Sessions`,
             data: [],
             backgroundColor: getRandomColor(), // Generate a random color for the background
             hoverOffset: 4,

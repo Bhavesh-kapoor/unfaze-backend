@@ -823,11 +823,11 @@ const getTherapistRevenue = async (req, res) => {
       return result.length > 0
         ? result[0]
         : {
-            totalUSDSales: 0,
-            totalINRSales: 0,
-            countUSDSales: 0,
-            countINRSales: 0,
-          };
+          totalUSDSales: 0,
+          totalINRSales: 0,
+          countUSDSales: 0,
+          countINRSales: 0,
+        };
     };
     const revenue = await calculateRevenue(start, end);
     res
@@ -1254,7 +1254,7 @@ const thankyou = asyncHandler(async (req, res) => {
     new ApiResponse(200, transaction, "Transactions retrieved successfully.")
   );
 });
-const initiateRefund = asyncHandler(async (req,res)=>{
+const initiateRefund = asyncHandler(async (req, res) => {
   const { transactionId } = req.query;
   const transaction = await Transaction.findOneAndUpdate(
     { transactionId: transactionId },
@@ -1263,14 +1263,61 @@ const initiateRefund = asyncHandler(async (req,res)=>{
   );
   if (!transaction) {
     return res
-     .status(404)
-     .json(new ApiResponse(404, [], "No transactions found for this user"));
+      .status(404)
+      .json(new ApiResponse(404, [], "No transactions found for this user"));
   }
   return res.json(
     new ApiResponse(200, transaction, "Refund initiated successfully.")
   );
 })
 
+const geTherapistsforChat = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const therapists = await Transaction.aggregate([
+      {
+        $match: {
+          user_id: userId,
+          payment_status: 'successful'
+        }
+      },
+      {
+        $group: {
+          _id: "$therapist_id",
+          lastTransaction: { $max: "$createdAt" }
+        }
+      },
+      {
+        $lookup: {
+          from: 'therapists',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'therapistDetails'
+        }
+      },
+      {
+        $unwind: "$therapistDetails"
+      },
+      {
+        $project: {
+          _id: '$therapistDetails._id',
+          email: '$therapistDetails.email',
+          fullName: {
+            $concat: [
+              "$therapistDetails.firstName",
+              " ",
+              "$therapistDetails.lastName"
+            ]
+          }
+        }
+      }
+    ]);
+    res.status(200).json({ therapists });
+  } catch (error) {
+    console.error('Error fetching therapists with successful transactions:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 export {
   calculateTotalSales,
   TotalSalesList,
@@ -1282,5 +1329,6 @@ export {
   UserTransactions,
   therapistTransactions,
   thankyou,
-  initiateRefund
+  initiateRefund,
+  geTherapistsforChat
 };
