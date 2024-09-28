@@ -80,7 +80,6 @@ const getChatHistory = asyncHandler(async (req, res) => {
 });
 const getConversationList = async (req, res) => {
     try {
-        re
         const userId = req.user._id;
         const userRole = req.user.role;
         // Pagination parameters
