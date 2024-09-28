@@ -1,21 +1,26 @@
-
 import { Server } from "socket.io";
 import dotenv from "dotenv";
+
 dotenv.config();
 
 let users = [];
+
+// Add user to the users array
 const addUser = (userId, socketId) => {
   !users.some((user) => user.userId === userId) &&
     users.push({ userId, socketId });
 };
 
+// Remove user from the users array
 const removeUser = (socketId) => {
   users = users.filter((user) => user.socketId !== socketId);
 };
 
+// Get user by userId
 const getUser = (userId) => {
   return users.find((user) => user.userId === userId);
 };
+
 export const configureSocket = (httpServer, app) => {
   const io = new Server(httpServer, {
     cors: {
@@ -25,27 +30,29 @@ export const configureSocket = (httpServer, app) => {
   });
 
   app.set("socketio", io);
-  io.on("connection", (socket) => {
-    //when connect
-    console.log("a user connected.");
 
-    //take userId and socketId from user
+  io.on("connection", (socket) => {
     socket.on("addUser", (userId) => {
       addUser(userId, socket.id);
       io.emit("getUsers", users);
     });
 
-    //send and get message
+    // Send and receive messages
     socket.on("sendMessage", ({ senderId, receiverId, text }) => {
       const user = getUser(receiverId);
-      io.to(user.socketId).emit("getMessage", {
-        senderId,
-        text,
-      });
+      if (user) {
+        io.to(user.socketId).emit("getMessage", {
+          senderId,
+          text,
+        });
+      }
     });
-    // Handle user disconnection
+
+    socket.on("typing", () => {
+      socket.broadcast.emit("user-typing");
+    });
+
     socket.on("disconnect", () => {
-      console.log("a user disconnected!");
       removeUser(socket.id);
       io.emit("getUsers", users);
     });
