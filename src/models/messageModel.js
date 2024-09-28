@@ -6,10 +6,12 @@ const ChatMessageSchema = new mongoose.Schema(
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
+      index: true,
     },
     receiverId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
+      index: true,
     },
     message: {
       type: String,

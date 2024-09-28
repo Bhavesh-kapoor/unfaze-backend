@@ -52,7 +52,7 @@ const getChatHistory = asyncHandler(async (req, res) => {
             ],
         })
             .select("-createdAt -updatedAt")
-            .sort({ timestamp: 1 })
+            .sort({ timestamp: -1 })
             .skip(skip)
             .limit(limit);
 
@@ -80,15 +80,28 @@ const getChatHistory = asyncHandler(async (req, res) => {
 });
 const getConversationList = async (req, res) => {
     try {
-        re
         const userId = req.user._id;
         const userRole = req.user.role;
-        // Pagination parameters
-        const page = parseInt(req.query.page) || 1;  // Current page, default is 1
-        const limit = parseInt(req.query.limit) || 10; // Limit of items per page, default is 10
-        const skip = (page - 1) * limit; // Number of items to skip
+        const { page = 1, limit = 10, search = '' } = req.query;
+        const pageNumber = parseInt(page);
+        const limitNumber = parseInt(limit);
+        const skip = (pageNumber - 1) * limitNumber;
 
-        // Aggregation to group conversations
+        // Step 1: Search for users based on the search query
+        let userSearchIds = [];
+        if (search) {
+            const exactMatch = await User.findOne({ email: search }).select('_id');
+            if (exactMatch) {
+                userSearchIds.push(exactMatch._id);
+            } else {
+                const regex = new RegExp(search, 'i');
+                const matchedUsers = await User.find({
+                    email: regex,
+                }).select('_id');
+                userSearchIds = matchedUsers.map(u => u._id);
+            }
+            console.log(userSearchIds)
+        }
         const messages = await Message.aggregate([
             {
                 $match: {
@@ -114,10 +127,10 @@ const getConversationList = async (req, res) => {
                 $sort: { lastMessageTime: -1 },
             },
             {
-                $skip: skip, // Skip the previous pages
+                $skip: skip,
             },
             {
-                $limit: limit, // Limit the number of conversations per page
+                $limit: limitNumber,
             },
             {
                 $project: {
@@ -133,24 +146,17 @@ const getConversationList = async (req, res) => {
 
         const uniqueIds = messages.map(msg => msg._id);
 
-        // Fetching conversations based on user role
-        let conversations = [];
+        // Step 3: Filter unique IDs based on the user search IDs
+        const filteredIds = userSearchIds.length > 0
+            ? uniqueIds.filter(id => userSearchIds.includes(id))
+            : uniqueIds;
 
-        if (userRole === 'user' || userRole === 'admin') {
-            // Fetch therapists
-            conversations = await Therapist.find({ _id: { $in: uniqueIds } })
-                .select('firstName lastName role email');
-        } else {
-            // Fetch users
-            conversations = await User.find({ _id: { $in: uniqueIds } })
-                .select('firstName lastName role email');
-        }
+        // Fetch users based on filtered IDs
+        const conversations = await User.find({ _id: { $in: filteredIds } })
+            .select('firstName lastName role email _id');
 
-        // Sorting conversations and handling missing data
-        const sortedConversations = uniqueIds.map(id => {
-            const conversation = conversations.find(convo => convo?._id?.equals(id));
-
-            // Handle case if conversation is not found
+        const sortedConversations = filteredIds.map(id => {
+            const conversation = conversations.find(convo => convo._id.equals(id));
             if (!conversation) {
                 return { _id: id, name: "Unknown", role: "Unknown", email: "Unknown" };
             }
@@ -163,7 +169,6 @@ const getConversationList = async (req, res) => {
             };
         });
 
-        // Include current user details
         const currentUser = {
             _id: req.user._id,
             name: `${req.user.firstName} ${req.user.lastName}`,
@@ -193,24 +198,25 @@ const getConversationList = async (req, res) => {
                 },
             },
         ]);
-        const totalPages = Math.ceil(totalConversations.length / limit);
+
+        const totalPages = Math.ceil(totalConversations.length / limitNumber);
         res.status(200).json(new ApiResponse(200, {
             userList: sortedConversations,
             currentUser,
             pagination: {
-                itemsPerPage: limit,
+                itemsPerPage: limitNumber,
                 totalItems: totalConversations.length,
                 totalPages,
-                currentPage: page,
+                currentPage: pageNumber,
             }
-        },)
-        );
+        }, "List fetched successfully"));
 
     } catch (error) {
         console.error("Error fetching conversation list:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 
 const getAllConversationList = asyncHandler(async (req, res) => {
