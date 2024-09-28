@@ -61,8 +61,8 @@ const getChatHistory = asyncHandler(async (req, res) => {
         }
 
         const formattedMessages = messages.map(message => ({
-            ...message._doc, 
-            isSender: message.senderId.toString() === senderId.toString(), 
+            ...message._doc,
+            isSender: message.senderId.toString() === senderId.toString(),
         }));
         res.status(200).json({
             result: formattedMessages,
@@ -78,12 +78,17 @@ const getChatHistory = asyncHandler(async (req, res) => {
         res.status(500).json({ error: "Error fetching messages" });
     }
 });
-
 const getConversationList = async (req, res) => {
     try {
+        re
         const userId = req.user._id;
         const userRole = req.user.role;
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;  // Current page, default is 1
+        const limit = parseInt(req.query.limit) || 10; // Limit of items per page, default is 10
+        const skip = (page - 1) * limit; // Number of items to skip
 
+        // Aggregation to group conversations
         const messages = await Message.aggregate([
             {
                 $match: {
@@ -109,6 +114,12 @@ const getConversationList = async (req, res) => {
                 $sort: { lastMessageTime: -1 },
             },
             {
+                $skip: skip, // Skip the previous pages
+            },
+            {
+                $limit: limit, // Limit the number of conversations per page
+            },
+            {
                 $project: {
                     _id: 1,
                     lastMessageTime: 1,
@@ -116,32 +127,92 @@ const getConversationList = async (req, res) => {
             },
         ]);
 
-        const uniqueIds = messages.map(msg => msg._id);
-
-        let conversations;
-        if (userRole === 'user') {
-            conversations = await Therapist.find({ _id: { $in: uniqueIds } })
-                .select('firstName lastName role');
-        } else {
-            conversations = await User.find({ _id: { $in: uniqueIds } })
-                .select('firstName lastName role');
+        if (!messages || messages.length === 0) {
+            return res.status(404).json({ error: "No conversations found" });
         }
 
+        const uniqueIds = messages.map(msg => msg._id);
+
+        // Fetching conversations based on user role
+        let conversations = [];
+
+        if (userRole === 'user' || userRole === 'admin') {
+            // Fetch therapists
+            conversations = await Therapist.find({ _id: { $in: uniqueIds } })
+                .select('firstName lastName role email');
+        } else {
+            // Fetch users
+            conversations = await User.find({ _id: { $in: uniqueIds } })
+                .select('firstName lastName role email');
+        }
+
+        // Sorting conversations and handling missing data
         const sortedConversations = uniqueIds.map(id => {
-            const conversation = conversations.find(conversation => conversation._id.equals(id));
+            const conversation = conversations.find(convo => convo?._id?.equals(id));
+
+            // Handle case if conversation is not found
+            if (!conversation) {
+                return { _id: id, name: "Unknown", role: "Unknown", email: "Unknown" };
+            }
+
             return {
                 _id: conversation._id,
                 name: `${conversation.firstName} ${conversation.lastName}`,
-                role: conversation.role
+                role: conversation.role,
+                email: conversation.email,
             };
         });
 
-        res.status(200).json(sortedConversations);
+        // Include current user details
+        const currentUser = {
+            _id: req.user._id,
+            name: `${req.user.firstName} ${req.user.lastName}`,
+            role: req.user.role,
+            email: req.user.email,
+        };
+
+        // Get total count of conversations for pagination
+        const totalConversations = await Message.aggregate([
+            {
+                $match: {
+                    $or: [
+                        { senderId: userId },
+                        { receiverId: userId },
+                    ],
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        $cond: [
+                            { $eq: ["$senderId", userId] },
+                            "$receiverId",
+                            "$senderId",
+                        ],
+                    },
+                },
+            },
+        ]);
+        const totalPages = Math.ceil(totalConversations.length / limit);
+        res.status(200).json(new ApiResponse(200, {
+            userList: sortedConversations,
+            currentUser,
+            pagination: {
+                itemsPerPage: limit,
+                totalItems: totalConversations.length,
+                totalPages,
+                currentPage: page,
+            }
+        },)
+        );
+
     } catch (error) {
         console.error("Error fetching conversation list:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+
 const getAllConversationList = asyncHandler(async (req, res) => {
     try {
         const messages = await Message.aggregate([
@@ -245,7 +316,5 @@ const deleteMessagebyId = asyncHandler(async (req, res) => {
         res.status(500).json({ error: "Error deleting message" });
     }
 })
-
-
 
 export { sendNewMessage, getChatHistory, getConversationList, getAllConversationList, getchatHistoryForAdmin, deleteMessagebyId };
