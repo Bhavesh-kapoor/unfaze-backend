@@ -81,7 +81,6 @@ const getChatHistory = asyncHandler(async (req, res) => {
 const getConversationList = async (req, res) => {
     try {
         const userId = req.user._id;
-        const userRole = req.user.role;
         const { page = 1, limit = 10, search = '' } = req.query;
         const pageNumber = parseInt(page);
         const limitNumber = parseInt(limit);
@@ -96,20 +95,33 @@ const getConversationList = async (req, res) => {
             } else {
                 const regex = new RegExp(search, 'i');
                 const matchedUsers = await User.find({
-                    email: regex,
+                    $or: [
+                        { firstName: regex },
+                        { email: regex }
+                    ],
                 }).select('_id');
                 userSearchIds = matchedUsers.map(u => u._id);
             }
-            console.log(userSearchIds)
         }
+
+        // Step 2: Modify message aggregation to match userSearchIds if available
+        const matchCondition = userSearchIds.length > 0
+            ? {
+                $or: [
+                    { senderId: userId, receiverId: { $in: userSearchIds } },
+                    { receiverId: userId, senderId: { $in: userSearchIds } }
+                ]
+            }
+            : {
+                $or: [
+                    { senderId: userId },
+                    { receiverId: userId }
+                ]
+            };
+
         const messages = await Message.aggregate([
             {
-                $match: {
-                    $or: [
-                        { senderId: userId },
-                        { receiverId: userId },
-                    ],
-                },
+                $match: matchCondition,
             },
             {
                 $group: {
@@ -146,16 +158,10 @@ const getConversationList = async (req, res) => {
 
         const uniqueIds = messages.map((msg) => msg._id);
 
-        // Step 3: Filter unique IDs based on the user search IDs
-        const filteredIds = userSearchIds.length > 0
-            ? uniqueIds.filter(id => userSearchIds.includes(id))
-            : uniqueIds;
-
-        // Fetch users based on filtered IDs
-        const conversations = await User.find({ _id: { $in: filteredIds } })
+        const conversations = await User.find({ _id: { $in: uniqueIds } })
             .select('firstName lastName role email _id');
 
-        const sortedConversations = filteredIds.map(id => {
+        const sortedConversations = uniqueIds.map(id => {
             const conversation = conversations.find(convo => convo._id.equals(id));
             if (!conversation) {
                 return { _id: id, name: "Unknown", role: "Unknown", email: "Unknown" };
@@ -176,15 +182,10 @@ const getConversationList = async (req, res) => {
             email: req.user.email,
         };
 
-        // Get total count of conversations for pagination
+
         const totalConversations = await Message.aggregate([
             {
-                $match: {
-                    $or: [
-                        { senderId: userId },
-                        { receiverId: userId },
-                    ],
-                },
+                $match: matchCondition,
             },
             {
                 $group: {
@@ -200,6 +201,7 @@ const getConversationList = async (req, res) => {
         ]);
 
         const totalPages = Math.ceil(totalConversations.length / limitNumber);
+
         res.status(200).json(new ApiResponse(200, {
             userList: sortedConversations,
             currentUser,
@@ -217,31 +219,68 @@ const getConversationList = async (req, res) => {
     }
 };
 
-
-
 const getAllConversationList = asyncHandler(async (req, res) => {
     try {
+        const { page = 1, limit = 10, search = '' } = req.query;
+        const pageNumber = parseInt(page);
+        const limitNumber = parseInt(limit);
+        const skip = (pageNumber - 1) * limitNumber;
+
+        // Step 1: Search for users based on the search query
+        let userSearchIds = [];
+        if (search) {
+            if (search.includes('@')) {
+                const exactUserMatch = await User.findOne({ email: search }).select('_id');
+                const exactTherapistMatch = await Therapist.findOne({ email: search }).select('_id');
+
+                if (exactUserMatch) {
+                    userSearchIds.push(exactUserMatch._id);
+                }
+                if (exactTherapistMatch) {
+                    userSearchIds.push(exactTherapistMatch._id);
+                }
+            } else {
+                const regex = new RegExp(search, 'i');
+                const matchedUsers = await User.find({
+                    $or: [
+                        { firstName: regex },
+                        { lastName: regex }
+                    ],
+                }).select('_id');
+
+                const matchedTherapists = await Therapist.find({
+                    $or: [
+                        { firstName: regex },
+                        { lastName: regex }
+                    ],
+                }).select('_id');
+
+                userSearchIds = [
+                    ...matchedUsers.map((u) => u._id),
+                    ...matchedTherapists.map((t) => t._id),
+                ];
+            }
+        }
+
+        // Step 2: Modify message aggregation to group conversations uniquely
+        const matchCondition = userSearchIds.length > 0
+            ? {
+                $or: [
+                    { senderId: { $in: userSearchIds } },
+                    { receiverId: { $in: userSearchIds } },
+                ],
+            }
+            : {};
+
         const messages = await Message.aggregate([
+            { $match: matchCondition },
             {
                 $group: {
                     _id: {
-                        $cond: [
-                            { $gt: ["$senderId", "$receiverId"] },
-                            {
-                                $concat: [
-                                    { $toString: "$receiverId" },
-                                    "-",
-                                    { $toString: "$senderId" },
-                                ],
-                            },
-                            {
-                                $concat: [
-                                    { $toString: "$senderId" },
-                                    "-",
-                                    { $toString: "$receiverId" },
-                                ],
-                            },
-                        ],
+                        pair: {
+                            senderId: { $cond: { if: { $lt: ["$senderId", "$receiverId"] }, then: "$senderId", else: "$receiverId" } },
+                            receiverId: { $cond: { if: { $lt: ["$senderId", "$receiverId"] }, then: "$receiverId", else: "$senderId" } }
+                        }
                     },
                     lastMessageTime: { $last: "$timestamp" },
                     lastMessage: { $last: "$message" },
@@ -249,10 +288,14 @@ const getAllConversationList = asyncHandler(async (req, res) => {
                     receiverId: { $last: "$receiverId" },
                 },
             },
-            {
-                $sort: { lastMessageTime: -1 },
-            },
+            { $sort: { lastMessageTime: -1 } },
+            { $skip: skip },
+            { $limit: limitNumber },
         ]);
+
+        if (!messages || messages.length === 0) {
+            return res.status(404).json({ error: "No conversations found" });
+        }
 
         const uniqueIds = [
             ...new Set(messages.flatMap((msg) => [msg.senderId, msg.receiverId])),
@@ -270,14 +313,14 @@ const getAllConversationList = asyncHandler(async (req, res) => {
             userMap.set(user._id.toString(), {
                 id: user._id,
                 name: `${user.firstName} ${user.lastName}`,
-                role: user.role,
+                role: 'user',
             });
         });
         therapists.forEach((therapist) => {
             userMap.set(therapist._id.toString(), {
                 id: therapist._id,
                 name: `${therapist.firstName} ${therapist.lastName}`,
-                role: therapist.role,
+                role: 'therapist',
             });
         });
 
@@ -285,44 +328,105 @@ const getAllConversationList = asyncHandler(async (req, res) => {
             const sender = userMap.get(msg.senderId.toString());
             const receiver = userMap.get(msg.receiverId.toString());
 
+            let user = null;
+            let therapist = null;
+
+            // Check roles to assign user/therapist
+            if (sender && sender.role === 'user') {
+                user = sender;
+                therapist = receiver && receiver.role === 'therapist' ? receiver : null;
+            } else if (receiver && receiver.role === 'user') {
+                user = receiver;
+                therapist = sender && sender.role === 'therapist' ? sender : null;
+            }
+
             return {
-                conversationId: msg._id,
-                participant1: {
-                    role: sender ? sender.role : "Unknown",
-                    id: sender ? sender.id : null,
-                    name: sender ? sender.name : "Unknown Sender",
-                },
-                participant2: {
-                    role: receiver ? receiver.role : "Unknown",
-                    id: receiver ? receiver.id : null,
-                    name: receiver ? receiver.name : "Unknown Receiver",
-                },
+                conversationId: `${msg.senderId}-${msg.receiverId}`,
+                userId: user ? user.id : null,
+                userName: user ? user.name : "Unknown User",
+                therapistId: therapist ? therapist.id : null,
+                therapistName: therapist ? therapist.name : "Unknown Therapist",
                 lastMessage: msg.lastMessage,
                 lastMessageTime: msg.lastMessageTime,
             };
         });
 
-        res.status(200).json(sortedConversations);
+        // Step 3: Get total count for pagination
+        const totalConversations = await Message.aggregate([
+            { $match: matchCondition },
+            {
+                $group: {
+                    _id: {
+                        pair: {
+                            senderId: { $cond: { if: { $lt: ["$senderId", "$receiverId"] }, then: "$senderId", else: "$receiverId" } },
+                            receiverId: { $cond: { if: { $lt: ["$senderId", "$receiverId"] }, then: "$receiverId", else: "$senderId" } }
+                        }
+                    },
+                },
+            },
+        ]);
+
+        const totalPages = Math.ceil(totalConversations.length / limitNumber);
+
+        res.status(200).json({
+            conversations: sortedConversations,
+            pagination: {
+                itemsPerPage: limitNumber,
+                totalItems: totalConversations.length,
+                totalPages,
+                currentPage: pageNumber,
+            },
+        });
     } catch (error) {
         console.error("Error fetching conversation list:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
-const getchatHistoryForAdmin = asyncHandler(async (req, res) => {
-    const { participent1, participent2 } = req.params;
+const getChatHistoryForAdmin = asyncHandler(async (req, res) => {
+    const { chatId } = req.params;
+    const participentArray = chatId.split("-");
+    const { page = 1, limit = 20 } = req.query;  // Default values for page and limit
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
     try {
+        // Find messages between the two participants and apply pagination
         const messages = await Message.find({
             $or: [
-                { senderId: participent1, receiverId: participent2 },
-                { senderId: participent2, receiverId: participent1 },
+                { senderId: participentArray[0], receiverId: participentArray[1] },
+                { senderId: participentArray[1], receiverId: participentArray[0] },
             ],
-        }).sort({ timestamp: 1 });
-        res.status(200).json(messages);
+        })
+            .sort({ timestamp: -1 })
+            .skip(skip)
+            .limit(limitNumber);
+
+        // Get total number of messages for pagination info
+        const totalMessages = await Message.countDocuments({
+            $or: [
+                { senderId: participentArray[0], receiverId: participentArray[1] },
+                { senderId: participentArray[1], receiverId: participentArray[0] },
+            ],
+        });
+
+        const totalPages = Math.ceil(totalMessages / limitNumber);
+        const reversedMessages = messages.reverse();
+        res.status(200).json({
+            reversedMessages,
+            pagination: {
+                currentPage: pageNumber,
+                totalPages,
+                totalMessages,
+                itemsPerPage: limitNumber,
+            },
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: "Error fetching messages" });
     }
 });
+
 const deleteMessagebyId = asyncHandler(async (req, res) => {
     const { _id } = req.params;
 
@@ -346,6 +450,6 @@ export {
     getChatHistory,
     getConversationList,
     getAllConversationList,
-    getchatHistoryForAdmin,
+    getChatHistoryForAdmin,
     deleteMessagebyId,
 };

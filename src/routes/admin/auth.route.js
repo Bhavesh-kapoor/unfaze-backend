@@ -13,6 +13,7 @@ import specializationRouter from "./specilization.route.js";
 import contactUsRoutes from "../../routes/contactUs.router.js";
 import { setNewPasswrd } from "../../controllers/admin/user.controller.js";
 import { bookSessionManully } from "../../controllers/admin/sessionsControllers.js";
+import { getAllConversationList,getChatHistoryForAdmin } from "../../controllers/messageController.js";
 import {
   getUserSessions,
   getTherapistSession,
@@ -51,5 +52,7 @@ router.post("/book-session-manully", bookSessionManully);
 router.get("/user-sessions/:userId/:status", getUserSessions);
 
 router.get("/therapist-sessions/:Id/:status", getTherapistSession);
+router.get("/get-chat-list", getAllConversationList);
+router.get("/get-chat-history/:chatId", getChatHistoryForAdmin);
 
 export default router;
