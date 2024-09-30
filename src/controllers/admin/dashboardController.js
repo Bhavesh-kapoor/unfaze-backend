@@ -4,7 +4,7 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { Session } from "../../models/sessionsModel.js";
 import { Therapist } from "../../models/therapistModel.js";
-import { endOfDay, startOfYear, endOfYear, eachMonthOfInterval, format } from "date-fns";
+import { endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, format, eachDayOfInterval } from "date-fns";
 import { Transaction } from "../../models/transactionModel.js";
 import { Notification } from "../../models/notification.Model.js";
 import { Specialization } from "../../models/specilaizationModel.js";
@@ -404,13 +404,19 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
 });
 export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) => {
   try {
-    const year = new Date().getFullYear();
-    const start = startOfYear(new Date(year, 0, 1));
-    const end = endOfYear(new Date(year, 11, 31));
+    const { year, month } = req.query;
+    const selectedYear = year || new Date().getFullYear();
+    let start, end, interval;
 
-    const months = eachMonthOfInterval({ start, end }).map(month => format(month, 'MMMM'));
-
-    // Aggregation pipeline to calculate sessions and revenue
+    if (month) {
+      start = startOfMonth(new Date(selectedYear, month - 1));
+      end = endOfMonth(new Date(selectedYear, month - 1));
+      interval = eachDayOfInterval({ start, end });
+    } else {
+      start = startOfYear(new Date(selectedYear));
+      end = endOfYear(new Date(selectedYear));
+      interval = eachMonthOfInterval({ start, end });
+    }
     const transactions = await Transaction.aggregate([
       {
         $match: {
@@ -441,7 +447,7 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
       },
       {
         $group: {
-          _id: { $month: '$createdAt' },
+          _id: month ? { $dayOfMonth: '$createdAt' } : { $month: '$createdAt' },
           totalSessions: { $sum: '$courseSessions' },
           totalRevenueUSD: { $sum: '$amount_USD' },
           totalRevenueINR: { $sum: '$amount_INR' },
@@ -452,23 +458,20 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
       },
     ]);
 
-    // Initialize response with zero data for each month
-    const response = months.map((month, index) => ({
-      label: month,
+    // Initialize response with zero data for each day/month
+    const response = interval.map(date => ({
+      label: month ? format(date, 'dd MMMM') : format(date, 'MMMM'), 
       totalSessions: 0,
       totalRevenueUSD: 0,
       totalRevenueINR: 0
     }));
 
-    // Map the aggregated data to the corresponding month
     transactions.forEach(transaction => {
-      const monthIndex = transaction._id - 1;
-      response[monthIndex].totalSessions = transaction.totalSessions;
-      response[monthIndex].totalRevenueUSD = transaction.totalRevenueUSD;
-      response[monthIndex].totalRevenueINR = transaction.totalRevenueINR;
+      const index = month ? transaction._id - 1 : transaction._id - 1;
+      response[index].totalSessions = transaction.totalSessions;
+      response[index].totalRevenueUSD = transaction.totalRevenueUSD;
+      response[index].totalRevenueINR = transaction.totalRevenueINR;
     });
-
-    // Prepare the final datasets structure
     const finalResponse = {
       datasets: [
         {
@@ -494,9 +497,11 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
         }
       ]
     };
-    res.status(200).json(new ApiResponse(200, finalResponse, "data fatched successfully"));
+
+    res.status(200).json(new ApiResponse(200, finalResponse, "Data fetched successfully"));
   } catch (error) {
     console.error(error);
     res.status(500).json(new ApiError(500, 'Server error', error));
   }
 });
+
