@@ -170,7 +170,6 @@ const getConversationList = async (req, res) => {
                 user_id: id,
                 status: "completed"
             }).sort({ start_time: -1 }).select('start_time');
-            console.log(lastSession)
             const lastSessionTime = lastSession ? lastSession.start_time : null;
 
             if (!conversation) {
