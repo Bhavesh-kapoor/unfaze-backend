@@ -145,8 +145,10 @@ export const fetchAllTransactions = async (req, res) => {
           "therapistData.firstName": 1,
         },
       },
+      { $sort: { createdAt: -1 } },
       { $skip: (pageNumber - 1) * pageSize },
       { $limit: pageSize },
+
     ];
     const transactions = await Transaction.aggregate(pipeline).exec();
 
@@ -1271,61 +1273,126 @@ const initiateRefund = asyncHandler(async (req, res) => {
   );
 })
 
+// const geTherapistsforChat = asyncHandler(async (req, res) => {
+//   try {
+//     const userId = req.user._id;
+
+//     const therapists = await Transaction.aggregate([
+//       {
+//         $match: {
+//           user_id: userId,
+//           payment_status: 'successful'
+//         }
+//       },
+//       {
+//         $group: {
+//           _id: "$therapist_id",
+//           lastTransaction: { $max: "$createdAt" }
+//         }
+//       },
+//       {
+//         $lookup: {
+//           from: 'therapists',
+//           localField: '_id',
+//           foreignField: '_id',
+//           as: 'therapistDetails'
+//         }
+//       },
+//       {
+//         $unwind: "$therapistDetails"
+//       },
+//       {
+//         $project: {
+//           _id: '$therapistDetails._id',
+//           email: '$therapistDetails.email',
+//           fullName: {
+//             $concat: [
+//               "$therapistDetails.firstName",
+//               " ",
+//               "$therapistDetails.lastName"
+//             ]
+//           }
+//         }
+//       }
+//     ]);
+//     if (!therapists.length) {
+//       return res.status(404).json({ message: 'No therapists found with successful transactions' });
+//     }
+//     const user = {
+//       _id: req.user._id,
+//       email: req.user.email,
+//       fullName: req.user.firstName + " " + req.user.lastName
+//     }
+//     res.status(200).json({ user, therapists });
+//   } catch (error) {
+//     console.error('Error fetching therapists with successful transactions:', error);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
 const geTherapistsforChat = asyncHandler(async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const therapists = await Transaction.aggregate([
-      {
-        $match: {
-          user_id: userId,
-          payment_status: 'successful'
-        }
-      },
-      {
-        $group: {
-          _id: "$therapist_id",
-          lastTransaction: { $max: "$createdAt" }
-        }
-      },
-      {
-        $lookup: {
-          from: 'therapists',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'therapistDetails'
-        }
-      },
-      {
-        $unwind: "$therapistDetails"
-      },
-      {
-        $project: {
-          _id: '$therapistDetails._id',
-          email: '$therapistDetails.email',
-          fullName: {
-            $concat: [
-              "$therapistDetails.firstName",
-              " ",
-              "$therapistDetails.lastName"
-            ]
-          }
-        }
+  let pipeline = [
+    {
+      $match: {
+        isActive: true
       }
-    ]);
-    if (!therapists.length) {
-      return res.status(404).json({ message: 'No therapists found with successful transactions' });
-    }
-    const user = {
-      _id: req.user._id,
-      email: req.user.email,
-      fullName: req.user.firstName + " " + req.user.lastName
-    }
-    res.status(200).json({ user, therapists });
-  } catch (error) {
-    console.error('Error fetching therapists with successful transactions:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    },
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "specialization",
+        foreignField: "_id",
+        as: "specializationDetails",
+      },
+    },
+  ];
+  // if (search) {
+  //   pipeline.push({
+  //     $match: {
+  //       $or: [
+  //         { email: { $regex: search, $options: "i" } },
+  //         { mobile: { $regex: search, $options: "i" } },
+  //       ],
+  //     },
+  //   });
+  // }
+  const user = {
+    _id: req.user._id,
+    email: req.user.email,
+    fullName: req.user.firstName + " " + req.user.lastName
   }
+  const therapistListData = await Therapist.aggregate([
+    ...pipeline,
+    { $sort: { createdAt: 1 } },
+    {
+      $project: {
+        _id: 1,
+        name: { $concat: ["$firstName", " ", "$lastName"] },
+        category: {
+          $reduce: {
+            input: "$specializationDetails",
+            initialValue: "",
+            in: {
+              $cond: {
+                if: { $eq: ["$$value", ""] },
+                then: "$$this.name",
+                else: { $concat: ["$$value", ", ", "$$this.name"] },
+              },
+            },
+          },
+        },
+      },
+    },
+  ]);
+
+  if (!therapistListData.length) {
+    return res.status(404).json(new ApiError(404, "", "No therapists found!"));
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { therapists: therapistListData, user }, "Therapist list fetched successfully")
+  );
 });
+
 export {
   calculateTotalSales,
   TotalSalesList,

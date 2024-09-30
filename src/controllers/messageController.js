@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { User } from "../models/userModel.js";
 import { Therapist } from "../models/therapistModel.js";
+import { Session } from "../models/sessionsModel.js";
 
 const sendNewMessage = asyncHandler(async (req, res) => {
     const { receiverId } = req.params;
@@ -161,10 +162,19 @@ const getConversationList = async (req, res) => {
         const conversations = await User.find({ _id: { $in: uniqueIds } })
             .select('firstName lastName role email _id');
 
-        const sortedConversations = uniqueIds.map(id => {
+        const sortedConversations = await Promise.all(uniqueIds.map(async id => {
             const conversation = conversations.find(convo => convo._id.equals(id));
+
+            // Find the last session of the user
+            const lastSession = await Session.findOne({
+                user_id: id,
+                status: "completed"
+            }).sort({ start_time: -1 }).select('start_time');
+            console.log(lastSession)
+            const lastSessionTime = lastSession ? lastSession.start_time : null;
+
             if (!conversation) {
-                return { _id: id, name: "Unknown", role: "Unknown", email: "Unknown" };
+                return { _id: id, name: "Unknown", role: "Unknown", email: "Unknown", lastSessionTime };
             }
 
             return {
@@ -172,8 +182,9 @@ const getConversationList = async (req, res) => {
                 name: `${conversation.firstName} ${conversation.lastName}`,
                 role: conversation.role,
                 email: conversation.email,
+                lastSessionTime,
             };
-        });
+        }));
 
         const currentUser = {
             _id: req.user._id,
@@ -218,6 +229,7 @@ const getConversationList = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 const getAllConversationList = asyncHandler(async (req, res) => {
     try {
