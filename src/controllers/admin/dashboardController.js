@@ -4,7 +4,7 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { Session } from "../../models/sessionsModel.js";
 import { Therapist } from "../../models/therapistModel.js";
-import { endOfDay, startOfYear, endOfYear } from "date-fns";
+import { endOfDay, startOfYear, endOfYear, eachMonthOfInterval, format } from "date-fns";
 import { Transaction } from "../../models/transactionModel.js";
 import { Notification } from "../../models/notification.Model.js";
 import { Specialization } from "../../models/specilaizationModel.js";
@@ -14,7 +14,7 @@ const getRandomColor = () => {
   const r = Math.floor(Math.random() * 255);
   const g = Math.floor(Math.random() * 255);
   const b = Math.floor(Math.random() * 255);
-  return `rgba(${r}, ${g}, ${b}, 0.5)`; // Adding 0.5 opacity for background colors
+  return `rgba(${r}, ${g}, ${b}, 0.5)`;
 };
 
 export const getOverview = asyncHandler(async (req, res) => {
@@ -402,21 +402,27 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
     throw new ApiError(500, error.message);
   }
 });
-export const getTransactionsAndSessiosByMonth = asyncHandler(async (req, res) => {
+export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) => {
   try {
-    const year = new Date().getFullYear(); 
+    const year = new Date().getFullYear();
+    const start = startOfYear(new Date(year, 0, 1));
+    const end = endOfYear(new Date(year, 11, 31));
+
+    const months = eachMonthOfInterval({ start, end }).map(month => format(month, 'MMMM'));
+
+    // Aggregation pipeline to calculate sessions and revenue
     const transactions = await Transaction.aggregate([
       {
         $match: {
           createdAt: {
-            $gte: new Date(`${year}-01-01`), // Start of the year
-            $lte: new Date(`${year}-12-31`), // End of the year
+            $gte: start,
+            $lte: end,
           },
         },
       },
       {
         $lookup: {
-          from: 'courses', // name of the course collection in MongoDB
+          from: 'courses',
           localField: 'courseId',
           foreignField: '_id',
           as: 'courseDetails',
@@ -437,22 +443,60 @@ export const getTransactionsAndSessiosByMonth = asyncHandler(async (req, res) =>
         $group: {
           _id: { $month: '$createdAt' },
           totalSessions: { $sum: '$courseSessions' },
-          totalRevenueUSD: { $sum: '$amount_USD' }, 
+          totalRevenueUSD: { $sum: '$amount_USD' },
           totalRevenueINR: { $sum: '$amount_INR' },
-          transactions: { $push: '$$ROOT' },
         },
       },
       {
-        $sort: { '_id': 1 }, 
+        $sort: { '_id': 1 },
       },
     ]);
 
-    res.status(200).json({
-      success: true,
-      data: transactions,
+    // Initialize response with zero data for each month
+    const response = months.map((month, index) => ({
+      label: month,
+      totalSessions: 0,
+      totalRevenueUSD: 0,
+      totalRevenueINR: 0
+    }));
+
+    // Map the aggregated data to the corresponding month
+    transactions.forEach(transaction => {
+      const monthIndex = transaction._id - 1;
+      response[monthIndex].totalSessions = transaction.totalSessions;
+      response[monthIndex].totalRevenueUSD = transaction.totalRevenueUSD;
+      response[monthIndex].totalRevenueINR = transaction.totalRevenueINR;
     });
+
+    // Prepare the final datasets structure
+    const finalResponse = {
+      datasets: [
+        {
+          label: "Number of Sessions",
+          data: response.map(item => item.totalSessions),
+          borderColor: "rgb(75, 192, 192)",
+          tension: 0.3,
+          fill: true,
+        },
+        {
+          label: "Revenue (USD)",
+          data: response.map(item => item.totalRevenueUSD),
+          borderColor: "rgb(54, 162, 235)",
+          tension: 0.3,
+          fill: true,
+        },
+        {
+          label: "Revenue (INR)",
+          data: response.map(item => item.totalRevenueINR),
+          borderColor: "rgb(255, 159, 64)",
+          tension: 0.3,
+          fill: true,
+        }
+      ]
+    };
+    res.status(200).json(new ApiResponse(200, finalResponse, "data fatched successfully"));
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json(new ApiError(500, 'Server error', error));
   }
 });
