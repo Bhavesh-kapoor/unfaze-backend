@@ -30,12 +30,10 @@ function sendOtpMessage(mobile, otp) {
       });
 
       res.on("end", () => {
-        console.log("Response from Msg91:", data);
         try {
           const response = JSON.parse(data);
 
           if (res.statusCode >= 200 && res.statusCode < 300 && response.type === "success") {
-            console.log("OTP sent successfully:", response);
             resolve(response);
           } else {
             console.error(
@@ -55,7 +53,7 @@ function sendOtpMessage(mobile, otp) {
     });
 
     req.on("error", (error) => {
-      console.error("Request error:", error.message); // Log the actual error
+      console.error("Request error:", error.message);
       reject(error);
     });
 

@@ -15,7 +15,10 @@ const ChatMessageSchema = new mongoose.Schema(
     },
     message: {
       type: String,
-      required: true,
+    },
+    chatFile: {
+      type: String,
+      default: null,
     },
     read: {
       type: Boolean,

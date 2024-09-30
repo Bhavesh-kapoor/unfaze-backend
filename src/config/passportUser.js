@@ -20,6 +20,9 @@ passport.use(
 
       try {
         let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }] });
+        if (user?.role === 'admin') {
+          return done(error, null);
+        }
         if (user && !user?.googleId) {
           user.googleId = profile.id,
             user.profileImage = profile.photos[0].value,

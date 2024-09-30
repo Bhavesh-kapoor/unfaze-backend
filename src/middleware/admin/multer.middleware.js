@@ -34,6 +34,8 @@ const getFolder = (fieldname, emailPrefix) => {
       return "src/images/blogs";
     case "userAvatar":
       return "src/images/users";
+    case "chatFile":
+      return "src/images/chatFiles"
     default:
       return "src/images/other";
   }
@@ -41,6 +43,9 @@ const getFolder = (fieldname, emailPrefix) => {
 
 // Function to remove existing file by fieldname and filename for blogImageUrl
 const removeExistingFile = (folder, fieldname, req) => {
+  if (fieldname === "chatFile") {
+    return;
+  }
   try {
     const files = fs.readdirSync(folder);
     for (const file of files) {
@@ -64,6 +69,7 @@ const removeExistingFile = (folder, fieldname, req) => {
     throw new Error(`Failed to remove existing file in folder ${folder}.`);
   }
 };
+
 
 // Multer disk storage configuration
 const storage = multer.diskStorage({

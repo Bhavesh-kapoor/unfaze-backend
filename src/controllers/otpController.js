@@ -151,8 +151,6 @@ const sendMobileOtp = asyncHandler(async (req, res) => {
 const mobileVerify = async (req, res) => {
   const user = req.user
   const { mobile, otp } = req.body;
-  console.log(req.body)
-
   if (!mobile || !otp) {
     return res
       .status(500)
@@ -161,6 +159,7 @@ const mobileVerify = async (req, res) => {
   const isValid = await verifyMobileOTP(mobile, otp);
   if (isValid) {
     user.isMobileVerified = true;
+    user.mobile = mobile;
     const updatedUser = await user.save();
 
     // if (user?.role === "therapist") {

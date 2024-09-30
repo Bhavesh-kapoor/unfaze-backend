@@ -402,7 +402,57 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
     throw new ApiError(500, error.message);
   }
 });
+export const getTransactionsAndSessiosByMonth = asyncHandler(async (req, res) => {
+  try {
+    const year = new Date().getFullYear(); 
+    const transactions = await Transaction.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(`${year}-01-01`), // Start of the year
+            $lte: new Date(`${year}-12-31`), // End of the year
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'courses', // name of the course collection in MongoDB
+          localField: 'courseId',
+          foreignField: '_id',
+          as: 'courseDetails',
+        },
+      },
+      {
+        $addFields: {
+          courseSessions: {
+            $cond: {
+              if: { $eq: ['$type', 'course'] },
+              then: { $arrayElemAt: ['$courseDetails.sessionOffered', 0] },
+              else: 1,
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$createdAt' },
+          totalSessions: { $sum: '$courseSessions' },
+          totalRevenueUSD: { $sum: '$amount_USD' }, 
+          totalRevenueINR: { $sum: '$amount_INR' },
+          transactions: { $push: '$$ROOT' },
+        },
+      },
+      {
+        $sort: { '_id': 1 }, 
+      },
+    ]);
 
-export const revenueAndSessionCount = asyncHandler(async (req, res) => {
-
-})
+    res.status(200).json({
+      success: true,
+      data: transactions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});

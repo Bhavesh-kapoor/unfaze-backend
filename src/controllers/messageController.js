@@ -5,13 +5,23 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { User } from "../models/userModel.js";
 import { Therapist } from "../models/therapistModel.js";
 import { Session } from "../models/sessionsModel.js";
+import { convertPathToUrl } from "./admin/TherepistController.js";
+import path from 'path';
+import fs from "fs"
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const sendNewMessage = asyncHandler(async (req, res) => {
     const { receiverId } = req.params;
     const senderId = req.user?._id;
-    const { message } = req.body;
-
-    if (!senderId || !receiverId || !message) {
+    let { message } = req.body;
+    let chatFile
+    if (req.file) {
+        chatFile = convertPathToUrl(req.file.path)
+    }
+    if (!senderId || !receiverId) {
         return res.status(400).json({ error: "All fields are required" });
     }
     try {
@@ -19,13 +29,15 @@ const sendNewMessage = asyncHandler(async (req, res) => {
             senderId,
             receiverId,
             message,
+            chatFile
         });
         await chatMessage.save();
         // const io = req.app.get("socketio");
         // io.to(receiverId).emit("receiveMessage", { senderId, message });
         res.status(201).json({ message: "Message sent successfully", chatMessage });
     } catch (error) {
-        res.status(500).json({ error: "Error sending message" });
+        console.log(error);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -440,20 +452,41 @@ const getChatHistoryForAdmin = asyncHandler(async (req, res) => {
     }
 });
 
+
 const deleteMessagebyId = asyncHandler(async (req, res) => {
     const { _id } = req.params;
+
     try {
+        // Find the message to get the image path
+        const message = await Message.findById(_id);
+
+        if (!message) {
+            return res.status(200).json(new ApiResponse(200, null, "message not found"));
+        }
+        if (message.chatFile) {
+            const imagePath = path.join(__dirname, '../images/chatFiles', path.basename(message.chatFile));
+
+            fs.access(imagePath, fs.constants.F_OK, (err) => {
+                if (!err) {
+                    fs.unlink(imagePath, (unlinkError) => {
+                        if (unlinkError) {
+                            console.error('Error deleting image:', unlinkError);
+                        }
+                    });
+                } else {
+                    console.log('Image not found, nothing to delete:', imagePath);
+                }
+            });
+        }
+
         const deletedMessage = await Message.findByIdAndDelete(_id);
         if (!deletedMessage) {
-            return res
-                .status(404)
-                .json({ error: "something went wrong while deleting the chat" });
+            return res.status(404).json({ error: "Something went wrong while deleting the chat" });
         }
-        console.log(deletedMessage);
-        res.status(200).json({ message: "Message deleted successfully" });
+        res.status(200).json(new ApiResponse(200, null, "message deleted successfully"));
     } catch (error) {
         console.log(error);
-        res.status(500).json({ error: "Error deleting message" });
+        res.status(500).json(new ApiError(500, "Error deleting message"));
     }
 });
 
