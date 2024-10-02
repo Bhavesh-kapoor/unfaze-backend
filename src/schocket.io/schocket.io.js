@@ -38,11 +38,12 @@ export const configureSocket = (httpServer, app) => {
     });
 
     // Send and receive messages
-    socket.on("sendMessage", ({ senderId, receiverId, text }) => {
+    socket.on("sendMessage", ({ senderId, receiverId, text, chatFile }) => {
       const user = getUser(receiverId);
       if (user) {
         io.to(user.socketId).emit("getMessage", {
           senderId,
+          chatFile,
           text,
         });
       }
