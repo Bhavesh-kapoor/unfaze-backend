@@ -113,7 +113,6 @@ const createOrder = asyncHandler(async (req, res) => {
         return_url: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
       },
     };
-
     const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
@@ -144,7 +143,7 @@ const createOrder = asyncHandler(async (req, res) => {
     //     },
     //   }
     // );
-    
+    console.log(paymentSessionId, order_id)
     return res
       .status(200)
       .json(
@@ -224,6 +223,7 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
       payment_status: "PAYMENT_INITIATED",
     });
     await initiatedTransaction.save();
+
     return res
       .status(200)
       .json(
@@ -244,7 +244,7 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
   }
 });
 const verifyPayment = asyncHandler(async (req, res, next) => {
-  const { order_id } = req.query;
+  const { order_id } = req.params;
   if (!order_id) {
     return res
       .status(501)

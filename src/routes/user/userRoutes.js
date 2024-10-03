@@ -57,7 +57,7 @@ router.put("/update-avatar", upload.single("userAvatar"), compressImage, updateA
 router.post("/get-enrolled-phonepay", processPaymentForcourse);
 router.get("/validate-payment-phonepay/:merchantTransactionId", validatePayment,getEnrolledInCourse);
 router.post("/get-enrolled-cashfree",createOrderForCourse);
-router.get("/validate-payment-cashfree",verifyPayment,getEnrolledCashfree);
+router.get("/validate-payment-cashfree/:order_id",verifyPayment,getEnrolledCashfree);
 router.post("/course-book-session",BookSessionFromCourse);
 router.use("/enrolled-course",enrolledCourseRoutes);
 export default router;

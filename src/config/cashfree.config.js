@@ -1,4 +1,6 @@
 import { Cashfree } from "cashfree-pg";
+import dotenv from "dotenv";
+dotenv.config()
 Cashfree.XClientId = process.env.CASHFREE_APP_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
 
@@ -7,7 +9,6 @@ if (process.env.DEV_MODE == "prod") {
 } else {
     Cashfree.XEnvironment = Cashfree.Environment.SANDBOX;
 }
-
 export default Cashfree;
 
 // export const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;

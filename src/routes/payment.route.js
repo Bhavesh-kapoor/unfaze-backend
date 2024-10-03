@@ -27,7 +27,7 @@ router.get(
 
 
 // Cashfree payment verification
-router.get("/verify", verifyPayment, handleCashfreePayment);
+router.get("/verify/:order_id", verifyPayment, handleCashfreePayment);
 
 export default router;
 
