@@ -11,7 +11,6 @@ const CategorySchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["general", "blog"],
       required: true,
       default: "general",
     },
