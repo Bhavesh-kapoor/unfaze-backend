@@ -86,23 +86,13 @@ const createBlogCategory = asyncHandler(async (req, res) => {
 // Update an existing blog category
 const updateBlogCategory = asyncHandler(async (req, res) => {
   const { _id } = req.params;
-  let { name } = req.body;
-
   if (!mongoose.Types.ObjectId.isValid(_id)) {
     return res.status(400).json(new ApiError(400, "", "Invalid category ID"));
   }
-
-  if (!name || name.trim().length === 0) {
-    return res
-      .status(400)
-      .json(new ApiError(400, "", "Category name is required!"));
-  }
-
   try {
-    name = name.toLowerCase().trim();
     const category = await Category.findByIdAndUpdate(
       _id,
-      { name },
+      req.body,
       { new: true, runValidators: true }
     );
 
@@ -111,7 +101,6 @@ const updateBlogCategory = asyncHandler(async (req, res) => {
         .status(404)
         .json(new ApiError(404, "", "Error while updating the category"));
     }
-
     res
       .status(200)
       .json(new ApiResponse(200, category, "Category updated successfully!"));
@@ -146,14 +135,14 @@ const deleteBlogCategory = asyncHandler(async (req, res) => {
       .json(new ApiError(500, "", "Server error while deleting category"));
   }
 });
- const categoryById = asyncHandler(async(req,res)=>{
+const categoryById = asyncHandler(async (req, res) => {
   const { _id } = req.params;
   const category = await Category.findById(_id);
   if (!category) {
     throw new ApiError(404, "", "Category not found");
   }
-  return res.status(200).json(new ApiResponse(200, category,"category fatched"));
- })
+  return res.status(200).json(new ApiResponse(200, category, "category fatched"));
+})
 
 export {
   createBlogCategory,
