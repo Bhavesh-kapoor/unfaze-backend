@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
 
 const couponSchema = new mongoose.Schema({
@@ -26,6 +26,11 @@ const couponSchema = new mongoose.Schema({
     },
     usageLimit: {
         type: Number,
+        required: true
+    },
+    specializationId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Specialization',
         required: true
     }
 })
