@@ -407,7 +407,6 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
     const { year, month } = req.query;
     // If no year is provided, default to the current year
     const selectedYear = year ? parseInt(year, 10) : new Date().getFullYear();
-    console.log(selectedYear)
     let start, end, interval;
     if (month) {
       const selectedMonth = parseInt(month, 10) - 1;
@@ -419,7 +418,6 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
       end = endOfYear(new Date(selectedYear, 11));
       interval = eachMonthOfInterval({ start, end });
     }
-    console.log(start, end)
     const transactions = await Transaction.aggregate([
       {
         $match: {
