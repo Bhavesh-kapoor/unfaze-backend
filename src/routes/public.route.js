@@ -42,6 +42,7 @@ import {
   getFAQDataBySlug,
   getSeoDataBySlug,
 } from "../controllers/admin/seoController.js";
+import ApiResponse from "../utils/ApiResponse.js";
 
 const router = express.Router();
 
@@ -56,7 +57,9 @@ const multipleImages = upload.fields([
 const handleAuthRedirect = (req, res) => {
   if (req.user) {
     const { accessToken, user } = req.user;
-
+    if (user.role === 'admin') {
+      return res.status(200).json(new ApiResponse(200, null, "this account cant be logged in via google login"))
+    }
     if (user && accessToken) {
       const { firstName, lastName } = user;
       res.redirect(

@@ -8,7 +8,6 @@ if (process.env.DEV_MODE == "prod") {
     Cashfree.XEnvironment = Cashfree.Environment.SANDBOX;
 }
 
-
 export default Cashfree;
 
 // export const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;

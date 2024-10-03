@@ -405,18 +405,21 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
 export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) => {
   try {
     const { year, month } = req.query;
-    const selectedYear = year || new Date().getFullYear();
+    // If no year is provided, default to the current year
+    const selectedYear = year ? parseInt(year, 10) : new Date().getFullYear();
+    console.log(selectedYear)
     let start, end, interval;
-
     if (month) {
-      start = startOfMonth(new Date(selectedYear, month - 1));
-      end = endOfMonth(new Date(selectedYear, month - 1));
+      const selectedMonth = parseInt(month, 10) - 1;
+      start = startOfMonth(new Date(selectedYear, selectedMonth));
+      end = endOfMonth(new Date(selectedYear, selectedMonth));
       interval = eachDayOfInterval({ start, end });
     } else {
-      start = startOfYear(new Date(selectedYear));
-      end = endOfYear(new Date(selectedYear));
+      start = startOfYear(new Date(selectedYear, 0));
+      end = endOfYear(new Date(selectedYear, 11));
       interval = eachMonthOfInterval({ start, end });
     }
+    console.log(start, end)
     const transactions = await Transaction.aggregate([
       {
         $match: {
@@ -460,18 +463,21 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
 
     // Initialize response with zero data for each day/month
     const response = interval.map(date => ({
-      label: month ? format(date, 'dd MMMM') : format(date, 'MMMM'), 
+      label: month ? format(date, 'dd MMMM') : format(date, 'MMMM'),
       totalSessions: 0,
       totalRevenueUSD: 0,
-      totalRevenueINR: 0
+      totalRevenueINR: 0,
     }));
 
+    // Populate response based on transactions data
     transactions.forEach(transaction => {
-      const index = month ? transaction._id - 1 : transaction._id - 1;
+      const index = month ? transaction._id - 1 : transaction._id - 1; // zero-indexed
       response[index].totalSessions = transaction.totalSessions;
       response[index].totalRevenueUSD = transaction.totalRevenueUSD;
       response[index].totalRevenueINR = transaction.totalRevenueINR;
     });
+
+    // Format the final response for charting
     const finalResponse = {
       datasets: [
         {
@@ -494,8 +500,8 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
           borderColor: "rgb(255, 159, 64)",
           tension: 0.3,
           fill: true,
-        }
-      ]
+        },
+      ],
     };
 
     res.status(200).json(new ApiResponse(200, finalResponse, "Data fetched successfully"));
@@ -504,4 +510,6 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
     res.status(500).json(new ApiError(500, 'Server error', error));
   }
 });
+
+
 

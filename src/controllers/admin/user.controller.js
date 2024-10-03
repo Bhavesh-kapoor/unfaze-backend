@@ -204,7 +204,11 @@ const updateProfile = asyncHandler(async (req, res) => {
       .status(401)
       .json(new ApiError(401, "", "User not authenticated"));
   }
-
+  if(req.user?.role == "admin"){
+    return res
+     .status(403)
+     .json(new ApiError(403, "", "admin account can not be upadated "));
+  }
   const user = req.body;
   let profileImage = req.file ? req.file.path : "";
 
@@ -534,7 +538,7 @@ export const updateAdminDetails = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    if (req?.file?.path) profileImagePath = req.file.path;
+    if (req.file?.path) profileImagePath = req.file.path;
 
     const adminUser = await User.findOne({ _id: id, role: "admin" });
 
