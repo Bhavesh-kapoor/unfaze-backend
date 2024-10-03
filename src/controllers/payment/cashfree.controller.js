@@ -13,7 +13,7 @@ import { Course } from "../../models/courseModel.js";
 // import axios from "axios";
 import { Specialization } from "../../models/specilaizationModel.js";
 import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
-
+import axios from "axios";
 // const SESSION_DURATION_MINUTES = 60;
 const createOrder = asyncHandler(async (req, res) => {
   try {
@@ -113,7 +113,19 @@ const createOrder = asyncHandler(async (req, res) => {
         return_url: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
       },
     };
-    const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+    // const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+    const response = await axios.post(
+      'https://api.cashfree.com/pg/orders',
+      request,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-client-id': process.env.CASHFREE_APP_ID,
+          'x-client-secret': process.env.CASHFREE_SECRET_KEY,
+          'x-api-version': '2023-08-01'
+        },
+      }
+    );
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
     const rate = await getExchangeRate("USD", "INR");
