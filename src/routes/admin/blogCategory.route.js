@@ -4,6 +4,7 @@ import {
   allBlogCategory,
   updateBlogCategory,
   deleteBlogCategory,
+  categoryById
 } from "../../controllers/admin/blogCategoryController.js";
 
 const router = Router();
@@ -15,5 +16,6 @@ router.post("/create", createBlogCategory);
 router.put("/update/:_id", updateBlogCategory);
 
 router.delete("/delete/:_id", deleteBlogCategory);
+router.get("/get/:_id", categoryById);
 
 export default router;
