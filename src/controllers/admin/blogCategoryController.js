@@ -105,9 +105,10 @@ const updateBlogCategory = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, category, "Category updated successfully!"));
   } catch (error) {
+    console.log(error);
     res
       .status(500)
-      .json(new ApiError(500, "", "Server error while updating category"));
+      .json(new ApiError(500, error.message, "Server error while updating category"));
   }
 });
 
