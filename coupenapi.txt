@@ -1,0 +1,102 @@
+http://localhost:8080/api/admin/coupen/
+
+1.
+Endpoint: POST /store
+Description: Create a new coupon.
+Request Body:
+json
+Copy code
+{
+  "code": "SAVE10",
+  "discountPercentage": 10,
+  "startDate": "2024-09-01",
+  "expiryDate": "2024-12-31",
+  "usageLimit": 100,
+  "specializationId": "60ad5a5a9f1b2c001e32b8c1"
+}
+
+
+2. List All Coupons
+Endpoint: GET /list
+Description: Fetch all coupons with associated specialization names.
+Response:
+json
+Copy code
+{
+  "status": 200,
+  "message": "Coupons retrieved successfully!",
+  "data": [
+    {
+      "_id": "60ad5b5b9f1b2c001e32b9e7",
+      "code": "SAVE10",
+      "discountPercentage": 10,
+      "specializationId": {
+        "_id": "60ad5a5a9f1b2c001e32b8c1",
+        "name": "Specialization A"
+      }
+    }
+  ]
+}
+
+3. Get a Single Coupon
+Endpoint: GET /edit/:id
+Description: Fetch a single coupon by ID.
+Response:
+json
+Copy code
+{
+  "status": 200,
+  "message": "Coupon details retrieved successfully!",
+  "data": {
+    "_id": "60ad5b5b9f1b2c001e32b9e7",
+    "code": "SAVE10",
+    "discountPercentage": 10,
+    "specializationId": {
+      "_id": "60ad5a5a9f1b2c001e32b8c1",
+      "name": "Specialization A"
+    }
+  }
+}
+
+4. Update a Coupon
+Endpoint: PUT /update/:id
+Description: Update an existing coupon.
+Request Body:
+json
+Copy code
+{
+  "code": "DISCOUNT20",
+  "discountPercentage": 20,
+  "startDate": "2024-09-15",
+  "expiryDate": "2024-12-15",
+  "usageLimit": 50,
+  "specializationId": "60ad5a5a9f1b2c001e32b8c2"
+}
+Response:
+json
+Copy code
+{
+  "status": 200,
+  "message": "Coupon updated successfully!"
+}
+5. Delete a Coupon
+Endpoint: DELETE /delete/:id
+Description: Delete a coupon by ID.
+Response:
+json
+Copy code
+{
+  "status": 200,
+  "message": "Coupon has been deleted successfully!"
+}
+Validation Rules
+code: Required (string), must be unique.
+discountPercentage: Required (number).
+startDate: Required (date).
+expiryDate: Required (date).
+usageLimit: Required (number).
+specializationId: Required (ObjectId of Specialization), validated as a valid MongoDB ObjectId.
+Error Responses
+400 Bad Request: Invalid or missing parameters.
+404 Not Found: Coupon or resource not found.
+409 Conflict: Coupon code already exists.
