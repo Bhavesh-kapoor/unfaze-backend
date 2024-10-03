@@ -6,8 +6,16 @@ import asyncHandler from "../../utils/asyncHandler.js";
 
 // Fetch all blog categories
 const allBlogCategory = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+  const skip = (pageNumber - 1) * limitNumber;
+
   try {
-    const getAllCategory = await Category.find().sort({ _id: -1 });
+    const getAllCategory = await Category.find().sort({ _id: -1 }).skip(skip)
+      .limit(limitNumber)
+      .skip(skip)
+    const totalCategories = await Category.countDocuments();
     if (!getAllCategory || getAllCategory.length === 0) {
       return res
         .status(404)
@@ -16,7 +24,15 @@ const allBlogCategory = asyncHandler(async (req, res) => {
     res
       .status(200)
       .json(
-        new ApiResponse(200, getAllCategory, "Categories fetched successfully!")
+        new ApiResponse(200, {
+          result: getAllCategory,
+          pagination: {
+            currentPage: pageNumber,
+            totalPages: Math.ceil(totalCategories / limitNumber),
+            totalItems: totalCategories,
+            itemsPerPage: limitNumber,
+          }
+        }, "Categories fetched successfully!")
       );
   } catch (error) {
     res
@@ -130,10 +146,19 @@ const deleteBlogCategory = asyncHandler(async (req, res) => {
       .json(new ApiError(500, "", "Server error while deleting category"));
   }
 });
+ const categoryById = asyncHandler(async(req,res)=>{
+  const { _id } = req.params;
+  const category = await Category.findById(_id);
+  if (!category) {
+    throw new ApiError(404, "", "Category not found");
+  }
+  return res.status(200).json(new ApiResponse(200, category,"category fatched"));
+ })
 
 export {
   createBlogCategory,
   allBlogCategory,
   updateBlogCategory,
   deleteBlogCategory,
+  categoryById
 };
