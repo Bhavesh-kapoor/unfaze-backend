@@ -25,9 +25,11 @@ export async function processPayment(req, res) {
     const { therapist_id, specialization_id, slot_id, coupon_code } = req.body;
     const specialization = await Specialization.findById(specialization_id);
     let amountToPay = specialization?.inrPrice * 100;
-    let discountPercent = 0
+    let discountPercent = 0;
+    let fixDiscount = 0;
     if (coupon_code) {
-      const coupon = await Coupon.findOne({ code: coupon_code })
+      const coupon = await Coupon.findOne({ code: coupon_code });
+      
       if (!coupon || coupon.expiryDate < new Date()) {
         return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
       }
@@ -36,8 +38,16 @@ export async function processPayment(req, res) {
           .status(200)
           .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
       }
-      amountToPay = (specialization?.inrPrice * 100) * (100 - coupon.discountPercentage) / 100;
-      discountPercent = coupon.discountPercentage
+      if(coupon.currencyType !== "INR"){
+        return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid in india"));
+      }
+      if (coupon.type === "percentage") {
+        amountToPay = (specialization?.inrPrice * 100) * (100 - coupon.discountPercentage) / 100;
+        discountPercent = coupon.discountPercentage
+      } else {
+        amountToPay = (specialization?.inrPrice * 100) - coupon.fixDiscount * 100;
+        fixDiscount = coupon.fixDiscount
+      }
     }
     const timeSlots = await Slot.aggregate([
       {
@@ -196,6 +206,8 @@ export async function processPayment(req, res) {
         start_time: startDateTime,
         end_time: endDateTime,
         discountPercent: discountPercent,
+        fixDiscount : fixDiscount,
+        couponCode:coupon_code,
         type: "single"
       });
       await initiatedTransaction.save();

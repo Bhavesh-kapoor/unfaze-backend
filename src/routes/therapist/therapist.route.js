@@ -12,7 +12,7 @@ router.use("/", therepistAuth);
 
 router.post("/email-verify", therapistEmailVerify);
 
-router.get("/get-sessions", getTherapistSessions);
+// router.get("/get-sessions", getTherapistSessions);
 
 router.get("/get-revenue", getTherapistRevenue);
 

@@ -70,10 +70,19 @@ const transactionSchema = new mongoose.Schema(
         return this.type === 'single';
       }
     },
-    discountPercent:{
+    discountPercent: {
       type: Number,
       default: 0,
+    },
+    fixDiscount: {
+      type: Number,
+      default: 0,
+    },
+    couponCode: {
+      type: String,
+      default: null
     }
+
   },
   { timestamps: true }
 );
