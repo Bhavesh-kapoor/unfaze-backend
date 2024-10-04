@@ -115,7 +115,7 @@ const createOrder = asyncHandler(async (req, res) => {
     };
     // const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     const response = await axios.post(
-      'https://api.cashfree.com/pg/orders',
+      process.env.CASHFREE_API_URL,
       request,
       {
         headers: {
@@ -218,7 +218,19 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
     },
   };
   try {
-    const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+    // const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+    const response = await axios.post(
+      process.env.CASHFREE_API_URL,
+      request,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-client-id': process.env.CASHFREE_APP_ID,
+          'x-client-secret': process.env.CASHFREE_SECRET_KEY,
+          'x-api-version': '2023-08-01'
+        },
+      }
+    );
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
     const rate = await getExchangeRate("USD", "INR");
@@ -260,22 +272,33 @@ const verifyPayment = asyncHandler(async (req, res, next) => {
   if (!order_id) {
     return res
       .status(501)
-      .json(new ApiError(501, error, "order_id is required"));
+      .json(new ApiError(501, "", "order_id is required"));
   }
   try {
-    const response = await Cashfree.PGFetchOrder("2023-08-01", order_id);
-    console.log(response)
+    // Make the request to Cashfree's API with the correct version
+    const response = await axios.post(
+      `${process.env.CASHFREE_API_URL}/${order_id}`,
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-client-id': process.env.CASHFREE_APP_ID,
+          'x-client-secret': process.env.CASHFREE_SECRET_KEY,
+          'x-api-version': "2023-08-01"
+        },
+      }
+    );
     if (response.data.order_status === "ACTIVE") {
-      return res.status(200).json(new ApiResponse(200, response.data, "order has been initiated and still active"))
+      return res.status(200).json(new ApiResponse(200, response.data, "Order has been initiated and is still active"));
     }
     const transaction = await Transaction.findOne({ transactionId: order_id });
-
     req.paymentDetails = response.data;
     req.transaction = transaction;
     next();
   } catch (error) {
-    console.log(error);
-    return res.status(500).json(new ApiError(500, "", "something went wrong!"));
+    console.log(error.response?.data || error);
+    return res.status(500).json(new ApiError(500, "", "Something went wrong!"));
   }
 });
+
 export { createOrder, verifyPayment, createOrderForCourse };
