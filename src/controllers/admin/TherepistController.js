@@ -78,8 +78,8 @@ const register = asyncHandler(async (req, res) => {
         existingTherapist?.email === email
           ? "Email"
           : existingTherapist?.mobile === mobile
-          ? "Phone Number"
-          : "";
+            ? "Phone Number"
+            : "";
 
       return res
         .status(400)
@@ -810,7 +810,7 @@ const dashboard = asyncHandler(async (req, res) => {
             {
               $sort: { start_time: 1 },
             },
-            { $limit: 10 },
+            { $limit: 2 },
             {
               $project: {
                 transactionId: 1,
@@ -830,8 +830,9 @@ const dashboard = asyncHandler(async (req, res) => {
                   ],
                 },
                 category: "$category.name",
-                amount_USD: "$transactions_details.amount_USD",
-                amount_INR: "$transactions_details.amount_INR",
+                // amount_USD: "$transactions_details.amount_USD",
+                // amount_INR: "$transactions_details.amount_INR",
+                status: 1,
                 start_time: 1,
               },
             },

@@ -862,10 +862,11 @@ const getTherapistSessions = async (req, res) => {
     const now = new Date();
     const matchConditions = {
       therapist_id: userId,
+      status: status
     };
 
     if (status === "upcoming") {
-      matchConditions.start_time = { $gt: now };
+      matchConditions.status = { $in: ["upcoming", "rescheduled"] };
     }
     const sessions = await Session.aggregate([
       {
@@ -963,7 +964,7 @@ const getUserSessions = async (req, res) => {
       userId = user?._id;
     }
 
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, page = 1, limit = 100 } = req.query;
     if (!userId) {
       return res
         .status(400)
