@@ -18,7 +18,7 @@ import {
   getUserSessions,
   getTherapistSession,
 } from "../../controllers/admin/sessionsControllers.js";
-import coupenRoute from "./coupen.route.js";
+import coupenRoute from "./coupon.route.js";
 
 const router = Router();
 
@@ -55,6 +55,6 @@ router.get("/user-sessions/:userId/:status", getUserSessions);
 router.get("/therapist-sessions/:Id/:status", getTherapistSession);
 router.get("/get-chat-list", getAllConversationList);
 router.get("/get-chat-history/:chatId", getChatHistoryForAdmin);
-router.use('/coupen',coupenRoute);
+router.use('/coupon', coupenRoute);
 
 export default router;

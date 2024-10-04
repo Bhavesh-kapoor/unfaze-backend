@@ -3,6 +3,7 @@ import { check, validationResult } from "express-validator";
 import asyncHandler from "../../utils/asyncHandler.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js"; // For consistent response formatting
+import { Specialization } from "../../models/specilaizationModel.js";
 
 // Validation rules for coupons
 const coupenValidation = [
@@ -15,43 +16,48 @@ const coupenValidation = [
 ];
 
 // Store (Create) Coupon API
-const store = asyncHandler(async (req, res) => {
+const create = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json(new ApiError(400, "", errors.array()));
     }
-
     const { code, discountPercentage, startDate, expiryDate, usageLimit, specializationId } = req.body;
-
+    const specialization = await Specialization.findById(specializationId);
+    if (!specialization) {
+        return res.status(404).json(new ApiError(404, null, "Specialization not found."));
+    }
+    console.log(req.body)
+    const couponCode = code.trim().toUpperCase();
     const now = new Date();
     const start = new Date(startDate);
     const expiry = new Date(expiryDate);
-
+    console.log(now, start, expiry)
     if (start < now) {
-        return res.status(400).json(new ApiError(400, "Start date must be today or a future date."));
+        return res.status(400).json(new ApiError(400, null, "Start date must be today or a future date."));
     }
-
     if (expiry <= start) {
-        return res.status(400).json(new ApiError(400, "Expiry date must be later than start date."));
+        return res.status(400).json(new ApiError(400, null, "Expiry date must be later than start date."));
     }
-
-    const couponExist = await Coupon.findOne({ 'code': code });
+    const couponExist = await Coupon.findOne({ 'code': couponCode });
     if (couponExist) {
         return res.status(409).json(new ApiError(409, "Coupon code already exists!"));
     }
+    try {
+        const newCoupon = new Coupon({
+            code: couponCode,
+            discountPercentage,
+            startDate: start,
+            expiryDate: expiry,
+            usageLimit,
+            specializationId
+        });
+        await newCoupon.save();
 
-    const newCoupon = new Coupon({
-        code,
-        discountPercentage,
-        startDate: start,
-        expiryDate: expiry,
-        usageLimit,
-        specializationId
-    });
-
-    await newCoupon.save();
-
-    res.status(201).json(new ApiResponse(201, newCoupon, "Coupon has been created!"));
+        res.status(201).json(new ApiResponse(201, newCoupon, "Coupon has been created!"));
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(new ApiError(500, "somthing went wrong while creating coupon", error.message,))
+    }
 });
 
 // List Coupons API
@@ -109,7 +115,7 @@ const update = asyncHandler(async (req, res) => {
     }
 
     const updatedCoupon = await Coupon.findByIdAndUpdate(
-        couponId, 
+        couponId,
         {
             code,
             discountPercentage,
@@ -117,7 +123,7 @@ const update = asyncHandler(async (req, res) => {
             expiryDate: expiry,
             usageLimit,
             specializationId
-        }, 
+        },
         { new: true }  // Return the updated coupon
     );
 
@@ -131,7 +137,7 @@ const deleteCoupon = asyncHandler(async (req, res) => {
     const couponId = req.params.id;
 
     const coupon = await Coupon.findById(couponId);
-    
+
     if (!coupon) {
         return res.status(404).json(new ApiError(404, "Coupon not found!"));
     }
@@ -142,4 +148,4 @@ const deleteCoupon = asyncHandler(async (req, res) => {
 });
 
 // Export the APIs
-export { coupenValidation, store, list, edit, update,deleteCoupon };
+export { coupenValidation, create, list, edit, update, deleteCoupon };

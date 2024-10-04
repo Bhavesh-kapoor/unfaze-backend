@@ -117,11 +117,11 @@ const sessionBookingConfirmation = (name, therapist) => {
         <p><strong>Therapist:</strong>${therapist}</p>
       </div>
       
-      <p>If you have any questions, feel free to reach out to us at support@unfazed.com.</p>
+      <p>If you have any questions, feel free to reach out to us at contact@unfazed.in.</p>
       <p>We look forward to helping you on your journey!</p>
       
       <p>Warm regards,</p>
-      <p>The Unfazed Team</p>
+      <p>The Team Unfazed</p>
     </div>
     
   </div>

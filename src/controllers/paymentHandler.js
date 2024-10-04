@@ -35,7 +35,7 @@ export const sendNotificationsAndEmails = async (user, therapist, htmlContent, m
 
   const mailOptions = {
     from: `Unfaze <${process.env.GMAIL}>`,
-    to: therapist.email,
+    to: user.email,
     subject: subject,
     html: htmlContent
   };

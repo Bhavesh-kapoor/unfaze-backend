@@ -1,6 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
 
-
 const couponSchema = new mongoose.Schema({
     code: {
         type: String,

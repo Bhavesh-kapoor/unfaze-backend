@@ -365,16 +365,16 @@ const getUserSessions = async (req, res) => {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
-    const now = new Date();
+    // const now = new Date();
 
     const matchConditions = {
       user_id: new mongoose.Types.ObjectId(userId),
       status: status,
     };
 
-    if (status === "upcoming") {
-      matchConditions.start_time = { $gt: now };
-    }
+    // if (status === "upcoming") {
+    //   matchConditions.start_time = { $gt: now };
+    // }
 
     // Count total sessions to calculate total pages
     const totalSessions = await Session.countDocuments(matchConditions);
@@ -496,9 +496,8 @@ const getTherapistSession = asyncHandler(async (req, res) => {
       status: status
     };
 
-    if (status === "upcoming") {
-      matchConditions.start_time = { $gt: now };
-    }
+    // if (status === "upcoming") {
+    // }
     const totalSessions = await Session.countDocuments(matchConditions);
     const sessions = await Session.aggregate([
       { $match: matchConditions },
@@ -681,10 +680,10 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
     }
     await course.save();
     // if (process.env.DEV_MODE === 'prod') {
-      const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
-      const subject = "Session Booking Confirmation";
-      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+    const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
+    const subject = "Session Booking Confirmation";
+    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
     // }
     return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
   } catch (error) {

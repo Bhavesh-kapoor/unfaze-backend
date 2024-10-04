@@ -11,6 +11,7 @@ import { parseISO, isValid, addMinutes, format, addDays } from "date-fns";
 import { Course } from "../../models/courseModel.js";
 import dotenv from "dotenv";
 import asyncHandler from "../../utils/asyncHandler.js";
+import { Coupon } from "../../models/couponModel.js";
 dotenv.config();
 import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
 import { Specialization } from "../../models/specilaizationModel.js";
@@ -20,7 +21,24 @@ import { Specialization } from "../../models/specilaizationModel.js";
 export async function processPayment(req, res) {
   try {
     const user = req.user;
-    const { therapist_id, specialization_id, slot_id } = req.body;
+
+    const { therapist_id, specialization_id, slot_id, coupon_code } = req.body;
+    const specialization = await Specialization.findById(specialization_id);
+    let amountToPay = specialization?.inrPrice * 100;
+    let discountPercent = 0
+    if (coupon_code) {
+      const coupon = await Coupon.findOne({ code: coupon_code })
+      if (!coupon || coupon.expiryDate < new Date()) {
+        return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
+      }
+      if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(specialization_id))) {
+        return res
+          .status(200)
+          .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
+      }
+      amountToPay = (specialization?.inrPrice * 100) * (100 - coupon.discountPercentage) / 100;
+      discountPercent = coupon.discountPercentage
+    }
     const timeSlots = await Slot.aggregate([
       {
         $match: {
@@ -92,7 +110,6 @@ export async function processPayment(req, res) {
         .status(404)
         .json(new ApiError(404, "", "Invalid therapist !!!"));
     }
-
     // const existingT=ransaction = await Transaction.findOne({
     //   user_id: user._id,
     //   therapist_id: new mongoose.Types.ObjectId(therapist_id),
@@ -108,13 +125,13 @@ export async function processPayment(req, res) {
     //   transactionId = uniqid();
     //   transactionId = `unfazed${transactionId}`;
     // }
-    const specialization = await Specialization.findById(specialization_id);
+
 
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
       merchantUserId: `MUID_${user._id}`,
-      amount: specialization?.inrPrice * 100,
+      amount: amountToPay,
       redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
       callbackUrl: `${process.env.BACKEND_URL}/api/payment/callback/${transactionId}`,
       redirectMode: "REDIRECT",
@@ -174,10 +191,11 @@ export async function processPayment(req, res) {
         therapist_id,
         slotId: slot_id,
         category: specialization_id,
-        amount_INR: specialization.inrPrice,
+        amount_INR: Math.floor(amountToPay / 100),
         payment_status: "PAYMENT_INITIATED",
         start_time: startDateTime,
         end_time: endDateTime,
+        discountPercent: discountPercent,
         type: "single"
       });
       await initiatedTransaction.save();

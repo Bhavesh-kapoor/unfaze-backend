@@ -20,8 +20,8 @@ passport.use(
 
       try {
         let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }] });
-        if (user?.role === 'admin') {
-          return done(null, user);
+        if (user?.role === "admin") {
+          return done(null, false);
         }
         if (user && !user?.googleId) {
           user.googleId = profile.id,

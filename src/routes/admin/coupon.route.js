@@ -1,10 +1,10 @@
 import Router from 'express';
-import { store, list, edit, update, deleteCoupon, coupenValidation } from '../../controllers/admin/coupenController.js';
+import { create, list, edit, update, deleteCoupon, coupenValidation } from '../../controllers/admin/coupenController.js';
 
 const coupenRoute = Router();
 
 // Store a new coupon
-coupenRoute.post('/store', coupenValidation, store);
+coupenRoute.post('/create', coupenValidation, create);
 
 // List all coupons (with Specialization name)
 coupenRoute.get('/list', list);
