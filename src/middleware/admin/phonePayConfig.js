@@ -244,7 +244,7 @@ export async function processPayment(req, res) {
 export async function processPaymentForcourse(req, res) {
   try {
     const user = req.user;
-    const { therapist_id, courseId, type = "course" } = req.body;
+    const { therapist_id, courseId, type = "course", coupon_code } = req.body;
     if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
       return res
         .status(400)
@@ -261,7 +261,7 @@ export async function processPaymentForcourse(req, res) {
     if (!course) {
       throw new ApiError(404, "Course not found or invalid!");
     }
-    let amountToPay =  course.inrPrice * 100;
+    let amountToPay = course.inrPrice * 100;
     let discountPercent = 0;
     let fixDiscount = 0;
     if (coupon_code) {
@@ -328,7 +328,7 @@ export async function processPaymentForcourse(req, res) {
         therapist_id,
         courseId,
         category: course.specializationId,
-        amount_INR:  Math.floor(amountToPay / 100),
+        amount_INR: Math.floor(amountToPay / 100),
         payment_status: "PAYMENT_INITIATED",
         type,
         discountPercent: discountPercent,

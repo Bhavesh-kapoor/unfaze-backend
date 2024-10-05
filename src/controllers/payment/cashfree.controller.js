@@ -13,11 +13,12 @@ import { Course } from "../../models/courseModel.js";
 // import axios from "axios";
 import { Specialization } from "../../models/specilaizationModel.js";
 import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
+import { Coupon } from "../../models/couponModel.js";
 import axios from "axios";
 // const SESSION_DURATION_MINUTES = 60;
 const createOrder = asyncHandler(async (req, res) => {
   try {
-    const { therapist_id, specialization_id, slot_id } = req.body;
+    const { therapist_id, specialization_id, slot_id, coupon_code } = req.body;
     let order_currency;
     if (process.env.DEV_MODE == "dev") {
       order_currency = "INR"
@@ -25,6 +26,32 @@ const createOrder = asyncHandler(async (req, res) => {
       order_currency = "USD"
     }
     const user = req.user;
+    const specialization = await Specialization.findById(specialization_id);
+    let amountToPay = specialization?.usdPrice;
+    let discountPercent = 0;
+    let fixDiscount = 0;
+    console.log("coupon_code", coupon_code)
+    if (coupon_code) {
+      const coupon = await Coupon.findOne({ code: coupon_code });
+      if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
+        return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
+      }
+      if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(specialization_id))) {
+        return res
+          .status(200)
+          .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
+      }
+      if (coupon.currencyType !== "USD") {
+        return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid for your location"));
+      }
+      if (coupon.type === "percentage") {
+        amountToPay = (specialization?.usdPrice) * (100 - coupon.discountPercentage) / 100;
+        discountPercent = coupon.discountPercentage
+      } else {
+        amountToPay = (specialization?.usdPrice) - coupon.fixDiscount;
+        fixDiscount = coupon.fixDiscount
+      }
+    }
     const timeSlots = await Slot.aggregate([
       {
         $match: {
@@ -87,8 +114,10 @@ const createOrder = asyncHandler(async (req, res) => {
         .status(404)
         .json(new ApiError(404, "", "Invalid therapist !!!"));
     }
-    const specialization = await Specialization.findById(specialization_id);
-    let transactionId = uniqid();
+
+    let transactionId;
+    transactionId = uniqid();
+    transactionId = `unfazed${transactionId}`;
 
     // book the slot first to avoid collisions
 
@@ -100,9 +129,8 @@ const createOrder = asyncHandler(async (req, res) => {
         "timeslots.$.isBooked": true,
       },
     })
-    transactionId = `unfazed${transactionId}`;
     let request = {
-      order_amount: `${specialization?.usdPrice}`,
+      order_amount: `${amountToPay}`,
       order_currency: `${order_currency}`,
       order_id: `${transactionId}`,
       customer_details: {
@@ -136,11 +164,15 @@ const createOrder = asyncHandler(async (req, res) => {
       therapist_id,
       slotId: slot_id,
       category: specialization_id,
-      amount_USD: specialization.usdPrice,
+      amount_USD: Math.floor(amountToPay),
       rate_USD: rate_USD,
       payment_status: "PAYMENT_INITIATED",
       start_time: startDateTime,
       end_time: endDateTime,
+      discountPercent: discountPercent,
+      fixDiscount: fixDiscount,
+      couponCode: coupon_code,
+      type: "single"
     });
     await initiatedTransaction.save();
     // const response = await axios.post(
@@ -155,7 +187,6 @@ const createOrder = asyncHandler(async (req, res) => {
     //     },
     //   }
     // );
-    console.log(paymentSessionId, order_id)
     return res
       .status(200)
       .json(
@@ -202,11 +233,35 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
   if (!course) {
     throw new ApiError(404, "Course not found or invalid!")
   }
+  let amountToPay = course.usdPrice;
+  let discountPercent = 0;
+  let fixDiscount = 0;
+  if (coupon_code) {
+    const coupon = await Coupon.findOne({ code: coupon_code });
+    if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
+      return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
+    }
+    if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(course.specializationId))) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
+    }
+    if (coupon.currencyType !== "USD") {
+      return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid at your Location!"));
+    }
+    if (coupon.type === "percentage") {
+      amountToPay = (course.usdPrice) * (100 - coupon.discountPercentage) / 100;
+      discountPercent = coupon.discountPercentage
+    } else {
+      amountToPay = (course.usdPrice) - coupon.fixDiscount;
+      fixDiscount = coupon.fixDiscount
+    }
+  }
   let transactionId
   transactionId = uniqid();
   transactionId = `unfazed${transactionId}`;
   let request = {
-    order_amount: `${course.inrPrice}`,
+    order_amount: `${amountToPay}`,
     order_currency: `${order_currency}`,
     order_id: `${transactionId}`,
     customer_details: {
@@ -242,9 +297,12 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
       transactionId: order_id,
       user_id: user._id,
       therapist_id,
-      amount_USD: course.usdPrice,
+      amount_USD: Math.floor(amountToPay),
       rate_USD: rate_USD,
       payment_status: "PAYMENT_INITIATED",
+      discountPercent: discountPercent,
+      fixDiscount: fixDiscount,
+      couponCode: coupon_code,
     });
     await initiatedTransaction.save();
 
