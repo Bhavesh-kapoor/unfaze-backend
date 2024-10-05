@@ -82,12 +82,12 @@ app.use((req, res, next) => {
       res.statusCode >= 500
         ? chalk.red
         : res.statusCode >= 400
-        ? chalk.yellow
-        : res.statusCode >= 300
-        ? chalk.cyan
-        : res.statusCode >= 200
-        ? chalk.green
-        : chalk.white;
+          ? chalk.yellow
+          : res.statusCode >= 300
+            ? chalk.cyan
+            : res.statusCode >= 200
+              ? chalk.green
+              : chalk.white;
 
     logger.info(
       `${chalk.blue("METHOD:")} ${chalk.yellow(req.method)} - ${chalk.blue(
@@ -123,6 +123,9 @@ app.get("/images/therapists/:subfolder/:image", (req, res) => {
 });
 
 app.use("/api", routes);
+// import { updateUserPasswords } from "./config/scripts/user.js";
+// updateUserPasswords("unfazed123")
+
 app.use((err, req, res, next) => {
   logger.error(`Error: ${err.message}`);
   res.status(500).json({ message: "An unexpected error occurred." });

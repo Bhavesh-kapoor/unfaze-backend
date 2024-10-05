@@ -5,6 +5,7 @@ import connectDB from "../db/connection.js";
 import { createServer } from "http"; // Create HTTP server
 import { configureSocket } from "./schocket.io/schocket.io.js";
 
+
 // Load environment variables
 config();
 
@@ -47,5 +48,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
 
 startServer();

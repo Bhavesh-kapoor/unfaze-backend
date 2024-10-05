@@ -65,7 +65,7 @@ const sendOtp = async (req, res) => {
   const htmlContent = otpContent(otp);
   const options = mailOptions(
     email,
-    "Email verification code - Unfaze",
+    "Email verification code - Unfazed",
     htmlContent
   );
   try {
