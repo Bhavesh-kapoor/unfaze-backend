@@ -7,6 +7,7 @@ import { Types } from "mongoose";
 import { Therapist } from "../models/therapistModel.js";
 import { sendNotificationsAndEmails } from "./paymentHandler.js";
 import { courseEnrollmentConfirmation } from "../static/emailcontent.js";
+import { Coupon } from "../models/couponModel.js";
 
 const findById = asyncHandler(async (req, res) => {
   const { _id } = req.params;
@@ -61,6 +62,16 @@ const getEnrolledInCourse = asyncHandler(async (req, res) => {
         isActive: true,
       });
       enrolledCourse.save();
+      if (transaction?.couponCode) {
+        const coupon = await Coupon.findOne({ code: transaction.couponCode });
+        if (coupon) {
+          coupon.usedCount += 1;
+          if (coupon.usedCount == coupon.usageLimit) {
+            coupon.isActive = false;
+          }
+          await coupon.save();
+        }
+      }
       const message = `${user.firstName} ${user.lastName} has successfully enrolled in a course.`;
       const htmlContent = courseEnrollmentConfirmation(
         `${user.firstName} ${user.lastName}`,
@@ -138,6 +149,16 @@ const getEnrolledCashfree = asyncHandler(async (req, res) => {
         isActive: true,
       });
       enrolledCourse.save();
+      if (transaction?.couponCode) {
+        const coupon = await Coupon.findOne({ code: transaction.couponCode });
+        if (coupon) {
+          coupon.usedCount += 1;
+          if (coupon.usedCount == coupon.usageLimit) {
+            coupon.isActive = false;
+          }
+          await coupon.save();
+        }
+      }
       const message = `${user.firstName} ${user.lastName} has successfully enrolled in a course.`;
       const htmlContent = courseEnrollmentConfirmation(
         `${user.firstName} ${user.lastName}`,

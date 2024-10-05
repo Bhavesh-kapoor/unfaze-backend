@@ -29,8 +29,7 @@ export async function processPayment(req, res) {
     let fixDiscount = 0;
     if (coupon_code) {
       const coupon = await Coupon.findOne({ code: coupon_code });
-      
-      if (!coupon || coupon.expiryDate < new Date()) {
+      if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
         return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
       }
       if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(specialization_id))) {
@@ -38,7 +37,7 @@ export async function processPayment(req, res) {
           .status(200)
           .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
       }
-      if(coupon.currencyType !== "INR"){
+      if (coupon.currencyType !== "INR") {
         return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid in india"));
       }
       if (coupon.type === "percentage") {
@@ -206,8 +205,8 @@ export async function processPayment(req, res) {
         start_time: startDateTime,
         end_time: endDateTime,
         discountPercent: discountPercent,
-        fixDiscount : fixDiscount,
-        couponCode:coupon_code,
+        fixDiscount: fixDiscount,
+        couponCode: coupon_code,
         type: "single"
       });
       await initiatedTransaction.save();
@@ -262,6 +261,30 @@ export async function processPaymentForcourse(req, res) {
     if (!course) {
       throw new ApiError(404, "Course not found or invalid!");
     }
+    let amountToPay =  course.inrPrice * 100;
+    let discountPercent = 0;
+    let fixDiscount = 0;
+    if (coupon_code) {
+      const coupon = await Coupon.findOne({ code: coupon_code });
+      if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
+        return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
+      }
+      if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(course.specializationId))) {
+        return res
+          .status(200)
+          .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
+      }
+      if (coupon.currencyType !== "INR") {
+        return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid in india"));
+      }
+      if (coupon.type === "percentage") {
+        amountToPay = (course.inrPrice * 100) * (100 - coupon.discountPercentage) / 100;
+        discountPercent = coupon.discountPercentage
+      } else {
+        amountToPay = (course.inrPrice * 100) - coupon.fixDiscount * 100;
+        fixDiscount = coupon.fixDiscount
+      }
+    }
     let transactionId;
     transactionId = uniqid();
     transactionId = `unfazed${transactionId}`;
@@ -269,7 +292,7 @@ export async function processPaymentForcourse(req, res) {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
       merchantUserId: `MUID_${user._id}`,
-      amount: course.inrPrice * 100,
+      amount: amountToPay,
       redirectUrl: `${process.env.FRONTEND_URL}/verifying_payment/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
@@ -299,16 +322,18 @@ export async function processPaymentForcourse(req, res) {
 
     try {
       const response = await axios.request(options);
-      console.log("category ", course.specializationId);
       const initiatedTransaction = new Transaction({
         transactionId,
         user_id: user._id,
         therapist_id,
         courseId,
         category: course.specializationId,
-        amount_INR: course.inrPrice,
+        amount_INR:  Math.floor(amountToPay / 100),
         payment_status: "PAYMENT_INITIATED",
         type,
+        discountPercent: discountPercent,
+        fixDiscount: fixDiscount,
+        couponCode: coupon_code,
       });
 
       await initiatedTransaction.save();

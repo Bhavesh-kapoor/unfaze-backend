@@ -8,8 +8,6 @@ import { Specialization } from "../../models/specilaizationModel.js";
 // Validation rules for coupons
 const coupenValidation = [
     check('code', 'Coupon code is required').notEmpty(),
-    check('discountPercentage', 'Discount Percentage is required').isFloat({ min: 1, max: 100 }),
-    check('startDate', 'Start date of coupon is required').notEmpty(),
     check('expiryDate', 'Expiry date of coupon is required').notEmpty(),
     check('usageLimit', 'Limit of coupon is required').notEmpty().isInt({ min: 1 }),
     check('specializationId', 'Specialization ID must be a valid MongoDB ObjectId').notEmpty().isMongoId(),
@@ -21,38 +19,23 @@ const create = asyncHandler(async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json(new ApiError(400, "", errors.array()));
     }
-    const { code, discountPercentage, startDate, expiryDate, usageLimit, specializationId } = req.body;
-    const specialization = await Specialization.findById(specializationId);
+    const specialization = await Specialization.findById(req.body.specializationId);
     if (!specialization) {
         return res.status(404).json(new ApiError(404, null, "Specialization not found."));
     }
-    console.log(req.body)
-    const couponCode = code.trim().toUpperCase();
     const now = new Date();
-    const start = new Date(startDate);
-    const expiry = new Date(expiryDate);
-    console.log(now, start, expiry)
-    if (start < now) {
-        return res.status(400).json(new ApiError(400, null, "Start date must be today or a future date."));
+    const expiry = new Date(req.body.expiryDate);
+    if (expiry <= now) {
+        return res.status(400).json(new ApiError(400, null, "Expiry date must be later than today date."));
     }
-    if (expiry <= start) {
-        return res.status(400).json(new ApiError(400, null, "Expiry date must be later than start date."));
-    }
-    const couponExist = await Coupon.findOne({ 'code': couponCode });
-    if (couponExist) {
-        return res.status(409).json(new ApiError(409, "Coupon code already exists!"));
-    }
-    try {
-        const newCoupon = new Coupon({
-            code: couponCode,
-            discountPercentage,
-            startDate: start,
-            expiryDate: expiry,
-            usageLimit,
-            specializationId
-        });
-        await newCoupon.save();
 
+    try {
+        const couponExist = await Coupon.findOne({ code: req.body.code.toUpperCase() });
+        if (couponExist) {
+            return res.status(409).json(new ApiError(409, "", "Coupon code already exists!"));
+        }
+        const newCoupon = new Coupon(req.body);
+        await newCoupon.save();
         res.status(201).json(new ApiResponse(201, newCoupon, "Coupon has been created!"));
     } catch (error) {
         console.log(error)

@@ -323,10 +323,10 @@ const allUser = asyncHandler(async (req, res) => {
   if (search) {
     filter.$or = [
       { email: { $regex: search, $options: "i" } },
+      {firstName: { $regex: search, $options: "i" } },
       { mobile: search },
     ];
   }
-
   if (startDate && endDate) {
     filter.createdAt = {
       $gte: startOfDay(parseISO(startDate)),
@@ -341,7 +341,6 @@ const allUser = asyncHandler(async (req, res) => {
       $lt: endOfDay(addDays(parseISO(endDate), 1)),
     };
   }
-
   // Fetching Users
   const userList = await User.find(filter)
     .select("-password -refreshToken")

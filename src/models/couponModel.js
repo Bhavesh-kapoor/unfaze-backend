@@ -14,11 +14,11 @@ const couponSchema = new mongoose.Schema({
     code: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
     },
     discountPercentage: {
         type: Number,
-        required: true
     },
     fixDiscount: {
         type: Number,
@@ -36,7 +36,7 @@ const couponSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    usedCount:{
+    usedCount: {
         type: Number,
         default: 0
     },
@@ -45,6 +45,23 @@ const couponSchema = new mongoose.Schema({
         ref: 'Specialization',
         required: true
     }
-})
+});
+
+// Add a schema-level validation function to check discount logic
+couponSchema.pre('validate', function (next) {
+    if (this.type === 'percentage' && (this.discountPercentage == null || this.discountPercentage <= 0)) {
+        return next(new Error('discountPercentage is required and must be greater than 0 when type is "percentage"'));
+    }
+    
+    if (this.type === 'fixed' && (this.fixDiscount == null || this.fixDiscount <= 0)) {
+        return next(new Error('fixDiscount is required and must be greater than 0 when type is "fixed"'));
+    }
+
+    next();
+});
+couponSchema.pre('save', function (next) {
+    this.code = this.code.toUpperCase();
+    next();
+});
 
 export const Coupon = mongoose.model('Coupon', couponSchema);

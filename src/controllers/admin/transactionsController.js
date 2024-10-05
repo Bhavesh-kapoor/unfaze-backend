@@ -100,7 +100,7 @@ export const fetchAllTransactions = async (req, res) => {
       { $match: { payment_status: status } },
       {
         $lookup: {
-          from: "specializations", // The collection name for category
+          from: "specializations",
           localField: "category",
           foreignField: "_id",
           as: "category",
@@ -109,7 +109,7 @@ export const fetchAllTransactions = async (req, res) => {
       { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
-          from: "users", // The collection name for user_id
+          from: "users",
           localField: "user_id",
           foreignField: "_id",
           as: "userData",
@@ -118,7 +118,7 @@ export const fetchAllTransactions = async (req, res) => {
       { $unwind: { path: "$userData", preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
-          from: "therapists", // The collection name for therapist_id
+          from: "therapists",
           localField: "therapist_id",
           foreignField: "_id",
           as: "therapistData",
@@ -130,6 +130,7 @@ export const fetchAllTransactions = async (req, res) => {
           end_time: 1,
           rate_USD: 1,
           updatedAt: 1,
+          createdAt: 1,
           amount_USD: 1,
           amount_INR: 1,
           start_time: 1,

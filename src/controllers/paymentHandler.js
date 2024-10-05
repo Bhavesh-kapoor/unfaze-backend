@@ -2,17 +2,18 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { sendNotification } from "./notificationController.js";
-import { transporter } from "../config/nodeMailer.js";
+import { transporter, mailOptions } from "../config/nodeMailer.js";
 import { Therapist } from "../models/therapistModel.js";
 import { Session } from "../models/sessionsModel.js";
 import { Slot } from "../models/slotModal.js";
 import { sessionBookingConfirmation } from "../static/emailcontent.js";
-function convertUTCtoIST(utcDate) {
-  const date = new Date(utcDate);
-  const istDateTime = date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-  const [istDate, istTime] = istDateTime.split(', ');
-  return { date: istDate, time: istTime };
-}
+import { Coupon } from "../models/couponModel.js";
+// function convertUTCtoIST(utcDate) {
+//   const date = new Date(utcDate);
+//   const istDateTime = date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+//   const [istDate, istTime] = istDateTime.split(', ');
+//   return { date: istDate, time: istTime };
+// }
 export const sendNotificationsAndEmails = async (user, therapist, htmlContent, message, subject) => {
   const receiverId = therapist._id;
   const payload = {
@@ -28,25 +29,24 @@ export const sendNotificationsAndEmails = async (user, therapist, htmlContent, m
       message,
       payload
     );
-    console.log("Notification sent:", notification);
   } catch (err) {
     console.error("Error sending notification:", err);
   }
+  const options = mailOptions(user.email, subject, htmlContent)
+  //   from: `Unfazed <${process.env.GMAIL}>`,
+  //   to: user.email,
+  //   subject: subject,
+  //   html: htmlContent
+  // };
 
-  const mailOptions = {
-    from: `Unfazed <${process.env.GMAIL}>`,
-    to: user.email,
-    subject: subject,
-    html: htmlContent
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
+  transporter.sendMail(options, (error, info) => {
     if (error) {
       console.log("Error while sending email:", error);
     } else {
       console.log("Email sent successfully:", info.response);
     }
   });
+
 };
 
 // const getEnrolledCourseList = asyncHandler(async (req, res) => {
@@ -151,6 +151,16 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       session.channelName = channelName;
       await session.save();
       // const { date, time } = convertUTCtoIST(transaction.start_time);
+      if (transaction?.couponCode) {
+        const coupon = await Coupon.findOne({ code: transaction.couponCode });
+        if (coupon) {
+          coupon.usedCount += 1;
+          if (coupon.usedCount == coupon.usageLimit) {
+            coupon.isActive = false;
+          }
+          await coupon.save();
+        }
+      }
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
       const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
@@ -225,6 +235,16 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       channelName = `session_${channelName}`;
       session.channelName = channelName;
       await session.save();
+      if (transaction?.couponCode) {
+        const coupon = await Coupon.findOne({ code: transaction.couponCode });
+        if (coupon) {
+          coupon.usedCount += 1;
+          if (coupon.usedCount == coupon.usageLimit) {
+            coupon.isActive = false;
+          }
+          await coupon.save();
+        }
+      }
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
       const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)

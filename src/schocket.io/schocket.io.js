@@ -49,10 +49,12 @@ export const configureSocket = (httpServer, app) => {
       }
     });
 
-    socket.on("typing", () => {
-      socket.broadcast.emit("user-typing");
+    socket.on("typing", (receiverId) => {
+      const user = getUser(receiverId);
+      if (user) {
+        io.to(user.socketId).emit("user-typing", { senderId: socket.id });
+      }
     });
-
     socket.on("disconnect", () => {
       removeUser(socket.id);
       io.emit("getUsers", users);
