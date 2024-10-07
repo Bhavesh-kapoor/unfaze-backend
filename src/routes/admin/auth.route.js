@@ -17,6 +17,7 @@ import { getAllConversationList, getChatHistoryForAdmin } from "../../controller
 import {
   getUserSessions,
   getTherapistSession,
+  sessionCompleted
 } from "../../controllers/admin/sessionsControllers.js";
 import coupenRoute from "./coupon.route.js";
 
@@ -56,5 +57,7 @@ router.get("/therapist-sessions/:Id/:status", getTherapistSession);
 router.get("/get-chat-list", getAllConversationList);
 router.get("/get-chat-history/:chatId", getChatHistoryForAdmin);
 router.use('/coupon', coupenRoute);
+router.get('/session_completed/:sessionId', sessionCompleted);
+
 
 export default router;
