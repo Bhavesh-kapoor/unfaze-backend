@@ -296,17 +296,22 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
 
   // Total sales of all time
   const getTotalSalesOfAllTime = async () => {
-    const result = await Session.aggregate([
+    const result = await Transaction.aggregate([
+      // {
+      //   $lookup: {
+      //     from: "transactions",
+      //     localField: "transaction_id",
+      //     foreignField: "_id",
+      //     as: "transaction_details",
+      //   },
+      // },
+      // {
+      //   $unwind: "$transaction_details",
+      // },
       {
-        $lookup: {
-          from: "transactions",
-          localField: "transaction_id",
-          foreignField: "_id",
-          as: "transaction_details",
+        $match: {
+          payment_status: "successful",
         },
-      },
-      {
-        $unwind: "$transaction_details",
       },
       {
         $group: {
