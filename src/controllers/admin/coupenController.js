@@ -197,11 +197,11 @@ const validateCoupon = asyncHandler(async (req, res) => {
     try {
         const coupon = await Coupon.findOne({ code: coupon_code });
         if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
-            return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
+            throw new ApiError(200, "Coupon not found or expired");
         }
 
         if (coupon.currencyType !== currencyType) {
-            return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid"));
+            throw new ApiError(200, "Coupon not found or expired");
         }
 
         let price, discount, amountToPay;
