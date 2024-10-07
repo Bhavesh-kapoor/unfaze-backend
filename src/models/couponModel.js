@@ -52,7 +52,7 @@ couponSchema.pre('validate', function (next) {
     if (this.type === 'percentage' && (this.discountPercentage == null || this.discountPercentage <= 0)) {
         return next(new Error('discountPercentage is required and must be greater than 0 when type is "percentage"'));
     }
-    
+
     if (this.type === 'fixed' && (this.fixDiscount == null || this.fixDiscount <= 0)) {
         return next(new Error('fixDiscount is required and must be greater than 0 when type is "fixed"'));
     }

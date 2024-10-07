@@ -4,7 +4,6 @@ const sessionSchema = new Schema(
     transaction_id: {
       type: Schema.Types.ObjectId,
       ref: "Transaction",
-      required: true,
     },
     therapist_id: {
       type: Schema.Types.ObjectId,
@@ -26,6 +25,10 @@ const sessionSchema = new Schema(
     },
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },
+    manuallyBooked:{
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 );

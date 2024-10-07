@@ -46,15 +46,37 @@ const create = asyncHandler(async (req, res) => {
 // List Coupons API
 // List Coupons API (with only Specialization name)
 const list = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10 } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const totalCoupons = await Coupon.countDocuments();
+
+    // Fetch the paginated coupons
     const coupons = await Coupon.find()
-        .populate('specializationId', 'name');  // Only fetch the 'name' field from Specialization
+        .populate('specializationId', 'name')
+        .skip(skip)
+        .limit(limitNumber);
 
     if (!coupons.length) {
         return res.status(404).json(new ApiError(404, "No coupons found!"));
     }
 
-    res.status(200).json(new ApiResponse(200, coupons, "Coupons retrieved successfully!"));
+    // Return the paginated coupons with total count
+    res.status(200).json(
+        new ApiResponse(200, {
+            result: coupons,
+            pagination: {
+                currentPage: pageNumber,
+                totalPages: Math.ceil(totalCoupons / limitNumber),
+                totalItems: totalCoupons,
+                itemsPerPage: limitNumber,
+            }
+        }, "Coupons retrieved successfully!")
+    );
 });
+
 
 // Edit (Retrieve Coupon by ID) API (with only Specialization name)
 const edit = asyncHandler(async (req, res) => {
@@ -78,11 +100,9 @@ const update = asyncHandler(async (req, res) => {
     }
 
     const couponId = req.params.id;
-    const { code, discountPercentage, startDate, expiryDate, usageLimit, specializationId } = req.body;
-
     const now = new Date();
-    const start = new Date(startDate);
-    const expiry = new Date(expiryDate);
+    const start = new Date(req.body.startDate);
+    const expiry = new Date(req.body.expiryDate);
 
     if (start < now) {
         return res.status(400).json(new ApiError(400, "Start date must be today or a future date."));
@@ -94,19 +114,11 @@ const update = asyncHandler(async (req, res) => {
 
     const couponExist = await Coupon.findOne({ 'code': code, '_id': { $ne: couponId } });
     if (couponExist) {
-        return res.status(409).json(new ApiError(409, "Coupon code already exists!"));
+        return res.status(409).json(new ApiError(409, "Coupon code already exists try another one!"));
     }
-
     const updatedCoupon = await Coupon.findByIdAndUpdate(
         couponId,
-        {
-            code,
-            discountPercentage,
-            startDate: start,
-            expiryDate: expiry,
-            usageLimit,
-            specializationId
-        },
+        req.body,
         { new: true }  // Return the updated coupon
     );
 
@@ -119,16 +131,15 @@ const update = asyncHandler(async (req, res) => {
 const deleteCoupon = asyncHandler(async (req, res) => {
     const couponId = req.params.id;
 
-    const coupon = await Coupon.findById(couponId);
+    const coupon = await Coupon.findByIdAndDelete(couponId);
 
     if (!coupon) {
         return res.status(404).json(new ApiError(404, "Coupon not found!"));
     }
-
-    await coupon.remove(); // Remove the coupon from the database
-
     res.status(200).json(new ApiResponse(200, null, "Coupon has been deleted successfully!"));
 });
+//  const appliedCoupon = asyncHandler(()=>{
 
+//  })
 // Export the APIs
 export { coupenValidation, create, list, edit, update, deleteCoupon };

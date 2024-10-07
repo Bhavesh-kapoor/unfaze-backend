@@ -24,6 +24,9 @@ export async function processPayment(req, res) {
 
     const { therapist_id, specialization_id, slot_id, coupon_code } = req.body;
     const specialization = await Specialization.findById(specialization_id);
+    if (!specialization) {
+      return res.status(200).json(new ApiResponse(200, "", "Specialization not found"));
+    }
     let amountToPay = specialization?.inrPrice * 100;
     let discountPercent = 0;
     let fixDiscount = 0;
