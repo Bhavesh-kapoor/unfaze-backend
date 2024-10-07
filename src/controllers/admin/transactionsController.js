@@ -209,41 +209,32 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
   const dateRanges = getDateRanges(now);
 
   const getTotalSales = async (startDate, endDate) => {
-    const result = await Session.aggregate([
+    const result = await Transaction.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
+          payment_status: "successful",  // Ensure that only successful transactions are counted
         },
-      },
-      {
-        $lookup: {
-          from: "transactions",
-          localField: "transaction_id",
-          foreignField: "_id",
-          as: "transaction_details",
-        },
-      },
-      {
-        $unwind: "$transaction_details",
       },
       {
         $group: {
           _id: null,
-          totalUSDSales: { $sum: "$transaction_details.amount_USD" },
-          totalINRSales: { $sum: "$transaction_details.amount_INR" },
+          totalUSDSales: { $sum: "$amount_USD" }, // Replace transaction_details fields with direct fields
+          totalINRSales: { $sum: "$amount_INR" },
           countUSDSales: {
             $sum: {
-              $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0],
+              $cond: [{ $gt: ["$amount_USD", 0] }, 1, 0],  // Count non-zero USD transactions
             },
           },
           countINRSales: {
             $sum: {
-              $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0],
+              $cond: [{ $gt: ["$amount_INR", 0] }, 1, 0],  // Count non-zero INR transactions
             },
           },
         },
       },
     ]);
+
     return (
       result[0] || {
         totalUSDSales: 0,
@@ -253,6 +244,7 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
       }
     );
   };
+
 
   // Function to get the count of newly created users within a time range
   const getNewUserCount = async (startDate, endDate) => {
@@ -316,16 +308,16 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: null,
-          totalUSDSales: { $sum: "$transaction_details.amount_USD" },
-          totalINRSales: { $sum: "$transaction_details.amount_INR" },
+          totalUSDSales: { $sum: "$amount_USD" }, // Replace transaction_details fields with direct fields
+          totalINRSales: { $sum: "$amount_INR" },
           countUSDSales: {
             $sum: {
-              $cond: [{ $gt: ["$transaction_details.amount_USD", 0] }, 1, 0],
+              $cond: [{ $gt: ["$amount_USD", 0] }, 1, 0],  // Count non-zero USD transactions
             },
           },
           countINRSales: {
             $sum: {
-              $cond: [{ $gt: ["$transaction_details.amount_INR", 0] }, 1, 0],
+              $cond: [{ $gt: ["$amount_INR", 0] }, 1, 0],  // Count non-zero INR transactions
             },
           },
         },
