@@ -539,7 +539,7 @@ export const updateAdminDetails = asyncHandler(async (req, res) => {
 
     if (req.file?.path) profileImagePath = req.file.path;
 
-    const adminUser = await User.findOne({ _id: id, role: "admin" });
+    const adminUser = await User.findOne({ _id: id });
 
     if (!adminUser) {
       return res
