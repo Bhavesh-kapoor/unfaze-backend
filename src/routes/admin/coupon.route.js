@@ -1,5 +1,5 @@
 import Router from 'express';
-import { create, list, edit, update, deleteCoupon, coupenValidation } from '../../controllers/admin/coupenController.js';
+import { create, list, edit, update, deleteCoupon, coupenValidation,validateCoupon } from '../../controllers/admin/coupenController.js';
 
 const coupenRoute = Router();
 
@@ -17,5 +17,6 @@ coupenRoute.put('/update/:id', coupenValidation, update);
 
 // Delete a coupon by ID
 coupenRoute.delete('/delete/:id', deleteCoupon);
+coupenRoute.get('/validate', validateCoupon);
 
 export default coupenRoute;
