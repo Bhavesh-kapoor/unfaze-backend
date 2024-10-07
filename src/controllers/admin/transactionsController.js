@@ -259,7 +259,7 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
   const daysPassedInCurrentYear = Math.floor(
     (now - new Date(now.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)
   );
-  const hoursPassedToday = now.getHours(); // Current hour of the day (0-23)
+  const hoursPassedToday = now.getHours();
 
   // Comparison date ranges
   const comparativeWeekStart = startOfWeek(subWeeks(now, 1));
@@ -308,23 +308,22 @@ const TotalSalesByDuration = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: null,
-          totalUSDSales: { $sum: "$amount_USD" }, // Replace transaction_details fields with direct fields
+          totalUSDSales: { $sum: "$amount_USD" },
           totalINRSales: { $sum: "$amount_INR" },
           countUSDSales: {
             $sum: {
-              $cond: [{ $gt: ["$amount_USD", 0] }, 1, 0],  // Count non-zero USD transactions
+              $cond: [{ $gt: ["$amount_USD", 0] }, 1, 0],
             },
           },
           countINRSales: {
             $sum: {
-              $cond: [{ $gt: ["$amount_INR", 0] }, 1, 0],  // Count non-zero INR transactions
+              $cond: [{ $gt: ["$amount_INR", 0] }, 1, 0],
             },
           },
         },
       },
     ]);
 
-    // Ensure the result object is returned correctly
     return (
       result[0] || {
         totalUSDSales: 0,
