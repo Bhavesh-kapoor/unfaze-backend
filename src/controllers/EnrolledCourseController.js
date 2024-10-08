@@ -216,6 +216,7 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
     const totalCourses = await EnrolledCourse.countDocuments({ userId });
 
     const enrolledCourses = await EnrolledCourse.find({ userId })
+      .sort({ enrollmentDate: -1 })
       .skip(skip)
       .limit(limitNumber)
       .populate({
@@ -239,18 +240,18 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
 
     const flattenedCourses = enrolledCourses.map((course) => ({
       _id: course._id,
-      transactionId: course.transactionId._id,
-      amount_USD: course.transactionId.amount_USD,
-      amount_INR: course.transactionId.amount_INR,
-      courseId: course.courseId._id,
-      category: course.courseId.specializationId.name,
-      therapistId: course.therapistId._id,
-      therapistName: `${course.therapistId.firstName} ${course.therapistId.lastName}`,
-      userId: course.userId._id,
-      userName: `${course.userId.firstName} ${course.userId.lastName}`,
-      remainingSessions: course.remainingSessions,
-      isActive: course.isActive,
-      enrollmentDate: course.enrollmentDate,
+      transactionId: course.transactionId?._id || "N/A",
+      amount_USD: course.transactionId?.amount_USD || 0,
+      amount_INR: course.transactionId?.amount_INR || 0,
+      courseId: course.courseId?._id || "N/A",
+      category: course.courseId?.specializationId?.name || "Unknown",
+      therapistId: course.therapistId?._id || "N/A",
+      therapistName: `${course.therapistId?.firstName || ''} ${course.therapistId?.lastName || ''}`,
+      userId: course.userId?._id || "N/A",
+      userName: `${course.userId?.firstName || ''} ${course.userId?.lastName || ''}`,
+      remainingSessions: course.remainingSessions || 0,
+      isActive: course.isActive || false,
+      enrollmentDate: course.enrollmentDate || "N/A",
     }));
 
     return res.status(200).json({
@@ -271,6 +272,7 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
     });
   }
 });
+
 
 export {
   findById,

@@ -1074,9 +1074,11 @@ const UserTransactions = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiResponse(400, null, "User ID is required!"));
   }
+
   const pageNumber = parseInt(page, 10);
   const limitNumber = parseInt(limit, 10);
   const skip = (pageNumber - 1) * limitNumber;
+
   const userTransactions = await Transaction.aggregate([
     {
       $match: {
@@ -1118,19 +1120,28 @@ const UserTransactions = asyncHandler(async (req, res) => {
         category: "$category.name",
         amount_USD: 1,
         amount_INR: 1,
-        start_time: 1,
+        // Handle start_time for both course and single session transactions
+        start_time: {
+          $cond: {
+            if: { $eq: ["$type", "course"] },
+            then: "",  // Set as empty string or null for course transactions
+            else: "$start_time",
+          },
+        },
         payment_status: "$payment_details.payment_status",
       },
     },
-    { $sort: { start_time: -1 } },
+    { $sort: { createdAt: -1 } }, // Sort by creation time
     { $skip: skip },
     { $limit: limitNumber },
   ]);
+
   if (!userTransactions.length) {
     return res
       .status(404)
       .json(new ApiResponse(200, [], "No transactions found for this user"));
   }
+
   return res.json(
     new ApiResponse(
       200,
@@ -1139,6 +1150,7 @@ const UserTransactions = asyncHandler(async (req, res) => {
     )
   );
 });
+
 const therapistTransactions = asyncHandler(async (req, res) => {
   const user = req.user;
   if (!user) {
