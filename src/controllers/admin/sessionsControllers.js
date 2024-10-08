@@ -688,7 +688,7 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
       { therapistId: course.therapistId, specializationId: course.courseId.specializationId },
       { $inc: { count: 1 } }
     );
-    
+
 
     // Set channelName for the session
     let channelName = `session_${session._id.toString().slice(-10)}`;
@@ -826,14 +826,14 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
     channelName = `session_${channelName}`;
     session.channelName = channelName;
     await session.save();
-    const monetization = await TherapistPay.findOne({
-      $and: [
-        { therapistId: therapist_id },
-        { specializationId: specialization_id }
-      ]
-    });
-    monetization.count += 1;
-    monetization.save();
+    // const monetization = await TherapistPay.findOne({
+    //   $and: [
+    //     { therapistId: therapist_id },
+    //     { specializationId: specialization_id }
+    //   ]
+    // });
+    // monetization.count = monetization.count + 1;
+    // await monetization.save();
     const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
     const subject = "Session Booking Confirmation";
     const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)

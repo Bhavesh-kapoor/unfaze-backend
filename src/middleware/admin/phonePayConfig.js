@@ -27,6 +27,13 @@ export async function processPayment(req, res) {
     if (!specialization) {
       return res.status(200).json(new ApiResponse(200, "", "Specialization not found"));
     }
+    //  const monetization = await TherapistPay.findOne({
+    //   $and: [
+    //     { therapistId: therapist_id },
+    //     { specializationId: specialization_id }
+    //   ]
+    // });
+
     let amountToPay = specialization?.inrPrice * 100;
     let discountPercent = 0;
     let fixDiscount = 0;

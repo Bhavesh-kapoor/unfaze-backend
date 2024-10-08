@@ -17,27 +17,41 @@ const createPay = asyncHandler(async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json(new ApiError(400, "", errors.array()));
     }
+
     try {
-        const { inrPay, usdPay, specializationId, therapistId } = req.body;
-        const therapist = await TherapistPay.findOne({
-            $and: [
-                { therapistId: therapistId },
-                { specializationId: specializationId }
-            ]
+        const { therapistId, data } = req.body;
+
+        // Check if therapist already exists for any of the specializations in data
+        const existingTherapist = await TherapistPay.findOne({
+            therapistId,
+            specializationId: { $in: data.map(item => item.specializationId) }
         });
-        if (therapist) {
+
+        if (existingTherapist) {
             throw new ApiError(400, "Therapist already exists for this specialization!");
         }
-        const therapistPay = await TherapistPay.create({ inrPay, usdPay, specializationId, therapistId });
-        if (!therapistPay) {
-            throw new ApiError(400, "Failed to create payment!");
+
+        // Prepare data for bulk insertion
+        const therapistPayments = data.map(item => ({
+            inrPay: item.inrPay,
+            usdPay: item.usdPay,
+            specializationId: item.specializationId, // Assuming each item has specializationId
+            therapistId
+        }));
+
+        const createdPayments = await TherapistPay.insertMany(therapistPayments);
+
+        if (!createdPayments) {
+            throw new ApiError(400, "Failed to create payments!");
         }
-        res.status(201).json(new ApiResponse(201, therapistPay, "therapist payment  created successfully!"));
+
+        res.status(201).json(new ApiResponse(201, createdPayments, "Therapist payments created successfully!"));
     } catch (error) {
-        console.log(error);
-        res.status(500).json(new ApiError(500, "somthing went wrong", error.message))
+        console.error(error);
+        res.status(500).json(new ApiError(500, "Something went wrong", error.message));
     }
 });
+
 const updatePay = asyncHandler(async (req, res) => {
     try {
 
@@ -107,8 +121,108 @@ const deletePay = asyncHandler(async (req, res) => {
         res.status(500).json(new ApiError(500, "somthing went wrong", error.message))
     }
 });
+const getAllMonetizations = asyncHandler(async (req, res) => {
+    try {
+        const { page = 1, limit = 10, search } = req.query;
+        const pageNumber = parseInt(page);
+        const limitNumber = parseInt(limit);
+        const skip = (pageNumber - 1) * limitNumber;
+
+        let matchCondition = {};
+
+        if (search) {
+            matchCondition = {
+                'therapistDetails.firstName': { $regex: search, $options: 'i' }
+            };
+        }
+
+        // Aggregation pipeline
+        const pipeline = [
+            {
+                $lookup: {
+                    from: 'therapists',
+                    localField: 'therapistId',
+                    foreignField: '_id',
+                    as: 'therapistDetails'
+                }
+            },
+            {
+                $unwind: '$therapistDetails'
+            },
+            {
+                $lookup: {
+                    from: 'specializations',
+                    localField: 'specializationId',
+                    foreignField: '_id',
+                    as: 'specializationDetails'
+                }
+            },
+            {
+                $unwind: '$specializationDetails'
+            },
+            {
+                $match: matchCondition
+            },
+            {
+                $project: {
+                    _id: 1,
+                    therapist: {
+                        $concat: ['$therapistDetails.firstName', ' ', '$therapistDetails.lastName']
+                    },
+                    category: '$specializationDetails.name',
+                    maxInrPrice: '$specializationDetails.inrPrice',
+                    maxUsdPrice: '$specializationDetails.usdPrice',
+                    inrPay: 1,
+                    usdPay: 1
+                }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limitNumber
+            }
+        ];
+
+        const allMonetizations = await TherapistPay.aggregate(pipeline);
+
+        const totalPipeline = [
+            {
+                $lookup: {
+                    from: 'therapists',
+                    localField: 'therapistId',
+                    foreignField: '_id',
+                    as: 'therapistDetails'
+                }
+            },
+            {
+                $unwind: '$therapistDetails'
+            },
+            {
+                $match: matchCondition
+            }
+        ];
+
+        const total = (await TherapistPay.aggregate(totalPipeline)).length;
+
+        res.status(200).json(new ApiResponse(200, {
+            result: allMonetizations,
+            pagination: {
+                currentPage: pageNumber,
+                totalPages: Math.ceil(total / limitNumber),
+                totalItems: total,
+                itemsPerPage: limitNumber
+            }
+        }, "Monetization list fetched successfully!"));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json(new ApiError(500, "failed to fatch monetization list", [error]));
+    }
+});
+
+
 // const listbyCategory = asyncHandler(async (req, res) => {
 
 // });
 
-export { payValidation, createPay, updatePay, findByTherapistId, deletePay }
+export { payValidation, createPay, updatePay, findByTherapistId, deletePay, getAllMonetizations }
