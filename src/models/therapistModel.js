@@ -26,7 +26,6 @@ const educationSchema = new Schema(
   },
   { _id: false }
 );
-
 const addressSchema = new Schema(
   {
     city: { type: String, trim: true },

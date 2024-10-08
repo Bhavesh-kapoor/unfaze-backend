@@ -14,6 +14,7 @@ import { EnrolledCourse } from "../../models/enrolledCourseModel.js";
 import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
 import { sessionBookingConfirmation } from "../../static/emailcontent.js";
 import { Specialization } from "../../models/specilaizationModel.js";
+import { TherapistPay } from "../../models/therapistPayModel.js";
 const SESSION_DURATION_MINUTES = 30;
 const GAP_BETWEEN_SESSIONS_MINUTES = 15;
 const START_HOUR = 9;
@@ -589,23 +590,39 @@ const getTherapistSession = asyncHandler(async (req, res) => {
 
 const BookSessionFromCourse = asyncHandler(async (req, res) => {
   try {
-    const { enrolledCourseId, slotId } = req.query
-    const user = req.user
+    const { enrolledCourseId, slotId } = req.query;
+    const user = req.user;
+
     if (!enrolledCourseId || !slotId) {
-      return res.status(400).json(new ApiError(400, "", "enrolledCourseId and slotId is required!"))
+      return res.status(400).json(new ApiError(400, "", "enrolledCourseId and slotId are required!"));
     }
+
+    // Find enrolled course and check ownership
     const course = await EnrolledCourse.findOne({
       _id: new mongoose.Types.ObjectId(enrolledCourseId),
-      userId: user._id
-    });
+      userId: user._id,
+    }).populate("courseId");
+
     if (!course) {
       return res.status(404).json(new ApiResponse(404, null, "Course not found"));
     }
+
     if (!course.remainingSessions) {
-      return res.status(200).json(new ApiResponse(200, null, "you have already taken all your sessions"))
+      return res.status(200).json(new ApiResponse(200, null, "You have already taken all your sessions"));
     }
-    const therapist = await Therapist.findById(course.therapistId)
-    const timeSlots = await Slot.aggregate([
+
+    // Check therapist monetization
+    const monetization = await TherapistPay.findOne({
+      therapistId: course.therapistId,
+      specializationId: course.courseId.specializationId,
+    });
+    if (!monetization) {
+      return res.status(404).json(new ApiResponse(404, null, "This therapist is not monetized"));
+    }
+    // Find therapist and slot
+    const therapist = await Therapist.findById(course.therapistId);
+
+    const timeSlot = await Slot.aggregate([
       {
         $match: {
           therapist_id: new mongoose.Types.ObjectId(course.therapistId),
@@ -631,67 +648,78 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
         },
       },
     ]);
-    if (timeSlots.length === 0) {
-      return res
-        .status(404)
-        .json(new ApiError(404, "", "Timeslot not found or already booked"));
+
+    if (!timeSlot.length) {
+      return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
     }
-    const { date, startTime, endTime } = timeSlots[0];
+
+    // Extract slot details
+    const { date, startTime, endTime } = timeSlot[0];
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
     const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
     const endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
 
     if (!isValid(startDateTime) || !isValid(endDateTime)) {
       console.error("Invalid date-time format:", startDateTime, endDateTime);
-      return res
-        .status(400)
-        .json(new ApiError(400, "", "Invalid date or time format"));
+      return res.status(400).json(new ApiError(400, "", "Invalid date or time format"));
     }
 
     if (startDateTime >= endDateTime) {
-      return res
-        .status(400)
-        .send({ error: "End time must be after start time" });
+      return res.status(400).json(new ApiError(400, "", "End time must be after start time"));
     }
-    await Slot.updateOne({
-      therapist_id: new mongoose.Types.ObjectId(course.therapistId),
-      "timeslots._id": new mongoose.Types.ObjectId(slotId),
-    }, {
-      $set: {
-        "timeslots.$.isBooked": true,
-      },
-    })
+
+    // Create session and update slot
     const session = new Session({
       transaction_id: course.transactionId,
       therapist_id: course.therapistId,
       user_id: user._id,
+      category: course.courseId.specializationId,
       start_time: startDateTime,
       end_time: endDateTime,
     });
+    await Slot.updateOne(
+      {
+        therapist_id: new mongoose.Types.ObjectId(course.therapistId),
+        "timeslots._id": new mongoose.Types.ObjectId(slotId),
+      },
+      { $set: { "timeslots.$.isBooked": true } }
+    );
+    await TherapistPay.updateOne(
+      { therapistId: course.therapistId, specializationId: course.courseId.specializationId },
+      { $inc: { count: 1 } }
+    );
+    
 
-    let channelName = session._id.toString().slice(-10)
-    channelName = `session_${channelName}`;
+    // Set channelName for the session
+    let channelName = `session_${session._id.toString().slice(-10)}`;
     session.channelName = channelName;
     await session.save();
-    course.remainingSessions -= 1
+
+    // Update remaining sessions and deactivate course if necessary
+    course.remainingSessions -= 1;
     if (course.remainingSessions === 0) {
       course.isActive = false;
-      await course.save();
     }
     await course.save();
-    // if (process.env.DEV_MODE === 'prod') {
-    const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
-    const subject = "Session Booking Confirmation";
-    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
-    // }
-    return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
+
+    // Send notifications and emails if in production mode
+    if (process.env.DEV_MODE === 'prod') {
+      const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
+      const subject = "Session Booking Confirmation";
+      const htmlContent = sessionBookingConfirmation(
+        `${user.firstName} ${user.lastName}`,
+        `${therapist.firstName} ${therapist.lastName}`
+      );
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+    }
+
+    return res.status(200).json(new ApiResponse(200, session, "Session booked successfully"));
   } catch (error) {
-    console.log(error)
-    res.status(500).json(new ApiError(500, "somthingwent wrong", [error]))
+    console.error(error);
+    res.status(500).json(new ApiError(500, "Something went wrong", [error]));
   }
-}
-);
+});
+
 
 const manualSessionBooking = asyncHandler(async (req, res) => {
   try {
@@ -798,6 +826,14 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
     channelName = `session_${channelName}`;
     session.channelName = channelName;
     await session.save();
+    const monetization = await TherapistPay.findOne({
+      $and: [
+        { therapistId: therapist_id },
+        { specializationId: specialization_id }
+      ]
+    });
+    monetization.count += 1;
+    monetization.save();
     const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
     const subject = "Session Booking Confirmation";
     const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)

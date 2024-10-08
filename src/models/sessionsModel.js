@@ -28,6 +28,11 @@ const sessionSchema = new Schema(
     manuallyBooked:{
       type: Boolean,
       default: false
+    },
+    category:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Specialization",
+      required: true,
     }
   },
   { timestamps: true }

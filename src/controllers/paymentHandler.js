@@ -8,6 +8,7 @@ import { Session } from "../models/sessionsModel.js";
 import { Slot } from "../models/slotModal.js";
 import { sessionBookingConfirmation } from "../static/emailcontent.js";
 import { Coupon } from "../models/couponModel.js";
+import { TherapistPay } from "../models/therapistPayModel.js";
 // function convertUTCtoIST(utcDate) {
 //   const date = new Date(utcDate);
 //   const istDateTime = date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -143,6 +144,7 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
         transaction_id: transaction._id,
         therapist_id: transaction.therapist_id,
         user_id: transaction.user_id,
+        category: transaction.category,
         start_time: transaction.start_time,
         end_time: transaction.end_time,
       });
@@ -161,6 +163,14 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
           await coupon.save();
         }
       }
+      // const monetization = await TherapistPay.findOne({
+      //   $and: [
+      //     { therapistId: transaction.therapist_id },
+      //     { specializationId: transaction.category }
+      //   ]
+      // });
+      // monetization.count = monetization.count + 1;
+      // await monetization.save();
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
       const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
@@ -227,6 +237,7 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
         transaction_id: transaction._id,
         therapist_id: transaction.therapist_id,
         user_id: user._id,
+        category: transaction.category,
         start_time: transaction.start_time,
         end_time: transaction.end_time,
       });
@@ -245,6 +256,15 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
           await coupon.save();
         }
       }
+      // const monetization = await TherapistPay.findOne({
+      //   $and: [
+      //     { therapistId: transaction.therapist_id },
+      //     { specializationId: transaction.category }
+      //   ]
+      // });
+      // monetization.count = monetization.count + 1;
+      // await monetization.save();
+
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
       const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)

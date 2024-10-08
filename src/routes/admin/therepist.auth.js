@@ -12,6 +12,7 @@ import {
   activateOrDeactivate,
   deleteTherapistByID,
   setNewPasswrd,
+  getTherapistSpecializations
 } from "../../controllers/admin/TherepistController.js";
 import {
   upload,
@@ -67,5 +68,6 @@ router.post(
 
 router.patch("/update-avatar", upload.single("profileImage"), updateAvatar);
 router.put("/set-new-password", setNewPasswrd);
+router.get("/get-therapist-specializations/:therapistId", getTherapistSpecializations);
 
 export default router;

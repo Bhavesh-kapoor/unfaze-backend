@@ -982,6 +982,25 @@ const setNewPasswrd = asyncHandler(async (req, res) => {
     return res.status(500).json({ error: error });
   }
 });
+
+const getTherapistSpecializations = asyncHandler(async (req, res) => {
+  const { therapistId } = req.params
+  try {
+    const specializationList = await Therapist.findById(therapistId)
+      .populate({
+        path: "specialization",
+        select: "name",
+      }).select("specialization")
+      .exec();
+    if (!specializationList) {
+      return res.status(404).json(new ApiError(404, null, 'Therapist not found!'))
+    }
+    return res.status(200).json(new ApiResponse(200, specializationList, 'Therapist found!'))
+  } catch (error) {
+    console.error('Error fetching therapist specializations:', error)
+    return res.status(500).json(new ApiError(500, null, 'Server error'))
+  }
+})
 export {
   register,
   login,
@@ -997,4 +1016,5 @@ export {
   forgotPassword,
   verifyOtpAllowAccess,
   setNewPasswrd,
+  getTherapistSpecializations
 };

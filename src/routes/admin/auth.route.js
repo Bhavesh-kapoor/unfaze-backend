@@ -14,6 +14,7 @@ import contactUsRoutes from "../../routes/contactUs.router.js";
 import { setNewPasswrd } from "../../controllers/admin/user.controller.js";
 import { bookSessionManully } from "../../controllers/admin/sessionsControllers.js";
 import { getAllConversationList, getChatHistoryForAdmin } from "../../controllers/messageController.js";
+import monetizeRoutes from "./therapistPayRoutes.js"
 import {
   getUserSessions,
   getTherapistSession,
@@ -58,6 +59,7 @@ router.get("/get-chat-list", getAllConversationList);
 router.get("/get-chat-history/:chatId", getChatHistoryForAdmin);
 router.use('/coupon', coupenRoute);
 router.get('/session_completed/:sessionId', sessionCompleted);
+router.use('/monetize', monetizeRoutes);
 
 
 export default router;
