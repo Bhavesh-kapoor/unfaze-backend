@@ -612,16 +612,15 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
     }
 
     // Check therapist monetization
-    const monetization = await TherapistPay.findOne({
-      therapistId: course.therapistId,
-      specializationId: course.courseId.specializationId,
-    });
-    if (!monetization) {
-      return res.status(404).json(new ApiResponse(404, null, "This therapist is not monetized"));
-    }
+    // const monetization = await TherapistPay.findOne({
+    //   therapistId: course.therapistId,
+    //   specializationId: course.courseId.specializationId,
+    // });
+    // if (!monetization) {
+    //   return res.status(404).json(new ApiResponse(404, null, "This therapist is not monetized"));
+    // }
     // Find therapist and slot
     const therapist = await Therapist.findById(course.therapistId);
-
     const timeSlot = await Slot.aggregate([
       {
         $match: {

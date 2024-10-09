@@ -2,8 +2,10 @@ import { TherapistPay } from "../models/therapistPayModel.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
-import { check, validationResult } from "express-validator";
+import { body, check, validationResult } from "express-validator";
 import mongoose from "mongoose";
+import { isValidObjectId } from "../utils/mongooseUtility.js";
+import { json } from "express";
 
 const payValidation = [
     check('inrPay', 'inrPay is required').notEmpty(),
@@ -11,46 +13,37 @@ const payValidation = [
     check('therapistId', 'Therapist ID must be a valid MongoDB ObjectId').notEmpty().isMongoId(),
     check('specializationId', 'Specialization ID must be a valid MongoDB ObjectId').notEmpty().isMongoId(),
 ];
-
 const createPay = asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json(new ApiError(400, "", errors.array()));
-    }
-
     try {
         const { therapistId, data } = req.body;
-
-        // Check if therapist already exists for any of the specializations in data
-        const existingTherapist = await TherapistPay.findOne({
+        const existingTherapists = await TherapistPay.find({
             therapistId,
             specializationId: { $in: data.map(item => item.specializationId) }
         });
 
-        if (existingTherapist) {
-            throw new ApiError(400, "Therapist already exists for this specialization!");
+        const existingSpecializationIds = existingTherapists.map(item => item.specializationId.toString());
+        const newPayments = data.filter(item => !existingSpecializationIds.includes(item.specializationId));
+
+        if (newPayments.length === 0) {
+            return res.status(200).json(new ApiResponse(200, null, "All provided specializations already exist for this therapist!"));
         }
 
-        // Prepare data for bulk insertion
-        const therapistPayments = data.map(item => ({
+        const therapistPayments = newPayments.map(item => ({
             inrPay: item.inrPay,
             usdPay: item.usdPay,
-            specializationId: item.specializationId, // Assuming each item has specializationId
+            specializationId: item.specializationId,
             therapistId
         }));
 
         const createdPayments = await TherapistPay.insertMany(therapistPayments);
 
-        if (!createdPayments) {
-            throw new ApiError(400, "Failed to create payments!");
-        }
-
-        res.status(201).json(new ApiResponse(201, createdPayments, "Therapist payments created successfully!"));
+        res.status(201).json(new ApiResponse(201, createdPayments, "Therapist payments created successfully for new specializations!"));
     } catch (error) {
         console.error(error);
-        res.status(500).json(new ApiError(500, "Something went wrong", error.message));
+        res.status(500).json(new ApiError(500, "Something went wrong", [error]));
     }
 });
+
 
 const updatePay = asyncHandler(async (req, res) => {
     try {
@@ -220,9 +213,31 @@ const getAllMonetizations = asyncHandler(async (req, res) => {
     }
 });
 
+const getById = asyncHandler(async (req, res) => {
+    try {
+        const { _id } = req.params
+        if (!isValidObjectId(_id)) {
+            return res.status(400).json(new ApiResponse(400, null, "Invalid document ID!"))
+        }
+        const therapistPay = await TherapistPay.findById(_id).populate("specializationId", "name inrPrice usdPrice").populate('therapistId', "firstName lastName")
+        if (!therapistPay) {
+            throw new ApiError(404, "No data found")
+        }
+        const result = {
+            _id: _id,
+            therapistName: `${therapistPay.therapistId.firstName} ${therapistPay.therapistId.lastName}`,
+            specialization: therapistPay.specializationId.name,
+            inrPay: therapistPay.inrPay,
+            usdPay: therapistPay.usdPay,
+            usdPrice: therapistPay.specializationId.usdPrice,
+            inrPrice: therapistPay.specializationId.inrPrice,
+            createdAt: therapistPay.createdAt,
+        }
+        return res.status(200).json(new ApiResponse(200, result, "Data fatched successfully"))
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(new ApiError(500, "Failed to fetch therapist pay"))
+    }
+});
 
-// const listbyCategory = asyncHandler(async (req, res) => {
-
-// });
-
-export { payValidation, createPay, updatePay, findByTherapistId, deletePay, getAllMonetizations }
+export { payValidation, createPay, updatePay, findByTherapistId, deletePay, getAllMonetizations, getById }
