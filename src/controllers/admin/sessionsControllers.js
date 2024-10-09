@@ -347,8 +347,8 @@ const bookSessionManully = asyncHandler(async (req, res) => {
 // for admin----------------------
 const getUserSessions = async (req, res) => {
   try {
-    const { userId, status } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { userId } = req.params;
+    const { page = 1, limit = 10, status = "upcoming" } = req.query;
 
     if (!userId) {
       return res
@@ -385,17 +385,8 @@ const getUserSessions = async (req, res) => {
       { $match: matchConditions },
       {
         $lookup: {
-          from: "transactions",
-          localField: "transaction_id",
-          foreignField: "_id",
-          as: "transactions_details",
-        },
-      },
-      { $unwind: "$transactions_details" },
-      {
-        $lookup: {
           from: "therapists",
-          localField: "transactions_details.therapist_id",
+          localField: "therapist_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "therapist_details",
@@ -405,7 +396,7 @@ const getUserSessions = async (req, res) => {
       {
         $lookup: {
           from: "specializations",
-          localField: "transactions_details.category",
+          localField: "category",
           foreignField: "_id",
           pipeline: [{ $project: { name: 1 } }],
           as: "category",
@@ -415,7 +406,7 @@ const getUserSessions = async (req, res) => {
       {
         $lookup: {
           from: "users",
-          localField: "transactions_details.user_id",
+          localField: "user_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "user_details",
@@ -438,10 +429,9 @@ const getUserSessions = async (req, res) => {
           },
           therapistId: "$therapist_details._id",
           category: "$category.name",
-          amount_USD: "$transactions_details.amount_USD",
-          amount_INR: "$transactions_details.amount_INR",
           start_time: 1,
           status: 1,
+          manuallyBooked: 1,
         },
       },
       { $sort: { start_time: 1 } },
@@ -475,8 +465,8 @@ const getUserSessions = async (req, res) => {
 
 const getTherapistSession = asyncHandler(async (req, res) => {
   try {
-    const { Id, status } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { Id } = req.params;
+    const { page = 1, limit = 10, status = "upcoming" } = req.query;
 
     if (!Id) {
       return res.status(400).json(new ApiError(400, null, "User ID is required!"));
@@ -502,19 +492,19 @@ const getTherapistSession = asyncHandler(async (req, res) => {
     const totalSessions = await Session.countDocuments(matchConditions);
     const sessions = await Session.aggregate([
       { $match: matchConditions },
-      {
-        $lookup: {
-          from: "transactions",
-          localField: "transaction_id",
-          foreignField: "_id",
-          as: "transactions_details",
-        },
-      },
-      { $unwind: "$transactions_details" },
+      // {
+      //   $lookup: {
+      //     from: "transactions",
+      //     localField: "transaction_id",
+      //     foreignField: "_id",
+      //     as: "transactions_details",
+      //   },
+      // },
+      // { $unwind: "$transactions_details" },
       {
         $lookup: {
           from: "therapists",
-          localField: "transactions_details.therapist_id",
+          localField: "therapist_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "therapist_details",
@@ -524,7 +514,7 @@ const getTherapistSession = asyncHandler(async (req, res) => {
       {
         $lookup: {
           from: "specializations",
-          localField: "transactions_details.category",
+          localField: "category",
           foreignField: "_id",
           pipeline: [{ $project: { name: 1 } }],
           as: "category",
@@ -534,7 +524,7 @@ const getTherapistSession = asyncHandler(async (req, res) => {
       {
         $lookup: {
           from: "users",
-          localField: "transactions_details.user_id",
+          localField: "user_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "user_details",
@@ -801,9 +791,6 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
         .status(400)
         .send({ error: "End time must be after start time" });
     }
-
-
-
     // Find therapist
 
     const session = new Session({
@@ -846,4 +833,5 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
     res.status(500).json(new ApiError(500, "somthingwent wrong", [error]))
   }
 })
+
 export { sessionCompleted, rescheduleSession, bookSessionManully, getUserSessions, getTherapistSession, BookSessionFromCourse, manualSessionBooking }

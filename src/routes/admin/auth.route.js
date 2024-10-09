@@ -52,16 +52,14 @@ router.put("/set-new-password", setNewPasswrd);
 router.use("/specialization", specializationRouter);
 
 router.post("/book-session-manully", bookSessionManully);
+router.get("/user-sessions/:userId", getUserSessions);
 
-router.get("/user-sessions/:userId/:status", getUserSessions);
-
-router.get("/therapist-sessions/:Id/:status", getTherapistSession);
+router.get("/therapist-sessions/:Id", getTherapistSession);
 router.get("/get-chat-list", getAllConversationList);
 router.get("/get-chat-history/:chatId", getChatHistoryForAdmin);
 router.use('/coupon', coupenRoute);
 router.get('/session_completed/:sessionId', sessionCompleted);
 router.post('/manual-booking', manualSessionBooking);
 router.use('/monetize', monetizeRoutes);
-
 
 export default router;
