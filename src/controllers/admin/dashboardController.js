@@ -425,6 +425,7 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
             $gte: start,
             $lte: end,
           },
+          payment_status: 'successful',
         },
       },
       {

@@ -1,5 +1,5 @@
 import fs from "fs";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
@@ -15,7 +15,14 @@ import { verifyOTP, createAndStoreOTP } from "../otpController.js";
 import { otpContent, passwordUpdatedEmail } from "../../static/emailcontent.js";
 import { CustomerFeedback } from "../../models/reviewsModal.js";
 import { Course } from "../../models/courseModel.js";
-
+import { count, log } from "console";
+import { json } from "express";
+import { ObjectId } from "mongodb";
+import path from "path";
+import { pipeline } from "stream";
+import { stringify } from "querystring";
+import { all } from "axios";
+import { populate } from "dotenv";
 const createAccessOrRefreshToken = async (user_id) => {
   const user = await Therapist.findById(user_id);
   const accessToken = await user.generateAccessToken();
@@ -708,81 +715,101 @@ const dashboard = asyncHandler(async (req, res) => {
       },
       {
         $lookup: {
-          from: "transactions",
-          localField: "transaction_id",
-          foreignField: "_id",
-          as: "transactions_details",
+          from: "therapistpays",
+          localField: "category",
+          foreignField: "specializationId",
+          let: { therapistId: therapist_id },
+          pipeline: [
+            {
+              $match: { $expr: { $eq: ["$therapistId", "$$therapistId"] } },
+            },
+            {
+              $project: {
+                inrPay: 1,
+                usdPay: 1,
+              },
+            },
+          ],
+          as: "therapist_pay",
         },
       },
       {
-        $unwind: "$transactions_details",
+        $unwind: {
+          path: "$therapist_pay",
+          preserveNullAndEmptyArrays: true, // Allow missing pay data
+        },
+      },
+      {
+        $addFields: {
+          inrPay: { $ifNull: ["$therapist_pay.inrPay", 0] },
+          usdPay: { $ifNull: ["$therapist_pay.usdPay", 0] },
+        },
+      },
+      {
+        $lookup: {
+          from: "specializations",
+          localField: "category",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "category_details",
+        },
+      },
+      {
+        $unwind: "$category_details",
       },
       {
         $lookup: {
           from: "therapists",
-          localField: "transactions_details.therapist_id",
+          localField: "therapist_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "therapist_details",
-        },
+        }
       },
       { $unwind: "$therapist_details" },
       {
         $lookup: {
-          from: "specializations",
-          localField: "transactions_details.category",
-          foreignField: "_id",
-          pipeline: [{ $project: { name: 1 } }],
-          as: "category",
-        },
-      },
-      { $unwind: "$category" },
-      {
-        $lookup: {
           from: "users",
-          localField: "transactions_details.user_id",
+          localField: "user_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "user_details",
-        },
+        }
       },
       { $unwind: "$user_details" },
       {
         $facet: {
           earnings: [
             {
+              $match: { status: "completed" },
+            },
+            {
               $group: {
                 _id: null,
-                amount_USD: { $sum: "$transactions_details.amount_USD" },
-                amount_INR: { $sum: "$transactions_details.amount_INR" },
+                amount_USD: { $sum: "$usdPay" },
+                amount_INR: { $sum: "$inrPay" },
               },
             },
             {
-              $project: {
-                _id: 0,
-              },
+              $project: { _id: 0 },
             },
           ],
           currentMonthEarnings: [
             {
               $match: {
-                createdAt: {
-                  $gte: firstDayOfMonth,
-                  $lte: lastDayOfMonth,
-                },
+                status: "completed",
+                start_time: { $gte: firstDayOfMonth, $lte: lastDayOfMonth },
               },
             },
             {
               $group: {
                 _id: null,
-                amount_USD: { $sum: "$transactions_details.amount_USD" },
-                amount_INR: { $sum: "$transactions_details.amount_INR" },
+                amount_USD: { $sum: "$usdPay" },
+                amount_INR: { $sum: "$inrPay" },
               },
             },
             {
-              $project: {
-                _id: 0,
-              },
+              $project: { _id: 0 },
             },
           ],
           upcomingSessionCount: [
@@ -829,28 +856,64 @@ const dashboard = asyncHandler(async (req, res) => {
                     "$therapist_details.lastName",
                   ],
                 },
-                category: "$category.name",
-                // amount_USD: "$transactions_details.amount_USD",
-                // amount_INR: "$transactions_details.amount_INR",
+                category: "$category_details.name",
                 status: 1,
                 start_time: 1,
+              },
+            },
+          ],
+          overallSessionCountByCategory: [
+            { $match: { status: "completed" } },
+            {
+              $group: {
+                _id: "$category_details.name",
+                count: { $sum: 1 },
+              },
+            },
+          ],
+          currentMonthSessionCountByCategory: [
+            {
+              $match: {
+                status: "completed",
+                start_time: { $gte: firstDayOfMonth, $lte: lastDayOfMonth },
+              },
+            },
+            {
+              $group: {
+                _id: "$category_details.name",
+                count: { $sum: 1 },
               },
             },
           ],
         },
       },
     ]);
+    console.log(result)
+    // Debugging output for each aggregation stage
+    console.log('Result after aggregation:', JSON.stringify(result, null, 2));
 
-    // Handle empty earnings, currentMonthEarnings, and session count
+    // Handle empty earnings and session counts
     const amount = (result.earnings && result.earnings[0]) || {
       amount_USD: 0,
       amount_INR: 0,
     };
     const currentMonthEarnings = (result.currentMonthEarnings &&
       result.currentMonthEarnings[0]) || { amount_USD: 0, amount_INR: 0 };
-    const upcomingSessionCount = result.upcomingSessionCount[0]?.count || 0;
-    const completedSessionCount = result.completedSessionCount[0]?.count || 0;
+
+    // Update upcoming session count
+    const upcomingSessionCount = (result.upcomingSessionCount[0]?.count || 0);
+    const completedSessionCount = (result.completedSessionCount[0]?.count || 0);
     const sessions = result.sessions || [];
+
+    // Add the category session counts
+    const sessionCountByCategory = result.overallSessionCountByCategory.map(category => ({
+      category: category._id,
+      count: category.count,
+    }));
+    const currentMonthSessionCountByCategory = result.currentMonthSessionCountByCategory.map(category => ({
+      category: category._id,
+      count: category.count,
+    }));
 
     // Return the result
     return res.status(200).json({
@@ -859,14 +922,16 @@ const dashboard = asyncHandler(async (req, res) => {
       completedSessionCount,
       upcomingSessionCount,
       sessions,
+      sessionCountByCategory,
+      currentMonthSessionCountByCategory,
     });
   } catch (error) {
     console.error("Error fetching therapist dashboard data:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
+
 
 const forgotPassword = asyncHandler(async (req, res) => {
   try {
