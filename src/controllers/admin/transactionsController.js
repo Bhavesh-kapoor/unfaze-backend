@@ -5,6 +5,7 @@ import { Session } from "../../models/sessionsModel.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
 import { User } from "../../models/userModel.js";
+import mongoose from "mongoose";
 import {
   startOfDay,
   endOfDay,
@@ -866,24 +867,20 @@ const getTherapistSessions = async (req, res) => {
       matchConditions.status = { $in: ["upcoming", "rescheduled"] };
     }
     const sessions = await Session.aggregate([
-      {
-        $match: matchConditions,
-      },
-      {
-        $lookup: {
-          from: "transactions",
-          localField: "transaction_id",
-          foreignField: "_id",
-          as: "transactions_details",
-        },
-      },
-      {
-        $unwind: "$transactions_details",
-      },
+      { $match: matchConditions },
+      // {
+      //   $lookup: {
+      //     from: "transactions",
+      //     localField: "transaction_id",
+      //     foreignField: "_id",
+      //     as: "transactions_details",
+      //   },
+      // },
+      // { $unwind: "$transactions_details" },
       {
         $lookup: {
           from: "therapists",
-          localField: "transactions_details.therapist_id",
+          localField: "therapist_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "therapist_details",
@@ -893,7 +890,7 @@ const getTherapistSessions = async (req, res) => {
       {
         $lookup: {
           from: "specializations",
-          localField: "transactions_details.category",
+          localField: "category",
           foreignField: "_id",
           pipeline: [{ $project: { name: 1 } }],
           as: "category",
@@ -903,7 +900,7 @@ const getTherapistSessions = async (req, res) => {
       {
         $lookup: {
           from: "users",
-          localField: "transactions_details.user_id",
+          localField: "user_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "user_details",
@@ -924,9 +921,10 @@ const getTherapistSessions = async (req, res) => {
               "$therapist_details.lastName",
             ],
           },
+          therapistId: "$therapist_details._id",
           category: "$category.name",
-          amount_USD: "$transactions_details.amount_USD",
-          amount_INR: "$transactions_details.amount_INR",
+          // amount_USD: "$transactions_details.amount_USD",
+          // amount_INR: "$transactions_details.amount_INR",
           start_time: 1,
           status: 1,
         },
@@ -954,14 +952,12 @@ const getUserSessions = async (req, res) => {
   try {
     const user = req.user;
     let userId;
-
     if (user.role === "admin") {
       userId = req.query.userId;
     } else {
       userId = user?._id;
     }
-
-    const { status, page = 1, limit = 100 } = req.query;
+    const { status = "upcoming", page = 1, limit = 10 } = req.query;
     if (!userId) {
       return res
         .status(400)
@@ -973,31 +969,19 @@ const getUserSessions = async (req, res) => {
     const skip = (pageNumber - 1) * limitNumber;
     const now = new Date();
     const matchConditions = {
-      user_id: userId,
+      user_id: new mongoose.Types.ObjectId(userId),
+      status: status,
     };
 
     // if (status === "upcoming") {
     //   matchConditions.start_time = { $gt: now };
     // }
     const sessions = await Session.aggregate([
-      {
-        $match: matchConditions,
-      },
-      {
-        $lookup: {
-          from: "transactions",
-          localField: "transaction_id",
-          foreignField: "_id",
-          as: "transactions_details",
-        },
-      },
-      {
-        $unwind: "$transactions_details",
-      },
+      { $match: matchConditions },
       {
         $lookup: {
           from: "therapists",
-          localField: "transactions_details.therapist_id",
+          localField: "therapist_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "therapist_details",
@@ -1007,7 +991,7 @@ const getUserSessions = async (req, res) => {
       {
         $lookup: {
           from: "specializations",
-          localField: "transactions_details.category",
+          localField: "category",
           foreignField: "_id",
           pipeline: [{ $project: { name: 1 } }],
           as: "category",
@@ -1017,7 +1001,7 @@ const getUserSessions = async (req, res) => {
       {
         $lookup: {
           from: "users",
-          localField: "transactions_details.user_id",
+          localField: "user_id",
           foreignField: "_id",
           pipeline: [{ $project: { firstName: 1, lastName: 1 } }],
           as: "user_details",
@@ -1040,10 +1024,9 @@ const getUserSessions = async (req, res) => {
           },
           therapistId: "$therapist_details._id",
           category: "$category.name",
-          amount_USD: "$transactions_details.amount_USD",
-          amount_INR: "$transactions_details.amount_INR",
           start_time: 1,
           status: 1,
+          manuallyBooked: 1,
         },
       },
       { $sort: { start_time: 1 } },
