@@ -6,8 +6,8 @@ import { check, validationResult } from "express-validator";
 import mongoose from "mongoose";
 
 const payValidation = [
-    check('inrPay', 'Coupon code is required').notEmpty(),
-    check('usdPay', 'Expiry date of coupon is required').notEmpty(),
+    check('inrPay', 'inrPay is required').notEmpty(),
+    check('usdPay', 'usdPay is required').notEmpty(),
     check('therapistId', 'Therapist ID must be a valid MongoDB ObjectId').notEmpty().isMongoId(),
     check('specializationId', 'Specialization ID must be a valid MongoDB ObjectId').notEmpty().isMongoId(),
 ];
