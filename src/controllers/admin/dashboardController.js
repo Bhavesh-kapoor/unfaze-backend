@@ -4,7 +4,16 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { Session } from "../../models/sessionsModel.js";
 import { Therapist } from "../../models/therapistModel.js";
-import { endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, format, eachDayOfInterval } from "date-fns";
+import {
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  eachMonthOfInterval,
+  format,
+  eachDayOfInterval,
+} from "date-fns";
 import { Transaction } from "../../models/transactionModel.js";
 import { Notification } from "../../models/notification.Model.js";
 import { Specialization } from "../../models/specilaizationModel.js";
@@ -369,8 +378,9 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
         labels: [], // Therapist names
         datasets: [
           {
-            label: `${status.charAt(0).toUpperCase() + status.slice(1)
-              } Sessions`,
+            label: `${
+              status.charAt(0).toUpperCase() + status.slice(1)
+            } Sessions`,
             data: [],
             backgroundColor: getRandomColor(), // Generate a random color for the background
             hoverOffset: 4,
@@ -466,55 +476,55 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
       },
     ]);
 
-    // Initialize response with zero data for each day/month
-    const response = interval.map(date => ({
-      label: month ? format(date, 'dd MMMM') : format(date, 'MMMM'),
-      totalSessions: 0,
-      totalRevenueUSD: 0,
-      totalRevenueINR: 0,
-    }));
+      // Initialize response with zero data for each day/month
+      const response = interval.map((date) => ({
+        label: month ? format(date, "dd MMMM") : format(date, "MMMM"),
+        totalSessions: 0,
+        totalRevenueUSD: 0,
+        totalRevenueINR: 0,
+      }));
 
-    // Populate response based on transactions data
-    transactions.forEach(transaction => {
-      const index = month ? transaction._id - 1 : transaction._id - 1; // zero-indexed
-      response[index].totalSessions = transaction.totalSessions;
-      response[index].totalRevenueUSD = transaction.totalRevenueUSD;
-      response[index].totalRevenueINR = transaction.totalRevenueINR;
-    });
+      // Populate response based on transactions data
+      transactions.forEach((transaction) => {
+        const index = month ? transaction._id - 1 : transaction._id - 1; // zero-indexed
+        response[index].totalSessions = transaction.totalSessions;
+        response[index].totalRevenueUSD = transaction.totalRevenueUSD;
+        response[index].totalRevenueINR = transaction.totalRevenueINR;
+      });
 
-    // Format the final response for charting
-    const finalResponse = {
-      datasets: [
-        {
-          label: "Number of Sessions",
-          data: response.map(item => item.totalSessions),
-          borderColor: "rgb(75, 192, 192)",
-          tension: 0.3,
-          fill: true,
-        },
-        {
-          label: "Revenue (USD)",
-          data: response.map(item => item.totalRevenueUSD),
-          borderColor: "rgb(54, 162, 235)",
-          tension: 0.3,
-          fill: true,
-        },
-        {
-          label: "Revenue (INR)",
-          data: response.map(item => item.totalRevenueINR),
-          borderColor: "rgb(255, 159, 64)",
-          tension: 0.3,
-          fill: true,
-        },
-      ],
-    };
+      // Format the final response for charting
+      const finalResponse = {
+        datasets: [
+          // {
+          //   label: "Number of Sessions",
+          //   data: response.map(item => item.totalSessions),
+          //   borderColor: "rgb(75, 192, 192)",
+          //   tension: 0.3,
+          //   fill: true,
+          // },
+          {
+            label: "Revenue (USD)",
+            data: response.map((item) => item.totalRevenueUSD),
+            borderColor: "rgb(54, 162, 235)",
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: "Revenue (INR)",
+            data: response.map((item) => item.totalRevenueINR),
+            borderColor: "rgb(255, 159, 64)",
+            tension: 0.3,
+            fill: true,
+          },
+        ],
+      };
 
-    res.status(200).json(new ApiResponse(200, finalResponse, "Data fetched successfully"));
-  } catch (error) {
-    console.error(error);
-    res.status(500).json(new ApiError(500, 'Server error', error));
+      res
+        .status(200)
+        .json(new ApiResponse(200, finalResponse, "Data fetched successfully"));
+    } catch (error) {
+      console.error(error);
+      res.status(500).json(new ApiError(500, "Server error", error));
+    }
   }
-});
-
-
-
+);
