@@ -376,7 +376,11 @@ const getUserSessions = async (req, res) => {
     // if (status === "upcoming") {
     //   matchConditions.start_time = { $gt: now };
     // }
-
+    if (status === "upcoming") {
+      matchConditions.status = { $in: ["upcoming", "rescheduled"] };
+    } else {
+      matchConditions.status = status;
+    }
     // Count total sessions to calculate total pages
     const totalSessions = await Session.countDocuments(matchConditions);
 
@@ -486,7 +490,11 @@ const getTherapistSession = asyncHandler(async (req, res) => {
       therapist_id: new mongoose.Types.ObjectId(Id),
       status: status
     };
-
+    if (status === "upcoming") {
+      matchConditions.status = { $in: ["upcoming", "rescheduled"] };
+    } else {
+      matchConditions.status = status;
+    }
     // if (status === "upcoming") {
     // }
     const totalSessions = await Session.countDocuments(matchConditions);

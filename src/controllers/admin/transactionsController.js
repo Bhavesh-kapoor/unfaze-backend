@@ -865,6 +865,8 @@ const getTherapistSessions = async (req, res) => {
 
     if (status === "upcoming") {
       matchConditions.status = { $in: ["upcoming", "rescheduled"] };
+    } else {
+      matchConditions.status = status;
     }
     const sessions = await Session.aggregate([
       { $match: matchConditions },
@@ -972,6 +974,11 @@ const getUserSessions = async (req, res) => {
       user_id: new mongoose.Types.ObjectId(userId),
       status: status,
     };
+    if (status === "upcoming") {
+      matchConditions.status = { $in: ["upcoming", "rescheduled"] };
+    } else {
+      matchConditions.status = status;
+    }
 
     // if (status === "upcoming") {
     //   matchConditions.start_time = { $gt: now };
