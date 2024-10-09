@@ -4,7 +4,16 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { Session } from "../../models/sessionsModel.js";
 import { Therapist } from "../../models/therapistModel.js";
-import { endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear, eachMonthOfInterval, format, eachDayOfInterval } from "date-fns";
+import {
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  eachMonthOfInterval,
+  format,
+  eachDayOfInterval,
+} from "date-fns";
 import { Transaction } from "../../models/transactionModel.js";
 import { Notification } from "../../models/notification.Model.js";
 import { Specialization } from "../../models/specilaizationModel.js";
@@ -369,8 +378,9 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
         labels: [], // Therapist names
         datasets: [
           {
-            label: `${status.charAt(0).toUpperCase() + status.slice(1)
-              } Sessions`,
+            label: `${
+              status.charAt(0).toUpperCase() + status.slice(1)
+            } Sessions`,
             data: [],
             backgroundColor: getRandomColor(), // Generate a random color for the background
             hoverOffset: 4,
@@ -402,113 +412,116 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
     throw new ApiError(500, error.message);
   }
 });
-export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) => {
-  try {
-    const { year, month } = req.query;
-    // If no year is provided, default to the current year
-    const selectedYear = year ? parseInt(year, 10) : new Date().getFullYear();
-    let start, end, interval;
-    if (month) {
-      const selectedMonth = parseInt(month, 10) - 1;
-      start = startOfMonth(new Date(selectedYear, selectedMonth));
-      end = endOfMonth(new Date(selectedYear, selectedMonth));
-      interval = eachDayOfInterval({ start, end });
-    } else {
-      start = startOfYear(new Date(selectedYear, 0));
-      end = endOfYear(new Date(selectedYear, 11));
-      interval = eachMonthOfInterval({ start, end });
-    }
-    const transactions = await Transaction.aggregate([
-      {
-        $match: {
-          createdAt: {
-            $gte: start,
-            $lte: end,
+export const getTransactionsAndSessionsByMonth = asyncHandler(
+  async (req, res) => {
+    try {
+      const { year, month } = req.query;
+      // If no year is provided, default to the current year
+      const selectedYear = year ? parseInt(year, 10) : new Date().getFullYear();
+      let start, end, interval;
+      if (month) {
+        const selectedMonth = parseInt(month, 10) - 1;
+        start = startOfMonth(new Date(selectedYear, selectedMonth));
+        end = endOfMonth(new Date(selectedYear, selectedMonth));
+        interval = eachDayOfInterval({ start, end });
+      } else {
+        start = startOfYear(new Date(selectedYear, 0));
+        end = endOfYear(new Date(selectedYear, 11));
+        interval = eachMonthOfInterval({ start, end });
+      }
+      const transactions = await Transaction.aggregate([
+        {
+          $match: {
+            createdAt: {
+              $gte: start,
+              $lte: end,
+            },
+            payment_status: "successful",
           },
-          payment_status: 'successful',
         },
-      },
-      {
-        $lookup: {
-          from: 'courses',
-          localField: 'courseId',
-          foreignField: '_id',
-          as: 'courseDetails',
+        {
+          $lookup: {
+            from: "courses",
+            localField: "courseId",
+            foreignField: "_id",
+            as: "courseDetails",
+          },
         },
-      },
-      {
-        $addFields: {
-          courseSessions: {
-            $cond: {
-              if: { $eq: ['$type', 'course'] },
-              then: { $arrayElemAt: ['$courseDetails.sessionOffered', 0] },
-              else: 1,
+        {
+          $addFields: {
+            courseSessions: {
+              $cond: {
+                if: { $eq: ["$type", "course"] },
+                then: { $arrayElemAt: ["$courseDetails.sessionOffered", 0] },
+                else: 1,
+              },
             },
           },
         },
-      },
-      {
-        $group: {
-          _id: month ? { $dayOfMonth: '$createdAt' } : { $month: '$createdAt' },
-          totalSessions: { $sum: '$courseSessions' },
-          totalRevenueUSD: { $sum: '$amount_USD' },
-          totalRevenueINR: { $sum: '$amount_INR' },
-        },
-      },
-      {
-        $sort: { '_id': 1 },
-      },
-    ]);
-
-    // Initialize response with zero data for each day/month
-    const response = interval.map(date => ({
-      label: month ? format(date, 'dd MMMM') : format(date, 'MMMM'),
-      totalSessions: 0,
-      totalRevenueUSD: 0,
-      totalRevenueINR: 0,
-    }));
-
-    // Populate response based on transactions data
-    transactions.forEach(transaction => {
-      const index = month ? transaction._id - 1 : transaction._id - 1; // zero-indexed
-      response[index].totalSessions = transaction.totalSessions;
-      response[index].totalRevenueUSD = transaction.totalRevenueUSD;
-      response[index].totalRevenueINR = transaction.totalRevenueINR;
-    });
-
-    // Format the final response for charting
-    const finalResponse = {
-      datasets: [
         {
-          label: "Number of Sessions",
-          data: response.map(item => item.totalSessions),
-          borderColor: "rgb(75, 192, 192)",
-          tension: 0.3,
-          fill: true,
+          $group: {
+            _id: month
+              ? { $dayOfMonth: "$createdAt" }
+              : { $month: "$createdAt" },
+            totalSessions: { $sum: "$courseSessions" },
+            totalRevenueUSD: { $sum: "$amount_USD" },
+            totalRevenueINR: { $sum: "$amount_INR" },
+          },
         },
         {
-          label: "Revenue (USD)",
-          data: response.map(item => item.totalRevenueUSD),
-          borderColor: "rgb(54, 162, 235)",
-          tension: 0.3,
-          fill: true,
+          $sort: { _id: 1 },
         },
-        {
-          label: "Revenue (INR)",
-          data: response.map(item => item.totalRevenueINR),
-          borderColor: "rgb(255, 159, 64)",
-          tension: 0.3,
-          fill: true,
-        },
-      ],
-    };
+      ]);
 
-    res.status(200).json(new ApiResponse(200, finalResponse, "Data fetched successfully"));
-  } catch (error) {
-    console.error(error);
-    res.status(500).json(new ApiError(500, 'Server error', error));
+      // Initialize response with zero data for each day/month
+      const response = interval.map((date) => ({
+        label: month ? format(date, "dd MMMM") : format(date, "MMMM"),
+        totalSessions: 0,
+        totalRevenueUSD: 0,
+        totalRevenueINR: 0,
+      }));
+
+      // Populate response based on transactions data
+      transactions.forEach((transaction) => {
+        const index = month ? transaction._id - 1 : transaction._id - 1; // zero-indexed
+        response[index].totalSessions = transaction.totalSessions;
+        response[index].totalRevenueUSD = transaction.totalRevenueUSD;
+        response[index].totalRevenueINR = transaction.totalRevenueINR;
+      });
+
+      // Format the final response for charting
+      const finalResponse = {
+        datasets: [
+          // {
+          //   label: "Number of Sessions",
+          //   data: response.map(item => item.totalSessions),
+          //   borderColor: "rgb(75, 192, 192)",
+          //   tension: 0.3,
+          //   fill: true,
+          // },
+          {
+            label: "Revenue (USD)",
+            data: response.map((item) => item.totalRevenueUSD),
+            borderColor: "rgb(54, 162, 235)",
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: "Revenue (INR)",
+            data: response.map((item) => item.totalRevenueINR),
+            borderColor: "rgb(255, 159, 64)",
+            tension: 0.3,
+            fill: true,
+          },
+        ],
+      };
+
+      res
+        .status(200)
+        .json(new ApiResponse(200, finalResponse, "Data fetched successfully"));
+    } catch (error) {
+      console.error(error);
+      res.status(500).json(new ApiError(500, "Server error", error));
+    }
   }
-});
-
-
-
+);
