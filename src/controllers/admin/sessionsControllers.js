@@ -775,14 +775,7 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
         .status(404)
         .json(new ApiError(404, "", "Timeslot not found or already booked"));
     }
-    await Slot.updateOne({
-      therapist_id: new mongoose.Types.ObjectId(therapist_id),
-      "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-    }, {
-      $set: {
-        "timeslots.$.isBooked": true,
-      },
-    })
+
     const { date, startTime, endTime } = timeSlots[0];
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
     const startDateTime = new Date(
@@ -817,6 +810,7 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
       transaction_id: null,
       therapist_id: therapist_id,
       user_id: user_id,
+      category: specialization._id,
       start_time: startDateTime,
       end_time: endDateTime,
       manuallyBooked: true
@@ -833,6 +827,14 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
     // });
     // monetization.count = monetization.count + 1;
     // await monetization.save();
+    await Slot.updateOne({
+      therapist_id: new mongoose.Types.ObjectId(therapist_id),
+      "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+    }, {
+      $set: {
+        "timeslots.$.isBooked": true,
+      },
+    })
     const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
     const subject = "Session Booking Confirmation";
     const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)

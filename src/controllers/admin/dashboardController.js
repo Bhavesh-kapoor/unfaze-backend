@@ -409,6 +409,12 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
     const selectedYear = year ? parseInt(year, 10) : new Date().getFullYear();
     let start, end, interval;
     if (month) {
+      if (month) {
+        const parsedMonth = parseInt(month, 10);
+        if (parsedMonth < 1 || parsedMonth > 12) {
+          return res.status(200).json(new ApiResponse(200, null, "invalid month"));
+        }
+      }
       const selectedMonth = parseInt(month, 10) - 1;
       start = startOfMonth(new Date(selectedYear, selectedMonth));
       end = endOfMonth(new Date(selectedYear, selectedMonth));

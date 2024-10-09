@@ -12,13 +12,14 @@ import dashboardRoutes from "../admin/dashboardRoutes.js";
 import specializationRouter from "./specilization.route.js";
 import contactUsRoutes from "../../routes/contactUs.router.js";
 import { setNewPasswrd } from "../../controllers/admin/user.controller.js";
-import { bookSessionManully } from "../../controllers/admin/sessionsControllers.js";
 import { getAllConversationList, getChatHistoryForAdmin } from "../../controllers/messageController.js";
 import monetizeRoutes from "./therapistPayRoutes.js"
 import {
   getUserSessions,
+  bookSessionManully,
   getTherapistSession,
-  sessionCompleted
+  sessionCompleted,
+  manualSessionBooking
 } from "../../controllers/admin/sessionsControllers.js";
 import coupenRoute from "./coupon.route.js";
 
@@ -59,6 +60,7 @@ router.get("/get-chat-list", getAllConversationList);
 router.get("/get-chat-history/:chatId", getChatHistoryForAdmin);
 router.use('/coupon', coupenRoute);
 router.get('/session_completed/:sessionId', sessionCompleted);
+router.post('/manual-booking', manualSessionBooking);
 router.use('/monetize', monetizeRoutes);
 
 

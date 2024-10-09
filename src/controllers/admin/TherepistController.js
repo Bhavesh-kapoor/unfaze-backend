@@ -888,10 +888,6 @@ const dashboard = asyncHandler(async (req, res) => {
         },
       },
     ]);
-    console.log(result)
-    // Debugging output for each aggregation stage
-    console.log('Result after aggregation:', JSON.stringify(result, null, 2));
-
     // Handle empty earnings and session counts
     const amount = (result.earnings && result.earnings[0]) || {
       amount_USD: 0,
