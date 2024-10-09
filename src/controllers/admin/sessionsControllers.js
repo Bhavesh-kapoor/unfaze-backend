@@ -683,10 +683,10 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
       },
       { $set: { "timeslots.$.isBooked": true } }
     );
-    await TherapistPay.updateOne(
-      { therapistId: course.therapistId, specializationId: course.courseId.specializationId },
-      { $inc: { count: 1 } }
-    );
+    // await TherapistPay.updateOne(
+    //   { therapistId: course.therapistId, specializationId: course.courseId.specializationId },
+    //   { $inc: { count: 1 } }
+    // );
 
 
     // Set channelName for the session
