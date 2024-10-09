@@ -208,7 +208,10 @@ const rescheduleSession = asyncHandler(async (req, res) => {
       .status(400)
       .json(new ApiResponse(400, null, "Invalid Session ID or Slot ID"));
   }
-  const session = await Session.findOne({ _id: session_id, status: "missed" });
+  const session = await Session.findOne({
+    _id: session_id,
+    status: { $in: ["missed", "upcoming"] }
+  });
   if (!session) {
     return res
       .status(400)
