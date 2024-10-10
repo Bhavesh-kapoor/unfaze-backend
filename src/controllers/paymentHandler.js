@@ -320,8 +320,8 @@ const manualPaymentValidator = asyncHandler(async (req, res) => {
   paymentDetails.payment_status = order_status;
   transaction.payment_status = order_status;
   transaction.save();
-  if(transaction.payment_status !== "successful"){
-    return res.status(200).json(new ApiResponse(200,paymentDetails,"this is an unsuccessful payment"))
+  if (transaction.payment_status !== "successful") {
+    return res.status(200).json(new ApiResponse(200, paymentDetails, "this is an unsuccessful payment"))
   }
   if (transaction.type === "course") {
     try {
@@ -406,7 +406,6 @@ const manualPaymentValidator = asyncHandler(async (req, res) => {
           "timeslots.$": 1,
         }
       );
-      console.log("check", slot)
       if (order_status === "successful") {
         const existingSession = await Session.findOne({
           transaction_id: transaction._id,
@@ -418,7 +417,7 @@ const manualPaymentValidator = asyncHandler(async (req, res) => {
               new ApiResponse(200, existingSession, "session is already booked!")
             );
         }
-        if (timeslots[0].isBooked) {
+        if (slot.timeslots[0].isBooked) {
           return res.status(200).json(new ApiResponse(200, transaction, "selected slot is occupied ask admin to book session manually!"))
         }
         const session = new Session({
