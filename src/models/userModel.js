@@ -2,6 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+
 const userSchema = new Schema(
   {
     mobile: { type: String },
@@ -45,10 +46,16 @@ const userSchema = new Schema(
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  if (!this.password) {
-    return next()
+
+  if (!this.password || this.password === "") {
+    const existingUser = await User.findById(this._id).select('password');
+    if (existingUser) {
+      this.password = existingUser.password;
+    }
+  } else {
+    // Hash the password if it's not empty
+    this.password = await bcrypt.hash(this.password, 10);
   }
-  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
