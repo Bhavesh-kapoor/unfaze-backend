@@ -33,7 +33,7 @@ export const getOverview = asyncHandler(async (req, res) => {
       dateRange = "today",
       status = "successful",
       page = 1,
-      limit = 10,
+      limit = 5,
     } = req.query;
 
     // Set up date ranges based on the dateRange query parameter
@@ -49,11 +49,11 @@ export const getOverview = asyncHandler(async (req, res) => {
     }
     const notifications = await Notification.find({ status: "unread" })
       .sort({ createdAt: -1 })
-      .limit(5)
+      .limit(limit)
       .select("message createdAt");
     const users = await User.find()
       .sort({ createdAt: -1 })
-      .limit(5)
+      .limit(limit)
       .select("firstName lastName gender email mobile");
     const pageNumber = parseInt(page, 10);
     const pageSize = parseInt(limit, 10);
@@ -88,42 +88,31 @@ export const getOverview = asyncHandler(async (req, res) => {
       { $unwind: { path: "$therapistData", preserveNullAndEmptyArrays: true } },
       {
         $project: {
-          end_time: 1,
-          rate_USD: 1,
-          updatedAt: 1,
           amount_USD: 1,
           amount_INR: 1,
-          start_time: 1,
+          createdAt: 1,
           transactionId: 1,
-          payment_status: 1,
-          payment_details: 1,
-          "category.name": 1,
-          user: {
-            name: {
-              $concat: ["$userData.firstName", " ", "$userData.lastName"],
-            },
-            email: "$userData.email",
+          category:"$category.name",
+          userName: { $concat: ["$userData.firstName", " ", "$userData.lastName"],
           },
-          Therapist: {
-            name: {
-              $concat: [
-                "$therapistData.firstName",
-                " ",
-                "$therapistData.lastName",
-              ],
-            },
-            email: "$therapistData.email",
+          therapistName: {
+            $concat: [
+              "$therapistData.firstName",
+              " ",
+              "$therapistData.lastName",
+            ],
           },
         },
       },
-      { $skip: (pageNumber - 1) * pageSize },
-      { $limit: pageSize },
+      { $sort: { createdAt: -1 } },
+      { $limit: limit },
     ];
     const transactions = await Transaction.aggregate(pipeline).exec();
     const sessionPipeline = [
       {
         $match: {
           start_time: { $gte: dateStart, $lte: dateEnd },
+          status: "upcoming"
         },
       },
       {
@@ -146,29 +135,29 @@ export const getOverview = asyncHandler(async (req, res) => {
         },
       },
       { $unwind: "$user_details" },
-      {
-        $lookup: {
-          from: "transactions",
-          localField: "transaction_id",
-          foreignField: "_id",
-          pipeline: [
-            {
-              $lookup: {
-                from: "specializations",
-                localField: "category",
-                foreignField: "_id",
-                as: "category",
-              },
-            },
-            { $unwind: "$category" },
-            { $project: { amount: 1, category: "$category.name" } },
-          ],
-          as: "transaction_details",
-        },
-      },
-      {
-        $unwind: "$transaction_details",
-      },
+      // {
+      //   $lookup: {
+      //     from: "transactions",
+      //     localField: "transaction_id",
+      //     foreignField: "_id",
+      //     pipeline: [
+      //       {
+      //         $lookup: {
+      //           from: "specializations",
+      //           localField: "category",
+      //           foreignField: "_id",
+      //           as: "category",
+      //         },
+      //       },
+      //       { $unwind: "$category" },
+      //       { $project: { amount: 1, category: "$category.name" } },
+      //     ],
+      //     as: "transaction_details",
+      //   },
+      // },
+      // {
+      //   $unwind: "$transaction_details",
+      // },
       {
         $project: {
           start_time: 1,
@@ -183,12 +172,13 @@ export const getOverview = asyncHandler(async (req, res) => {
               "$therapist_details.lastName",
             ],
           },
-          category: "$transaction_details.category",
+          category: 1,
         },
       },
       {
         $sort: { start_time: 1 },
       },
+      { $limit: limit }
     ];
     const sessions = await Session.aggregate(sessionPipeline);
 
@@ -236,7 +226,7 @@ export const getOverview = asyncHandler(async (req, res) => {
         },
       },
       {
-        $limit: 5,
+        $limit: limit,
       },
       {
         $project: {
@@ -378,9 +368,8 @@ export const getOverviewBySessions = asyncHandler(async (req, res) => {
         labels: [], // Therapist names
         datasets: [
           {
-            label: `${
-              status.charAt(0).toUpperCase() + status.slice(1)
-            } Sessions`,
+            label: `${status.charAt(0).toUpperCase() + status.slice(1)
+              } Sessions`,
             data: [],
             backgroundColor: getRandomColor(), // Generate a random color for the background
             hoverOffset: 4,
@@ -476,55 +465,55 @@ export const getTransactionsAndSessionsByMonth = asyncHandler(async (req, res) =
       },
     ]);
 
-      // Initialize response with zero data for each day/month
-      const response = interval.map((date) => ({
-        label: month ? format(date, "dd MMMM") : format(date, "MMMM"),
-        totalSessions: 0,
-        totalRevenueUSD: 0,
-        totalRevenueINR: 0,
-      }));
+    // Initialize response with zero data for each day/month
+    const response = interval.map((date) => ({
+      label: month ? format(date, "dd MMMM") : format(date, "MMMM"),
+      totalSessions: 0,
+      totalRevenueUSD: 0,
+      totalRevenueINR: 0,
+    }));
 
-      // Populate response based on transactions data
-      transactions.forEach((transaction) => {
-        const index = month ? transaction._id - 1 : transaction._id - 1; // zero-indexed
-        response[index].totalSessions = transaction.totalSessions;
-        response[index].totalRevenueUSD = transaction.totalRevenueUSD;
-        response[index].totalRevenueINR = transaction.totalRevenueINR;
-      });
+    // Populate response based on transactions data
+    transactions.forEach((transaction) => {
+      const index = month ? transaction._id - 1 : transaction._id - 1; // zero-indexed
+      response[index].totalSessions = transaction.totalSessions;
+      response[index].totalRevenueUSD = transaction.totalRevenueUSD;
+      response[index].totalRevenueINR = transaction.totalRevenueINR;
+    });
 
-      // Format the final response for charting
-      const finalResponse = {
-        datasets: [
-          // {
-          //   label: "Number of Sessions",
-          //   data: response.map(item => item.totalSessions),
-          //   borderColor: "rgb(75, 192, 192)",
-          //   tension: 0.3,
-          //   fill: true,
-          // },
-          {
-            label: "Revenue (USD)",
-            data: response.map((item) => item.totalRevenueUSD),
-            borderColor: "rgb(54, 162, 235)",
-            tension: 0.3,
-            fill: true,
-          },
-          {
-            label: "Revenue (INR)",
-            data: response.map((item) => item.totalRevenueINR),
-            borderColor: "rgb(255, 159, 64)",
-            tension: 0.3,
-            fill: true,
-          },
-        ],
-      };
+    // Format the final response for charting
+    const finalResponse = {
+      datasets: [
+        // {
+        //   label: "Number of Sessions",
+        //   data: response.map(item => item.totalSessions),
+        //   borderColor: "rgb(75, 192, 192)",
+        //   tension: 0.3,
+        //   fill: true,
+        // },
+        {
+          label: "Revenue (USD)",
+          data: response.map((item) => item.totalRevenueUSD),
+          borderColor: "rgb(54, 162, 235)",
+          tension: 0.3,
+          fill: true,
+        },
+        {
+          label: "Revenue (INR)",
+          data: response.map((item) => item.totalRevenueINR),
+          borderColor: "rgb(255, 159, 64)",
+          tension: 0.3,
+          fill: true,
+        },
+      ],
+    };
 
-      res
-        .status(200)
-        .json(new ApiResponse(200, finalResponse, "Data fetched successfully"));
-    } catch (error) {
-      console.error(error);
-      res.status(500).json(new ApiError(500, "Server error", error));
-    }
+    res
+      .status(200)
+      .json(new ApiResponse(200, finalResponse, "Data fetched successfully"));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(new ApiError(500, "Server error", error));
   }
+}
 );
