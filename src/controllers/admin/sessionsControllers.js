@@ -183,7 +183,7 @@ const bookedSessions = asyncHandler(async (req, res) => {
 });
 // ----------------------------------------------------------------------------------------
 const sessionCompleted = asyncHandler(async (req, res) => {
-  const { sessionId } = req.params;
+  const { sessionId, status } = req.params;
   if (!sessionId) {
     return res
       .status(400)
@@ -192,7 +192,7 @@ const sessionCompleted = asyncHandler(async (req, res) => {
   const user = req.user;
   const session = await Session.findByIdAndUpdate(
     sessionId,
-    { status: "completed" },
+    { status: status },
     { new: true }
   );
   return res
