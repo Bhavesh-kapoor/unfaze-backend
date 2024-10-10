@@ -458,6 +458,8 @@ const manualPaymentValidator = asyncHandler(async (req, res) => {
           .status(201)
           .json(new ApiResponse(201, transaction, "transaction updated  successfully and session booked"));
         res.status(200).json(new ApiResponse(200, null, paymentDetails.message));
+      } else {
+        res.status(200).json(new ApiResponse(200, null, paymentDetails.message));
       }
     } catch (error) {
       console.log(error);
