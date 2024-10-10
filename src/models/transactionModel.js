@@ -1,12 +1,17 @@
 import mongoose from "mongoose";
 const transactionSchema = new mongoose.Schema(
   {
+
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
       required: function () {
         return this.type === 'course';
       }
+    },
+    method: {
+      type: String,
+      enum: ['phonepay', 'cashfree'],
     },
     transactionId: {
       type: "string",

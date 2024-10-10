@@ -217,7 +217,8 @@ export async function processPayment(req, res) {
         discountPercent: discountPercent,
         fixDiscount: fixDiscount,
         couponCode: coupon_code,
-        type: "single"
+        type: "single",
+        method: "phonepay"
       });
       await initiatedTransaction.save();
       await Slot.updateOne(
@@ -344,6 +345,7 @@ export async function processPaymentForcourse(req, res) {
         discountPercent: discountPercent,
         fixDiscount: fixDiscount,
         couponCode: coupon_code,
+        method: "phonepay"
       });
 
       await initiatedTransaction.save();

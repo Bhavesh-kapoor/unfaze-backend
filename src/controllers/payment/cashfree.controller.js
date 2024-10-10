@@ -30,7 +30,6 @@ const createOrder = asyncHandler(async (req, res) => {
     let amountToPay = specialization?.usdPrice;
     let discountPercent = 0;
     let fixDiscount = 0;
-    console.log("coupon_code", coupon_code)
     if (coupon_code) {
       const coupon = await Coupon.findOne({ code: coupon_code });
       if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
@@ -172,7 +171,8 @@ const createOrder = asyncHandler(async (req, res) => {
       discountPercent: discountPercent,
       fixDiscount: fixDiscount,
       couponCode: coupon_code,
-      type: "single"
+      type: "single",
+      method: "cashfree"
     });
     await initiatedTransaction.save();
     // const response = await axios.post(
@@ -208,7 +208,7 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 });
 const createOrderForCourse = asyncHandler(async (req, res) => {
-  const { therapist_id, courseId, type = "course" } = req.body;
+  const { therapist_id, courseId, coupon_code,type = "course" } = req.body;
   const user = req.user;
   let order_currency;
   if (process.env.DEV_MODE == "dev") {
@@ -216,7 +216,6 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
   } else {
     order_currency = "USD"
   }
-
   if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
     return res
       .status(400)
@@ -303,6 +302,7 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
       discountPercent: discountPercent,
       fixDiscount: fixDiscount,
       couponCode: coupon_code,
+      method: "cashfree"
     });
     await initiatedTransaction.save();
 
@@ -346,9 +346,9 @@ const verifyPayment = asyncHandler(async (req, res, next) => {
         },
       }
     );
-    if (response.data.order_status === "ACTIVE") {
-      return res.status(200).json(new ApiResponse(200, response.data, "Order has been initiated and is still active"));
-    }
+    // if (response.data.order_status === "ACTIVE") {
+    //   return res.status(200).json(new ApiResponse(200, response.data, "Order has been initiated and is still active"));
+    // }
     const transaction = await Transaction.findOne({ transactionId: order_id });
     req.paymentDetails = response.data;
     req.transaction = transaction;
