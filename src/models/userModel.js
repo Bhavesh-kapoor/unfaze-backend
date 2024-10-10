@@ -41,12 +41,12 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin","corp-admin"],
+      enum: ["user", "admin", "corp-admin"],
       default: "user",
       trim: true,
     },
-    orgatizationName:{ type: String, trim},
-    
+    orgatizationName: { type: String, trim: true },
+
   },
   { timestamps: true }
 );
