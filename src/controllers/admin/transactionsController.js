@@ -1110,18 +1110,17 @@ const UserTransactions = asyncHandler(async (req, res) => {
         category: "$category.name",
         amount_USD: 1,
         amount_INR: 1,
-        // Handle start_time for both course and single session transactions
         start_time: {
           $cond: {
             if: { $eq: ["$type", "course"] },
-            then: "",  // Set as empty string or null for course transactions
+            then: "",
             else: "$start_time",
           },
         },
         payment_status: "$payment_details.payment_status",
       },
     },
-    { $sort: { createdAt: -1 } }, // Sort by creation time
+    { $sort: { createdAt: -1 } },
     { $skip: skip },
     { $limit: limitNumber },
   ]);

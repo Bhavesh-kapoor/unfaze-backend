@@ -8,7 +8,10 @@ import { Session } from "../models/sessionsModel.js";
 import { Slot } from "../models/slotModal.js";
 import { sessionBookingConfirmation } from "../static/emailcontent.js";
 import { Coupon } from "../models/couponModel.js";
-import { TherapistPay } from "../models/therapistPayModel.js";
+import { Course } from "../models/courseModel.js";
+import { User } from "../models/userModel.js";
+import { EnrolledCourse } from "../models/enrolledCourseModel.js";
+import { courseEnrollmentConfirmation } from "../static/emailcontent.js";
 // function convertUTCtoIST(utcDate) {
 //   const date = new Date(utcDate);
 //   const istDateTime = date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -94,17 +97,32 @@ export const sendNotificationsAndEmails = async (user, therapist, htmlContent, m
 //     )
 //   );
 // });
-
-const handlePhonepayPayment = asyncHandler(async (req, res) => {
-  const mapPaymentStatus = (responseCode) => {
-    const statusMap = {
-      PENDING: "pending",
-      SUCCESS: "successful",
-      FAILED: "failed",
-      REFUNDED: "refunded",
-    };
-    return statusMap[responseCode] || "pending";
+const mapPaymentStatus = (responseCode) => {
+  const statusMap = {
+    PENDING: "pending",
+    SUCCESS: "successful",
+    FAILED: "failed",
+    REFUNDED: "refunded",
+    CANCELLED: "cancelled",
+    ACTIVE: "pending",
+    PAID: "successful",
+    FAILED: "failed",
+    REFUNDED: "refunded",
+    CANCELLED: "cancelled",
   };
+  return statusMap[responseCode] || "pending";
+};
+const handlePhonepayPayment = asyncHandler(async (req, res) => {
+  // const mapPaymentStatus = (responseCode) => {
+  //   const statusMap = {
+  //     PENDING: "pending",
+  //     SUCCESS: "successful",
+  //     FAILED: "failed",
+  //     REFUNDED: "refunded",
+  //     CANCELLED: "cancelled",
+  //   };
+  //   return statusMap[responseCode] || "pending";
+  // };
   try {
     const { paymentDetails, transaction } = req;
     const user = req.user;
@@ -284,4 +302,167 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, null, "Internal Server Error."));
   }
 });
-export { handlePhonepayPayment, handleCashfreePayment };
+
+
+const manualPaymentValidator = asyncHandler(async (req, res) => {
+  const { paymentDetails, transaction } = req;
+  console.log(transaction)
+  const user = await User.findById(transaction.user_id);
+  if (!user) {
+    return res.status(404).json(new ApiError(404, null, "user not exist"));
+  }
+
+  const therapist = await Therapist.findById(transaction.therapist_id);
+  if (!therapist) {
+    return res.status(404).json(new ApiError(404, null, "user not exist"));
+  }
+  const order_status = mapPaymentStatus(paymentDetails?.data?.responseCode);
+  transaction.payment_details = paymentDetails;
+  paymentDetails.payment_status = order_status;
+  transaction.payment_status = order_status;
+  transaction.save();
+  if (transaction.type === "course") {
+    try {
+      const existingenrollment = await EnrolledCourse.findOne({
+        transactionId: transaction._id,
+      });
+      if (existingenrollment) {
+        return res
+          .status(409)
+          .json(
+            new ApiError(409, "", "course enrolled already with this transaction")
+          );
+      }
+      if (order_status === "successful") {
+        const course = await Course.findById(transaction.courseId);
+        const enrolledCourse = new EnrolledCourse({
+          courseId: course._id,
+          userId: user._id,
+          transactionId: transaction._id,
+          therapistId: therapist._id,
+          remainingSessions: course.sessionOffered,
+          isActive: true,
+        });
+        enrolledCourse.save();
+        if (transaction?.couponCode) {
+          const coupon = await Coupon.findOne({ code: transaction.couponCode });
+          if (coupon) {
+            coupon.usedCount += 1;
+            if (coupon.usedCount == coupon.usageLimit) {
+              coupon.isActive = false;
+            }
+            await coupon.save();
+          }
+        }
+        const message = `${user.firstName} ${user.lastName} has successfully enrolled in a course.`;
+        const htmlContent = courseEnrollmentConfirmation(
+          `${user.firstName} ${user.lastName}`,
+          `${therapist.firstName} ${therapist.lastName}`
+        );
+        const subject = "course enrollment confirmation";
+        await sendNotificationsAndEmails(
+          user,
+          therapist,
+          htmlContent,
+          message,
+          subject
+        );
+        res
+          .status(201)
+          .json(
+            new ApiResponse(
+              201,
+              enrolledCourse,
+              "You enrolled in course successfully"
+            )
+          );
+      } else {
+        res.status(200).json(new ApiResponse(200, null, paymentDetails.message));
+      }
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(new ApiError(500, "something went wrong in package payment validation"))
+    }
+  } else {
+    try {
+      // if (order_status !== "successful") {
+      //   await Slot.updateOne({
+      //     therapist_id: transaction.therapist_id,
+      //     "timeslots._id": transaction.slotId,
+      //   }, {
+      //     $set: {
+      //       "timeslots.$.isBooked": false,
+      //     },
+      //   })
+      // }
+      const slot = await Slot.findOne(
+        {
+          therapist_id: therapist._id,
+          "timeslots._id": transaction.slotId,
+        },
+        {
+          "timeslots.$": 1,
+        }
+      );
+      console.log("check", slot)
+      if (order_status === "successful") {
+        const existingSession = await Session.findOne({
+          transaction_id: transaction._id,
+        });
+        if (existingSession) {
+          return res
+            .status(400)
+            .json(
+              new ApiResponse(200, existingSession, "session is already booked!")
+            );
+        }
+        if (timeslots[0].isBooked) {
+          return res.status(200).json(new ApiResponse(200, transaction, "selected slot is occupied ask admin to book session manually!"))
+        }
+        const session = new Session({
+          transaction_id: transaction._id,
+          therapist_id: transaction.therapist_id,
+          user_id: transaction.user_id,
+          category: transaction.category,
+          start_time: transaction.start_time,
+          end_time: transaction.end_time,
+        });
+        let channelName = session._id.toString().slice(-10)
+        channelName = `session_${channelName}`;
+        session.channelName = channelName;
+        await session.save();
+        if (transaction?.couponCode) {
+          const coupon = await Coupon.findOne({ code: transaction.couponCode });
+          if (coupon) {
+            coupon.usedCount += 1;
+            if (coupon.usedCount == coupon.usageLimit) {
+              coupon.isActive = false;
+            }
+            await coupon.save();
+          }
+        }
+        // const monetization = await TherapistPay.findOne({
+        //   $and: [
+        //     { therapistId: transaction.therapist_id },
+        //     { specializationId: transaction.category }
+        //   ]
+        // });
+        // monetization.count = monetization.count + 1;
+        // await monetization.save();
+        const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
+        const subject = "Session Booking Confirmation";
+        const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+        await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+        res
+          .status(201)
+          .json(new ApiResponse(201, transaction, "transaction updated  successfully and session booked"));
+        res.status(200).json(new ApiResponse(200, null, paymentDetails.message));
+      }
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json(new ApiError(500, error.message))
+    }
+  }
+})
+
+export { handlePhonepayPayment, handleCashfreePayment, manualPaymentValidator };
