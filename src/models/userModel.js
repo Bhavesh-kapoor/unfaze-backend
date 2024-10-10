@@ -19,7 +19,6 @@ const userSchema = new Schema(
     city: { type: String, trim: true },
     state: { type: String, trim: true },
     firstName: { type: String, required: true, trim: true },
-    role: { type: String, default: "user", trim: true },
     permissions: { type: [String], default: [] },
     email: {
       type: String,
@@ -40,6 +39,14 @@ const userSchema = new Schema(
       //   message: "Date of birth must be in the past.",
       // },
     },
+    role: {
+      type: String,
+      enum: ["user", "admin","corp-admin"],
+      default: "user",
+      trim: true,
+    },
+    orgatizationName:{ type: String, trim},
+    
   },
   { timestamps: true }
 );

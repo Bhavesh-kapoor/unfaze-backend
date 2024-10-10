@@ -138,6 +138,7 @@ export const fetchAllTransactions = async (req, res) => {
           transactionId: 1,
           payment_status: 1,
           payment_details: 1,
+          method: 1,
           "category.name": 1,
           "userData.email": 1,
           "userData.lastName": 1,

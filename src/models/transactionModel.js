@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 const transactionSchema = new mongoose.Schema(
   {
-
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
@@ -87,7 +86,6 @@ const transactionSchema = new mongoose.Schema(
       type: String,
       default: null
     }
-
   },
   { timestamps: true }
 );
