@@ -358,5 +358,4 @@ const verifyPayment = asyncHandler(async (req, res, next) => {
     return res.status(500).json(new ApiError(500, "", "Something went wrong!"));
   }
 });
-
 export { createOrder, verifyPayment, createOrderForCourse };

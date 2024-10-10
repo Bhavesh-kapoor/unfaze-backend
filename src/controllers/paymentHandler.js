@@ -306,7 +306,6 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
 
 const manualPaymentValidator = asyncHandler(async (req, res) => {
   const { paymentDetails, transaction } = req;
-  console.log(transaction)
   const user = await User.findById(transaction.user_id);
   if (!user) {
     return res.status(404).json(new ApiError(404, null, "user not exist"));
@@ -321,6 +320,9 @@ const manualPaymentValidator = asyncHandler(async (req, res) => {
   paymentDetails.payment_status = order_status;
   transaction.payment_status = order_status;
   transaction.save();
+  if(transaction.payment_status !== "successful"){
+    return res.status(200).json(new ApiResponse(200,paymentDetails,"this is an unsuccessful payment"))
+  }
   if (transaction.type === "course") {
     try {
       const existingenrollment = await EnrolledCourse.findOne({
