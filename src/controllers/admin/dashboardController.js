@@ -35,7 +35,8 @@ export const getOverview = asyncHandler(async (req, res) => {
       page = 1,
       limit = 5,
     } = req.query;
-
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
     // Set up date ranges based on the dateRange query parameter
     const now = new Date();
     let dateStart, dateEnd;
@@ -49,14 +50,13 @@ export const getOverview = asyncHandler(async (req, res) => {
     }
     const notifications = await Notification.find({ status: "unread" })
       .sort({ createdAt: -1 })
-      .limit(limit)
+      .limit(limitNumber)
       .select("message createdAt");
     const users = await User.find()
       .sort({ createdAt: -1 })
-      .limit(limit)
+      .limit(limitNumber)
       .select("firstName lastName gender email mobile");
-    const pageNumber = parseInt(page, 10);
-    const pageSize = parseInt(limit, 10);
+   
     const pipeline = [
       { $match: { payment_status: status } },
       {
@@ -92,8 +92,9 @@ export const getOverview = asyncHandler(async (req, res) => {
           amount_INR: 1,
           createdAt: 1,
           transactionId: 1,
-          category:"$category.name",
-          userName: { $concat: ["$userData.firstName", " ", "$userData.lastName"],
+          category: "$category.name",
+          userName: {
+            $concat: ["$userData.firstName", " ", "$userData.lastName"],
           },
           therapistName: {
             $concat: [
@@ -105,7 +106,7 @@ export const getOverview = asyncHandler(async (req, res) => {
         },
       },
       { $sort: { createdAt: -1 } },
-      { $limit: limit },
+      { $limit: limitNumber },
     ];
     const transactions = await Transaction.aggregate(pipeline).exec();
     const sessionPipeline = [
@@ -178,7 +179,7 @@ export const getOverview = asyncHandler(async (req, res) => {
       {
         $sort: { start_time: 1 },
       },
-      { $limit: limit }
+      { $limit: limitNumber }
     ];
     const sessions = await Session.aggregate(sessionPipeline);
 
@@ -226,7 +227,7 @@ export const getOverview = asyncHandler(async (req, res) => {
         },
       },
       {
-        $limit: limit,
+        $limit: limitNumber,
       },
       {
         $project: {
