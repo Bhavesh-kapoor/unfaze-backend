@@ -183,7 +183,9 @@ const bookedSessions = asyncHandler(async (req, res) => {
 });
 // ----------------------------------------------------------------------------------------
 const sessionCompleted = asyncHandler(async (req, res) => {
-  const { sessionId, status } = req.params;
+  const { sessionId } = req.params;
+  const { status } = req.query;
+
   if (!sessionId) {
     return res
       .status(400)
