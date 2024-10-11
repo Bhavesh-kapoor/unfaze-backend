@@ -56,7 +56,7 @@ export const getOverview = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(limitNumber)
       .select("firstName lastName gender email mobile");
-   
+
     const pipeline = [
       { $match: { payment_status: status } },
       {
@@ -118,6 +118,16 @@ export const getOverview = asyncHandler(async (req, res) => {
       },
       {
         $lookup: {
+          from: "specializations",
+          localField: "category",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "category",
+        },
+      },
+      { $unwind: "$category" },
+      {
+        $lookup: {
           from: "therapists",
           localField: "therapist_id",
           foreignField: "_id",
@@ -173,7 +183,7 @@ export const getOverview = asyncHandler(async (req, res) => {
               "$therapist_details.lastName",
             ],
           },
-          category: 1,
+          category: "$category.name",
         },
       },
       {
@@ -244,7 +254,6 @@ export const getOverview = asyncHandler(async (req, res) => {
       },
     ]);
 
-    // Return the results using ApiResponse
     return res.status(200).json(
       new ApiResponse(
         200,

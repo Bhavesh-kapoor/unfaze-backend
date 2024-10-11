@@ -467,5 +467,4 @@ const manualPaymentValidator = asyncHandler(async (req, res) => {
     }
   }
 })
-
 export { handlePhonepayPayment, handleCashfreePayment, manualPaymentValidator };
