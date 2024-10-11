@@ -34,8 +34,10 @@ const getFolder = (fieldname, emailPrefix) => {
       return "src/images/blogs";
     case "userAvatar":
       return "src/images/users";
+    case "userAvatarCorp":
+      return "src/images/corpUsers";
     case "chatFile":
-      return "src/images/chatFiles"
+      return "src/images/chatFiles";
     default:
       return "src/images/other";
   }

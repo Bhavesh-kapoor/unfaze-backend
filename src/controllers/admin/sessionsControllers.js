@@ -175,8 +175,6 @@ const bookedSessions = asyncHandler(async (req, res) => {
     //   }
     // }
   ]);
-  console.log("session-----------s", sessions);
-
   res
     .status(200)
     .json(new ApiResponse(200, sessions, "Session fetched successfully!"));
@@ -185,13 +183,11 @@ const bookedSessions = asyncHandler(async (req, res) => {
 const sessionCompleted = asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { status } = req.query;
-
   if (!sessionId) {
     return res
       .status(400)
       .json(new ApiResponse(400, null, "Invalid Session ID"));
   }
-  const user = req.user;
   const session = await Session.findByIdAndUpdate(
     sessionId,
     { status: status },

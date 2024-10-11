@@ -12,8 +12,9 @@ cron.schedule("*/10 * * * *", async () => {
         const tenMinutesAgo = subMinutes(new Date(), 10);
 
         const transactions = await Transaction.find({
-            payment_status: "PAYMENT_INITIATED",
-            createdAt: { $lte: tenMinutesAgo },
+            payment_status: { $ne: "SUCCESSFUL" },
+            createdAt: { $lte: tenMinutesAgo }, 
+            manuallyBooked: false              
         });
         let updatedCount = 0
         for (const transaction of transactions) {

@@ -22,6 +22,8 @@ import {
   manualSessionBooking
 } from "../../controllers/admin/sessionsControllers.js";
 import coupenRoute from "./coupon.route.js";
+import corpUserRoute from "../corporate/corpUserRoutes.js"
+import organizationRoute from "../corporate/organizationRoutes.js"
 
 const router = Router();
 
@@ -61,5 +63,11 @@ router.use('/coupon', coupenRoute);
 router.get('/session_completed/:sessionId', sessionCompleted);
 router.post('/manual-booking', manualSessionBooking);
 router.use('/monetize', monetizeRoutes);
+
+/*------------------------------------- CORPORATE ROUTE------------------------------------- */
+router.use('/corporate', corpUserRoute);
+router.use('/organization', organizationRoute);
+
+
 
 export default router;

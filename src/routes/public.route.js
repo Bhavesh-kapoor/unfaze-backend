@@ -58,7 +58,7 @@ const handleAuthRedirect = (req, res) => {
   if (req.user) {
     const { accessToken, user } = req.user;
     if (user.role === 'admin') {
-      return res.status(200).json(new ApiResponse(200, null, "this account cant be logged in via google login"))
+      return res.status(200).json(new ApiResponse(200, null, "this account can't be logged in via google login"))
     }
     if (user && accessToken) {
       const { firstName, lastName } = user;
@@ -72,7 +72,7 @@ const handleAuthRedirect = (req, res) => {
 // User registration with profile image upload
 router.post(
   "/register",
-  upload.single("profileImage"),
+  upload.single("userAvatar"),
   compressImage,
   validateRegister,
   register

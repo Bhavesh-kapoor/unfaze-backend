@@ -205,13 +205,11 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
   if (user?.role == "admin" || user?.role == "therapist") {
     userId = req.query.userId;
   } else {
-    userId = req.user?._id; // Otherwise, use the current logged-in user's ID
+    userId = req.user?._id;
   }
-
   if (!userId) {
     return res.status(401).json({ message: "User not authenticated" });
   }
-
   try {
     const totalCourses = await EnrolledCourse.countDocuments({ userId });
 
@@ -272,7 +270,6 @@ const enrolledCourseList = asyncHandler(async (req, res) => {
     });
   }
 });
-
 
 export {
   findById,
