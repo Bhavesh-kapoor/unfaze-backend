@@ -19,7 +19,7 @@ import { transporter, mailOptions } from "../../config/nodeMailer.js";
 import { check, validationResult } from "express-validator";
 import { Transaction } from "../../models/transactionModel.js";
 
-const createAccessOrRefreshToken = async (user_id) => {
+export const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
   const accessToken = await user.generateAccessToken();
   const refreshToken = await user.generateRefreshToken();
