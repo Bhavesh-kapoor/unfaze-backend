@@ -3,6 +3,7 @@ import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Organization } from "../../models/corporate/organizationModel.js";
 import { isValidObjectId } from "../../utils/mongooseUtility.js";
+import { json } from "express";
 
 
 // Register a new organization
@@ -69,19 +70,22 @@ const getById = asyncHandler(async (req, res) => {
 
 // Get all organizations
 const getAll = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
+    const query = search
+        ? { name: { $regex: search, $options: 'i' } }
+        : {};
 
-    const organizations = await Organization.find()
+    const organizations = await Organization.find(query)
         .skip(skip)
         .limit(limitNumber);
 
-    const totalOrganizations = await Organization.countDocuments();
+    const totalOrganizations = await Organization.countDocuments(query);
 
-    return res.status(200).json(new ApiResponse({
+    return res.status(200).json(new ApiResponse(200, {
         result: organizations,
         pagination: {
             totalPages: Math.ceil(totalOrganizations / limitNumber),
@@ -92,11 +96,9 @@ const getAll = asyncHandler(async (req, res) => {
     }, 'Organizations retrieved successfully'));
 });
 
-
 // Delete organization by ID
 const deleteById = asyncHandler(async (req, res) => {
     const { id } = req.params;
-
     if (!isValidObjectId(id)) {
         throw new ApiError(400, 'Invalid organization ID');
     }
@@ -104,8 +106,7 @@ const deleteById = asyncHandler(async (req, res) => {
     if (!organization) {
         throw new ApiError(404, 'Organization not found');
     }
-
-    return res.status(200).json(new ApiResponse(null, 'Organization deleted successfully'));
+    return res.status(200).json(new ApiResponse(200, null, 'Organization deleted successfully'));
 });
 
 export { register, update, getById, getAll, deleteById };

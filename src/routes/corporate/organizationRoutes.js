@@ -11,6 +11,6 @@ router.get('/get/:id', getById);
 
 router.get('/all', getAll);
 
-router.delete('delete/:id', deleteById);
+router.delete('/delete/:id', deleteById);
 
 export default router;

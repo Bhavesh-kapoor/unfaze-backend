@@ -1,11 +1,15 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { ObjectId } from "mongodb";
 
 
 const corpUserSchema = new Schema(
     {
-        orgatizationId: { type: String, trim: true },
+        orgatizationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Organization'
+        },
         googleId: { type: String },
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },
