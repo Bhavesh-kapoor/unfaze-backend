@@ -5,6 +5,10 @@ import jwt from "jsonwebtoken";
 
 const userSchema = new Schema(
   {
+    orgatizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization'
+    },
     mobile: { type: String },
     password: { type: String },
     googleId: { type: String },
@@ -41,7 +45,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin"],
+      enum: ["user", "admin","corp-user", "corp-admin"],
       default: "user",
       trim: true,
     },

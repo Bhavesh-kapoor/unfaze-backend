@@ -377,10 +377,13 @@ const getUserSessions = async (req, res) => {
     // if (status === "upcoming") {
     //   matchConditions.start_time = { $gt: now };
     // }
+    let sort;
     if (status === "upcoming") {
       matchConditions.status = { $in: ["upcoming", "rescheduled"] };
+      sort = { start_time: 1 };
     } else {
       matchConditions.status = status;
+      sort = { start_time: -1 };
     }
     // Count total sessions to calculate total pages
     const totalSessions = await Session.countDocuments(matchConditions);
@@ -439,7 +442,7 @@ const getUserSessions = async (req, res) => {
           manuallyBooked: 1,
         },
       },
-      { $sort: { start_time: 1 } },
+      { $sort: sort },
       { $skip: skip },
       { $limit: limitNumber },
     ]);
@@ -486,15 +489,17 @@ const getTherapistSession = asyncHandler(async (req, res) => {
     const limitNumber = parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
     const now = new Date();
-
+    let sort;
     const matchConditions = {
       therapist_id: new mongoose.Types.ObjectId(Id),
       status: status
     };
     if (status === "upcoming") {
       matchConditions.status = { $in: ["upcoming", "rescheduled"] };
+      sort = { start_time: 1 };
     } else {
       matchConditions.status = status;
+      sort = { start_time: -1 };
     }
     // if (status === "upcoming") {
     // }
@@ -562,7 +567,7 @@ const getTherapistSession = asyncHandler(async (req, res) => {
           status: 1,
         },
       },
-      { $sort: { start_time: 1 } },
+      { $sort: sort },
       { $skip: skip },
       { $limit: limitNumber },
     ]);
