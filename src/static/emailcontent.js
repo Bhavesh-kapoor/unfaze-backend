@@ -4,12 +4,12 @@ const contactUsContent = (senderName, senderEmail, query, senderMobile) => {
               <h2 style="color: #333;">Hello, admin</h2>
               <h1 style="color: #007bff;"> Name:${senderName}</h1>
               <p>Email of the user is ${senderEmail}</p>
-              <p>Email of the user is ${senderMobile}</p>
+              <p>Mobile of the user is ${senderMobile}</p>
               <p>message:</p>
               <p>${query}</p>
               <br>
               <p>Best regards,</p>
-              <p>The unfazed Team</p>
+              <p>Team Unfazed</p>
           </div>
       `)
 }
@@ -23,7 +23,7 @@ const otpContent = (otp) => {
               <p>If you did not request this OTP, please ignore this email.</p>
               <br>
               <p>Best regards,</p>
-              <p>The unfazed Team</p>
+              <p>Team unfazed</p>
           </div>
       `
   )
@@ -40,7 +40,7 @@ const loginCredentialEmail = (username, tempPassword) => {
             <p>If you did not request this account, please contact our support team immediately.</p>
             <br>
             <p>Best regards,</p>
-            <p>The unfazed Team</p>
+            <p>Team unfazed</p>
         </div>
     `);
 };
@@ -121,7 +121,7 @@ const sessionBookingConfirmation = (name, therapist) => {
       <p>We look forward to helping you on your journey!</p>
       
       <p>Warm regards,</p>
-      <p>The Team Unfazed</p>
+      <p>Team Unfazed</p>
     </div>
     
   </div>
@@ -153,7 +153,7 @@ const courseEnrollmentConfirmation = (name, therapist) => {
       <p>We look forward to helping you on your journey!</p>
       
       <p>Warm regards,</p>
-      <p>The Unfazed Team</p>
+      <p>Team Unfazed</p>
     </div>
     
   </div>
@@ -162,4 +162,25 @@ const courseEnrollmentConfirmation = (name, therapist) => {
   )
 }
 
-export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation }
+function createPwdEmailContent(name, link) {
+  return `
+    <div class="email-container" style="background-color: #ffffff; max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #dddddd; border-radius: 8px;">
+        <h1 style="color: #333333;">Welcome to Unfazed!</h1>
+        <p>Dear ${name},</p>
+        <p>We’re excited to have you with us. To start using your account, please create your password by clicking the button below:</p>
+        <a href="${link}" style="background-color: #007bff; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 20px;">Create Password</a>
+        <p>For your security, this link will expire in 1 hour.</p>
+        <p>If you didn’t request this email, you can safely ignore it. If you need any help, feel free to contact us.</p>
+        <div class="footer" style="margin-top: 30px; font-size: 12px; color: #888888;">
+            <p>Thank you,<br>Team Unfazed</p>
+            <p>If you’re having trouble clicking the button, copy and paste this URL into your browser:<br><a href="${link}" style="color: #007bff;">${link}</a></p>
+           <p><strong>Whatsapp:</strong> +91-6392-975-097</p>
+           <p><strong>Email:</strong> <a href="mailto:bds.unfazed@gmail.com" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
+            <p><strong>Website:</strong> <a href="http://www.unfazed.in" target="_blank" style="color: #0066cc; text-decoration: none;">www.unfazed.in</a></p>
+        </div>
+    </div>
+  `;
+}
+
+
+export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation, createPwdEmailContent }

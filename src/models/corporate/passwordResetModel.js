@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-const PasswordResetSchema =  new mongoose.Schema({
-    userId:{
+const PasswordResetSchema = new mongoose.Schema({
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -11,3 +11,5 @@ const PasswordResetSchema =  new mongoose.Schema({
         required: true
     },
 })
+
+export const PasswordReset = mongoose.model("PasswordReset", PasswordResetSchema)

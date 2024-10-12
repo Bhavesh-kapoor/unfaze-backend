@@ -3,7 +3,7 @@ import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Organization } from "../../models/corporate/organizationModel.js";
 import { isValidObjectId } from "../../utils/mongooseUtility.js";
-import { json } from "express";
+
 
 
 // Register a new organization

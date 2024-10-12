@@ -5,6 +5,15 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { createAccessOrRefreshToken } from "../admin/user.controller.js";
 import { parseISO, addDays, startOfDay, endOfDay, format } from "date-fns";
+import { PasswordReset } from "../../models/corporate/passwordResetModel.js";
+import { generateSixDigitNumber } from "../../utils/tempPasswordGenerator.js";
+import { sendMail } from "../../utils/sendMail.js";
+import { createPwdEmailContent } from "../../static/emailcontent.js";
+const sendPwdCreationLink = (receiverEmail, name, link) => {
+  const mailContent = createPwdEmailContent(name, link);
+  const subject = "Create Your Password for Your New Account at Unfazed"
+  sendMail(receiverEmail, subject, mailContent);
+}
 
 const validateRegister = [
   check("firstName", "First Name is required").notEmpty(),
@@ -37,6 +46,14 @@ const registerUser = asyncHandler(async (req, res) => {
       profileImage: profileImagePath ? profileImagePath : "",
     });
     await newCorpUser.save();
+    const token = generateSixDigitNumber();
+    const passwordObject = await PasswordReset.create({
+      userId: newCorpUser._id,
+      token: token
+    });
+    const link = `${process.env.FRONTEND_URL}/create-password/?token=${token}`
+    const name = `${newCorpUser?.firstName} ${newCorpUser?.lastName}`
+    sendPwdCreationLink(newCorpUser.email, name, link)
     return res.status(200).json(new ApiResponse(200, newCorpUser, "Corporate user register successfully!"));
   } catch (error) {
     console.error(error);
@@ -62,13 +79,20 @@ const registerAdmin = asyncHandler(async (req, res) => {
       role: "corp-admin"
     });
     await adminUser.save();
-    return res.status(200).json(new ApiResponse(200, newCorpUser, "Corporate user register successfully!"));
+    const token = generateSixDigitNumber();
+    const passwordObject = await PasswordReset.create({
+      userId: adminUser._id,
+      token: token
+    });
+    const link = `${process.env.FRONTEND_URL}/create-password/?token=${token}`
+    const name = `${adminUser?.firstName} ${adminUser?.lastName}`
+    sendPwdCreationLink(adminUser.email, name, link)
+    return res.status(200).json(new ApiResponse(200, adminUser, "Corporate user register successfully!"));
   } catch (error) {
     console.error(error);
     res.status(500).json(new ApiError(500, null, error.message));
   }
 })
-
 const corpUserlogin = asyncHandler(async (req, res) => {
   try {
     const { email, password } = req.body;
