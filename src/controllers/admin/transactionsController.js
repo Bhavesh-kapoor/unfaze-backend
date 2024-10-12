@@ -1074,7 +1074,7 @@ const UserTransactions = asyncHandler(async (req, res) => {
     {
       $match: {
         user_id: user._id,
-        payment_status: { $ne: "PAYMENT_INITIATED" },
+        payment_status: "successful",
       },
     },
     {
