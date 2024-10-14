@@ -43,6 +43,7 @@ import {
   getSeoDataBySlug,
 } from "../controllers/admin/seoController.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import { createPassword } from "../controllers/corporate/corpController.js";
 
 const router = express.Router();
 
@@ -128,6 +129,7 @@ router.get("/slot/list/:therapist_id/:date", getSlotsByDate);
 router.get("/get-therapist-list-by-category", therapistListByGroup);
 
 router.get("/therapist-list", getAllTherapistList);
+router.post("/set-password", createPassword);
 
 router.post(
   "/therapist/register",
@@ -162,4 +164,5 @@ router.get(
   }),
   handleAuthRedirect
 );
+
 export default router;

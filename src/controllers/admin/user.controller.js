@@ -96,7 +96,7 @@ const userlogin = asyncHandler(async (req, res) => {
         .json(new ApiError(400, "", "Please pass username or email"));
     }
 
-    let existUser = await User.findOne({ $and: [{ email }, { role: "user" }] });
+    let existUser = await User.findOne({ $and: [{ email }, { role: { $ne: "admin" } }] });
     if (!existUser)
       return res.status(400).json(new ApiError(400, "", "Email Not Found!"));
 
@@ -204,10 +204,10 @@ const updateProfile = asyncHandler(async (req, res) => {
       .status(401)
       .json(new ApiError(401, "", "User not authenticated"));
   }
-  if(req.user?.role == "admin"){
+  if (req.user?.role == "admin") {
     return res
-     .status(403)
-     .json(new ApiError(403, "", "admin account can not be upadated "));
+      .status(403)
+      .json(new ApiError(403, "", "admin account can not be upadated "));
   }
   const user = req.body;
   let profileImage = req.file ? req.file.path : "";
@@ -323,7 +323,7 @@ const allUser = asyncHandler(async (req, res) => {
   if (search) {
     filter.$or = [
       { email: { $regex: search, $options: "i" } },
-      {firstName: { $regex: search, $options: "i" } },
+      { firstName: { $regex: search, $options: "i" } },
       { mobile: search },
     ];
   }

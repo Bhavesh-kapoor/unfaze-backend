@@ -25,7 +25,7 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
 
     // Find user based on role
     let user;
-    if (verified.role === "admin" || verified.role === "user") {
+    if (verified.role === "admin" || verified.role === "user" || verified.role === "corp-user" || verified.role === "corp-admin") {
       user = await User.findById(verified._id).select(
         "-password -refreshToken"
       );

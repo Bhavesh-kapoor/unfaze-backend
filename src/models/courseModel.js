@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 const courseSchema = new Schema(
-  {
+  { 
     sessionOffered: {
       type: Number,
       required: true,

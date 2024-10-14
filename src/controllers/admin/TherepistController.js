@@ -593,19 +593,19 @@ const updateTherapist = asyncHandler(async (req, res) => {
           : existingTherapist.serviceChargeInr,
       educationDetails: {
         highSchool: {
-          ...existingTherapist.educationDetails.highSchool,
+          ...existingTherapist.educationDetails?.highSchool || {},
           ...highSchool,
         },
         intermediate: {
-          ...existingTherapist.educationDetails.intermediate,
+          ...existingTherapist.educationDetails?.intermediate || {},
           ...intermediate,
         },
         graduation: {
-          ...existingTherapist.educationDetails.graduation,
+          ...existingTherapist.educationDetails?.graduation || {},
           ...graduation,
         },
         postGraduation: {
-          ...existingTherapist.educationDetails.postGraduation,
+          ...existingTherapist.educationDetails?.postGraduation || {},
           ...postGraduation,
         },
       },
@@ -652,8 +652,8 @@ const updateTherapist = asyncHandler(async (req, res) => {
         new ApiResponse(200, updatedTherapist, "Profile updated successfully")
       );
   } catch (err) {
-    console.error(err);
-    res.status(500).json(new ApiError(500, "", err));
+    console.log(err);
+    res.status(500).json(new ApiError(500, "", err.message));
   }
 });
 

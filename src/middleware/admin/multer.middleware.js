@@ -45,7 +45,7 @@ const getFolder = (fieldname, emailPrefix) => {
 
 // Function to remove existing file by fieldname and filename for blogImageUrl
 const removeExistingFile = (folder, fieldname, req) => {
-  if (fieldname === "chatFile") {
+  if (fieldname === "chatFile" || fieldname === "userAvatarCorp") {
     return;
   }
   try {

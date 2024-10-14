@@ -1,4 +1,4 @@
-import { check } from "express-validator";
+import { check, validationResult } from "express-validator";
 import { User } from "../../models/userModel.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
@@ -9,6 +9,7 @@ import { PasswordReset } from "../../models/corporate/passwordResetModel.js";
 import { generateSixDigitNumber } from "../../utils/tempPasswordGenerator.js";
 import { sendMail } from "../../utils/sendMail.js";
 import { createPwdEmailContent } from "../../static/emailcontent.js";
+import { convertPathToUrl } from "../admin/TherepistController.js";
 const sendPwdCreationLink = (receiverEmail, name, link) => {
   const mailContent = createPwdEmailContent(name, link);
   const subject = "Create Your Password for Your New Account at Unfazed"
@@ -21,14 +22,22 @@ const validateRegister = [
   check("email", "Email is required").isEmail(),
   check("mobile", "Mobile is required").notEmpty(),
   check("gender", "Gender is required").notEmpty(),
-  check("orgatizationName", "orgatizationName is required").notEmpty(),
-  check("role", "role is required").notEmpty(),
   check("country", "country is required").notEmpty(),
   check("state", "state is required").notEmpty(),
   check("city", "city is required").notEmpty(),
+  check("organizationId", "Organization ID is required")
+    .optional({ checkFalsy: true })
+    .notEmpty().withMessage("Organization ID cannot be empty"),
 ];
 
 const registerUser = asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "Validation Error", errors.array()));
+  }
   try {
     const admin = req.user
     if (admin.role !== "corp-admin") {
@@ -37,13 +46,15 @@ const registerUser = asyncHandler(async (req, res) => {
     let profileImagePath;
     const newUser = req.body;
     const existingUser = await User.findOne({ email: newUser.email })
-    if (!existingUser) {
+    if (existingUser) {
       return res.status(400).json(new ApiResponse(400, null, "Email already exists!"));
     }
-    if (req?.file?.path) profileImagePath = req.file.path;
+    if (req?.file?.path) profileImagePath = convertPathToUrl(req.file.path);
     const newCorpUser = new User({
       ...newUser,
       profileImage: profileImagePath ? profileImagePath : "",
+      organizationId: admin.organizationId,
+      role: "corp-user"
     });
     await newCorpUser.save();
     const token = generateSixDigitNumber();
@@ -61,6 +72,13 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 })
 const registerAdmin = asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .json(new ApiError(400, "Validation Error", errors.array()));
+  }
   const admin = req.user
   if (admin.role !== "admin") {
     return res.status(403).json(new ApiError(403, null, "Only admin can register corporate Admin!"));
@@ -69,10 +87,10 @@ const registerAdmin = asyncHandler(async (req, res) => {
     let profileImagePath;
     const newUser = req.body;
     const existingUser = await User.findOne({ email: newUser.email })
-    if (!existingUser) {
+    if (existingUser) {
       return res.status(400).json(new ApiResponse(400, null, "Email already exists!"));
     }
-    if (req?.file?.path) profileImagePath = req.file.path;
+    if (req?.file?.path) profileImagePath = convertPathToUrl(req.file.path);
     const adminUser = new User({
       ...newUser,
       profileImage: profileImagePath ? profileImagePath : "",
@@ -91,6 +109,51 @@ const registerAdmin = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json(new ApiError(500, null, error.message));
+  }
+})
+const createPassword = asyncHandler(async (req, res) => {
+  try {
+    const { password, token } = req.body;
+    const passwordReset = await PasswordReset.findOne({ token });
+    if (!passwordReset) {
+      return res
+        .status(404)
+        .json(new ApiError(404, null, "Password reset token expired or in valid"));
+    }
+    const user = await User.findById(passwordReset.userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json(new ApiError(404, null, "User not found!"));
+    }
+    user.password = password;
+    await user.save();
+    await PasswordReset.findByIdAndDelete(passwordReset._id);
+    let { accessToken, refreshToken } = await createAccessOrRefreshToken(
+      user._id
+    );
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            user
+          },
+          "Password reset successfully!"
+        )
+      );
+  } catch (error) {
+    console.error(error)
+    res.status(500).json(new ApiError(500, null, "Something went wrong while resetting password!"));
   }
 })
 const corpUserlogin = asyncHandler(async (req, res) => {
@@ -392,4 +455,4 @@ const getOrganizationAdmin = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, adminList, "Admin list fetched successfully"));
 })
 
-export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin }
+export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword }

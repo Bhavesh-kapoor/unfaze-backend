@@ -35,7 +35,6 @@ const httpServer = createServer(app);
 
 // Initialize Socket.IO with the HTTP server
 configureSocket(httpServer, app);
-
 // Connect to the database and start the server
 const startServer = async () => {
   try {

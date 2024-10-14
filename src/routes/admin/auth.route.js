@@ -24,6 +24,7 @@ import {
 import coupenRoute from "./coupon.route.js";
 import corpUserRoute from "../corporate/corpUserRoutes.js"
 import organizationRoute from "../corporate/organizationRoutes.js"
+import corpPackageRoute from "../corporate/corpPackageRoutes.js"
 
 const router = Router();
 
@@ -67,7 +68,7 @@ router.use('/monetize', monetizeRoutes);
 /*------------------------------------- CORPORATE ROUTE------------------------------------- */
 router.use('/corporate', corpUserRoute);
 router.use('/organization', organizationRoute);
-
+router.use('/corp-package', corpPackageRoute);
 
 
 export default router;
