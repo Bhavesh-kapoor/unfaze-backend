@@ -28,7 +28,6 @@ const getFolder = (fieldname, emailPrefix) => {
   ];
   if (therapistFields.includes(fieldname) && emailPrefix)
     return `src/images/therapists/${emailPrefix}`;
-
   switch (fieldname) {
     case "blogImageUrl":
       return "src/images/blogs";

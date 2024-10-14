@@ -10,6 +10,7 @@ import { generateSixDigitNumber } from "../../utils/tempPasswordGenerator.js";
 import { sendMail } from "../../utils/sendMail.js";
 import { createPwdEmailContent } from "../../static/emailcontent.js";
 import { convertPathToUrl } from "../admin/TherepistController.js";
+import mongoose from "mongoose";
 const sendPwdCreationLink = (receiverEmail, name, link) => {
   const mailContent = createPwdEmailContent(name, link);
   const subject = "Create Your Password for Your New Account at Unfazed"
@@ -365,6 +366,7 @@ const allUser = asyncHandler(async (req, res) => {
 
 const allUserBycompany = asyncHandler(async (req, res) => {
   const user = req.user
+  console.log("user", user)
   const {
     page = 1,
     limit = 10,
@@ -379,7 +381,7 @@ const allUserBycompany = asyncHandler(async (req, res) => {
   if (user.role === "admin") {
     orgId = req.query.orgId;
   } else if (user.role === "corp-admin") {
-    orgId = user.orgatizationId
+    orgId = user.organizationId
   }
   // Pagination
   const pageNumber = parseInt(page);
@@ -387,7 +389,7 @@ const allUserBycompany = asyncHandler(async (req, res) => {
   const skip = (pageNumber - 1) * limitNumber;
 
   // Search and Date Filter
-  let filter = { orgatizationId: new mongoose.Types.ObjectId(orgId) };
+  let filter = { organizationId: new mongoose.Types.ObjectId(orgId) };
   if (role) {
     filter.role = { role: role };
   }
@@ -414,6 +416,7 @@ const allUserBycompany = asyncHandler(async (req, res) => {
     };
   }
   // Fetching Users
+  console.log(filter)
   const userList = await User.find(filter)
     .select("-password -refreshToken")
     .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
