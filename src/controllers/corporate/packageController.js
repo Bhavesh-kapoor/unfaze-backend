@@ -3,8 +3,6 @@ import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { CorpPackage } from "../../models/corporate/packageModel.js";
 import { check, validationResult } from "express-validator";
-import { populate } from "dotenv";
-import { json } from "express";
 import { Organization } from "../../models/corporate/organizationModel.js";
 
 // Validation middleware
@@ -39,28 +37,51 @@ const createPackage = asyncHandler(async (req, res) => {
 const updatePackage = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const updatedPackage = await CorpPackage.findByIdAndUpdate(id, req.body, {
+    const updatedPackage = await CorpPackage.findByIdAndUpdate(id, { ...req.body, remainingSessions: req.body.TotalSession }, {
         new: true,
         runValidators: true,
     });
     if (!updatedPackage) {
         return res.status(404).json(new ApiError(404, "Package not found"));
     }
-
     return res.status(200).json(new ApiResponse(200, updatedPackage, "Package updated successfully"));
 });
 
 const getPackage = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const corpPackage = await CorpPackage.findById(id);
+    // Fetch the package and populate only the names of related fields
+    const corpPackage = await CorpPackage.findById(id)
+        .populate("organizationId", "name")
+        .populate("specializationId", "name");
 
     if (!corpPackage) {
         return res.status(404).json(new ApiError(404, "Package not found"));
     }
 
-    return res.status(200).json(new ApiResponse(200, corpPackage, "Package retrieved successfully"));
+    // Flatten the response by extracting the required fields
+    const flattenedPackage = {
+        _id: corpPackage._id,
+        organizationId: corpPackage.organizationId._id,
+        organizationName: corpPackage.organizationId.name,
+        specializationId: corpPackage.specializationId._id,
+        specializationName: corpPackage.specializationId.name,
+        TotalSession: corpPackage.TotalSession,
+        currency: corpPackage.currency,
+        price: corpPackage.price,
+        isActive: corpPackage.isActive,
+        remainingSessions: corpPackage.remainingSessions,
+        createdAt: corpPackage.createdAt,
+        updatedAt: corpPackage.updatedAt,
+        __v: corpPackage.__v,
+    };
+
+    // Return the flattened response
+    return res
+        .status(200)
+        .json(new ApiResponse(200, flattenedPackage, "Package retrieved successfully"));
 });
+
 
 // Get List of Packages for admin
 const getListOfPackages = asyncHandler(async (req, res) => {
@@ -84,15 +105,34 @@ const getListOfPackages = asyncHandler(async (req, res) => {
         : {};
 
     const packages = await CorpPackage.find(query)
-        .populate('organizationId')
+        .populate("organizationId", "name")
+        .populate("specializationId", "name")
         .limit(limitNumber)
         .skip(skip)
         .exec();
 
+    const result = packages.map((item) => {
+        return {
+            _id: item._id,
+            organizationId: item.organizationId._id,
+            organizationName: item.organizationId.name,
+            specializationId: item.specializationId._id,
+            specializationName: item.specializationId.name,
+            TotalSession: item.TotalSession,
+            currency: item.currency,
+            price: item.price,
+            isActive: item.isActive,
+            remainingSessions: item.remainingSessions,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            __v: item.__v
+        }
+    })
+
     const totalPackages = await CorpPackage.countDocuments(query);
 
     return res.status(200).json(new ApiResponse(200, {
-        result: packages,
+        result: result,
         pagination: {
             totalPages: Math.ceil(totalPackages / limitNumber),
             currentPage: pageNumber,
@@ -112,17 +152,35 @@ const allPackagesByOrg = asyncHandler(async (req, res) => {
     const limitNumber = parseInt(limit, 10) || 10;
     const skip = (pageNumber - 1) * limitNumber;
 
-
+    console.log(user)
     const packages = await CorpPackage.find({ organizationId: user.organizationId })
-        .populate('organizationId')
+        .populate('organizationId', 'name')
+        .populate('specializationId', 'name')
         .limit(limitNumber)
         .skip(skip)
         .exec();
 
     const totalPackages = await CorpPackage.countDocuments({ organizationId: user.organizationId });
 
+    const result = packages.map((item) => {
+        return {
+            _id: item._id,
+            organizationId: item.organizationId._id,
+            organizationName: item.organizationId.name,
+            specializationId: item.specializationId._id,
+            specializationName: item.specializationId.name,
+            TotalSession: item.TotalSession,
+            currency: item.currency,
+            price: item.price,
+            isActive: item.isActive,
+            remainingSessions: item.remainingSessions,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            __v: item.__v
+        }
+    })
     return res.status(200).json(new ApiResponse(200, {
-        result: packages,
+        result: result,
         pagination: {
             totalPages: Math.ceil(totalPackages / limitNumber),
             currentPage: pageNumber,

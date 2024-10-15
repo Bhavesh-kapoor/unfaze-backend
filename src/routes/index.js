@@ -11,7 +11,7 @@ import therapistRoute from "../routes/therapist/therapist.route.js";
 import refundRoutes from "./refundRoute.js";
 import { callback } from "../middleware/admin/phonePayConfig.js";
 import chatRoute from "./message.routes.js";
-import corpAdminRoute from "./corporate/corpUserRoutes.js"
+import corpAdminRoute from "./corporate/corpadminRoutes.js"
 
 // Initialize the router
 const router = express.Router();

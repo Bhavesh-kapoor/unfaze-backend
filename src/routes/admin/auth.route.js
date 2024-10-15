@@ -22,7 +22,7 @@ import {
   manualSessionBooking
 } from "../../controllers/admin/sessionsControllers.js";
 import coupenRoute from "./coupon.route.js";
-import corpUserRoute from "../corporate/corpUserRoutes.js"
+import corpUserRoute from "../corporate/corpadminRoutes.js"
 import organizationRoute from "../corporate/organizationRoutes.js"
 import corpPackageRoute from "../corporate/corpPackageRoutes.js"
 
