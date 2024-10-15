@@ -17,7 +17,7 @@ const sessionSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["upcoming", "completed", "cancelled","rescheduled","missed"],
+      enum: ["upcoming", "completed", "cancelled", "rescheduled", "missed"],
       default: "upcoming",
     },
     channelName: {
@@ -25,11 +25,16 @@ const sessionSchema = new Schema(
     },
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },
-    manuallyBooked:{
+    manuallyBooked: {
       type: Boolean,
       default: false
     },
-    category:{
+    type: {
+      type: String,
+      enum: ["individual", "package", "corporate"],
+      default: "individual"
+    },
+    category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Specialization",
       required: true,

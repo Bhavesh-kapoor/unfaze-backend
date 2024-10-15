@@ -15,6 +15,7 @@ import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
 import { sessionBookingConfirmation } from "../../static/emailcontent.js";
 import { Specialization } from "../../models/specilaizationModel.js";
 import { TherapistPay } from "../../models/therapistPayModel.js";
+import { PackageDistribution } from "../../models/corporate/packageDistributionModel.js";
 const SESSION_DURATION_MINUTES = 30;
 const GAP_BETWEEN_SESSIONS_MINUTES = 15;
 const START_HOUR = 9;
@@ -677,6 +678,7 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
       therapist_id: course.therapistId,
       user_id: user._id,
       category: course.courseId.specializationId,
+      type: "package",
       start_time: startDateTime,
       end_time: endDateTime,
     });
@@ -847,5 +849,143 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
     res.status(500).json(new ApiError(500, "somthingwent wrong", [error]))
   }
 })
+const bookSessionFromCorpPackage = asyncHandler(async (req, res) => {
+  try {
+    const user_id = req.user._id
+    const { therapist_id, corpPackageId, slot_id } = req.body
+    if (!user_id || !therapist_id || !corpPackageId || !slot_id) {
+      return res.status(400).json(new ApiError(400, "", "user_id, therapist_id, specialization_id and slot_id are required!"));
+    }
+    const corpPackage = await PackageDistribution.findById(corpPackageId).populate("mainPackageId");
+    if (!corpPackage) {
+      return res.status(200).json(new ApiResponse(200, "", "corpPackage not found!"));
+    }
 
-export { sessionCompleted, rescheduleSession, bookSessionManully, getUserSessions, getTherapistSession, BookSessionFromCourse, manualSessionBooking }
+    if (!corpPackage.isActive) {
+      return res.status(200).json(new ApiResponse(200, null, " You have taken all your alloted sessions already !"))
+    }
+    const therapist = await Therapist.findOne({ _id: therapist_id });
+    if (!therapist) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "Invalid therapist !!!"));
+    }
+    console.log(therapist.specialization)
+    console.log(corpPackage.mainPackageId.specializationId)
+    if (!therapist.specialization.includes(corpPackage.mainPackageId.specializationId)) {
+      return res.status(200).json(new ApiResponse(200, null, "this therapist doesn't provide therapy in this category"))
+    }
+    const user = await User.findOne({ _id: new mongoose.Types.ObjectId(user_id) });
+    if (!user) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "Invalid user !!!"));
+    }
+
+    const timeSlots = await Slot.aggregate([
+      {
+        $match: {
+          therapist_id: new mongoose.Types.ObjectId(therapist_id),
+        },
+      },
+      {
+        $unwind: "$timeslots",
+      },
+      {
+        $match: {
+          "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+          "timeslots.isBooked": false,
+        },
+      },
+      {
+        $project: {
+          _id: "$timeslots._id",
+          therapist_id: 1,
+          date: "$timeslots.date",
+          startTime: "$timeslots.startTime",
+          endTime: "$timeslots.endTime",
+          isBooked: "$timeslots.isBooked",
+        },
+      },
+    ]);
+    if (timeSlots.length === 0) {
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "Timeslot not found or already booked"));
+    }
+
+    const { date, startTime, endTime } = timeSlots[0];
+    const formattedDate = format(new Date(date), "yyyy-MM-dd");
+    const startDateTime = new Date(
+      `${formattedDate}T${convertTo24HourFormat(startTime)}`
+    );
+    const [start_Time, startModifier] = startTime.split(" ");
+    const [end_Time, endModifier] = endTime.split(" ");
+    let endDateTime = new Date(
+      `${formattedDate}T${convertTo24HourFormat(endTime)}`
+    );
+
+    if (startModifier === "PM" && endModifier === "AM") {
+      endDateTime = addDays(endDateTime, 1);
+    }
+    if (!isValid(startDateTime) || !isValid(endDateTime)) {
+      console.error("Invalid date-time format:", startDateTime, endDateTime);
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Invalid date or time format"));
+    }
+    if (startDateTime >= endDateTime) {
+      return res
+        .status(400)
+        .send({ error: "End time must be after start time" });
+    }
+    // Find therapist
+
+    const session = new Session({
+      transaction_id: null,
+      therapist_id: therapist_id,
+      user_id: user_id,
+      category: corpPackage.mainPackageId.specializationId,
+      type: "corporate",
+      start_time: startDateTime,
+      end_time: endDateTime,
+      manuallyBooked: false
+    });
+    let channelName = session._id.toString().slice(-10)
+    channelName = `session_${channelName}`;
+    session.channelName = channelName;
+    await session.save();
+    // const monetization = await TherapistPay.findOne({
+    //   $and: [
+    //     { therapistId: therapist_id },
+    //     { specializationId: specialization_id }
+    //   ]
+    // });
+    // monetization.count = monetization.count + 1;
+    // await monetization.save();
+    await Slot.updateOne({
+      therapist_id: new mongoose.Types.ObjectId(therapist_id),
+      "timeslots._id": new mongoose.Types.ObjectId(slot_id),
+    }, {
+      $set: {
+        "timeslots.$.isBooked": true,
+      },
+    })
+
+    corpPackage.used += 1;
+    await corpPackage.save();
+
+    const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
+    const subject = "Session Booking Confirmation";
+    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+    return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).json(new ApiError(500, "somthingwent wrong", [error]))
+  }
+})
+
+
+export { sessionCompleted, rescheduleSession, bookSessionManully, getUserSessions, getTherapistSession, BookSessionFromCourse, manualSessionBooking, bookSessionFromCorpPackage }

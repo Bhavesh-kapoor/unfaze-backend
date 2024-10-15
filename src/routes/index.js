@@ -12,6 +12,7 @@ import refundRoutes from "./refundRoute.js";
 import { callback } from "../middleware/admin/phonePayConfig.js";
 import chatRoute from "./message.routes.js";
 import corpAdminRoute from "./corporate/corpadminRoutes.js"
+import corpUserRoute from "./corporate/corpUserRoute.js"
 
 // Initialize the router
 const router = express.Router();
@@ -26,6 +27,7 @@ router.use("/public/admin", publicAdminRoute);
 router.use("/admin", verifyJwtToken, adminRoutes);
 //corporate admin
 router.use("/corp-admin", verifyJwtToken, corpAdminRoute);
+router.use("/corp-user", verifyJwtToken, corpUserRoute);
 
 // handle user auth routes for (local)
 router.use("/auth/user", verifyJwtToken, userRoutes);
