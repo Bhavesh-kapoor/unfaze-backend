@@ -516,6 +516,7 @@ const getUserDetails = asyncHandler(async (req, res) => {
         state: 1,
         isEmailVerified: 1,
         isMobileVerified: 1,
+        isActive: 1,
       }
     ).populate("organizationId", "name")
     if (!user) {
@@ -526,8 +527,8 @@ const getUserDetails = asyncHandler(async (req, res) => {
     const formattedUser = {
       _id: user._id,
       role: user.role,
-      organizationId:user.organizationId,
-      profileImage: user.profileImage,
+      organizationId: user.organizationId?._id,
+      profileImage: user?.profileImage,
       dateOfBirth: user.dateOfBirth,
       email: user.email,
       mobile: user.mobile,
@@ -539,7 +540,7 @@ const getUserDetails = asyncHandler(async (req, res) => {
       state: user.state,
       isEmailVerified: user.isEmailVerified,
       isMobileVerified: user.isMobileVerified,
-      organizationName: user.organizationId.name,
+      organizationName: user.organizationId?.name,
       isActive: user.isActive
     }
     res.status(200).json(new ApiResponse(200, formattedUser, "Data fatched successfully"));
