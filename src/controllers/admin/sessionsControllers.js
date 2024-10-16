@@ -870,8 +870,6 @@ const bookSessionFromCorpPackage = asyncHandler(async (req, res) => {
         .status(404)
         .json(new ApiError(404, "", "Invalid therapist !!!"));
     }
-    console.log(therapist.specialization)
-    console.log(corpPackage.mainPackageId.specializationId)
     if (!therapist.specialization.includes(corpPackage.mainPackageId.specializationId)) {
       return res.status(200).json(new ApiResponse(200, null, "this therapist doesn't provide therapy in this category"))
     }
