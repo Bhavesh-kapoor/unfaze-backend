@@ -1342,6 +1342,14 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
         localField: "specialization",
         foreignField: "_id",
         as: "specializationDetails",
+        pipeline: [
+          {
+            $project: {
+             
+              name: 1 
+            }
+          }
+        ]
       },
     },
   ];
@@ -1367,19 +1375,21 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
       $project: {
         _id: 1,
         name: { $concat: ["$firstName", " ", "$lastName"] },
-        category: {
-          $reduce: {
-            input: "$specializationDetails",
-            initialValue: "",
-            in: {
-              $cond: {
-                if: { $eq: ["$$value", ""] },
-                then: "$$this.name",
-                else: { $concat: ["$$value", ", ", "$$this.name"] },
-              },
-            },
-          },
-        },
+        bio: 1,
+        category: "$specializationDetails"
+        // category: {
+        //   $reduce: {
+        //     input: "$specializationDetails",
+        //     initialValue: "",
+        //     in: {
+        //       $cond: {
+        //         if: { $eq: ["$$value", ""] },
+        //         then: "$$this.name",
+        //         else: { $concat: ["$$value", ", ", "$$this.name"] },
+        //       },
+        //     },
+        //   },
+        // },
       },
     },
   ]);
