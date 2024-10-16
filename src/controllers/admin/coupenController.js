@@ -5,7 +5,7 @@ import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js"; // For consistent response formatting
 import { Specialization } from "../../models/specilaizationModel.js";
 import { Course } from "../../models/courseModel.js";
-import mongoose from "mongoose";
+
 
 
 // Validation rules for coupons
@@ -14,6 +14,7 @@ const coupenValidation = [
     check('expiryDate', 'Expiry date of coupon is required').notEmpty(),
     check('usageLimit', 'Limit of coupon is required').notEmpty().isInt({ min: 1 }),
     check('specializationId', 'Specialization ID must be a valid MongoDB ObjectId').notEmpty().isMongoId(),
+    check('discription', 'Discription is required').notEmpty()
 ];
 
 // Store (Create) Coupon API
@@ -85,7 +86,7 @@ const list = asyncHandler(async (req, res) => {
 const edit = asyncHandler(async (req, res) => {
     const couponId = req.params.id;
     const coupon = await Coupon.findById(couponId)
-        .populate('specializationId', 'name');  // Only fetch the 'name' field from Specialization
+        .populate('specializationId', 'name');
 
     if (!coupon) {
         return res.status(404).json(new ApiError(404, "Coupon not found!"));
@@ -224,7 +225,7 @@ const validateCoupon = asyncHandler(async (req, res) => {
 
 const coupon = asyncHandler(async (req, res) => {
     try {
-        const coupons = await Coupon.find({ isActive: true }).select("code").sort({ createdAt: -1 })
+        const coupons = await Coupon.find({ isActive: true }).select("code discription").sort({ createdAt: -1 })
         if (!coupons) {
             return res.status(200).json(new ApiResponse(200, null, "No active coupons found!"));
         }

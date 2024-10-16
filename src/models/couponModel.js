@@ -44,7 +44,19 @@ const couponSchema = new mongoose.Schema({
         type: Schema.Types.ObjectId,
         ref: 'Specialization',
         required: true
+    },
+    discription: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 100,
+    },
+    visibility: {
+        type: Boolean,
+        required: true,
+        default: false
     }
+
 });
 
 // Add a schema-level validation function to check discount logic
