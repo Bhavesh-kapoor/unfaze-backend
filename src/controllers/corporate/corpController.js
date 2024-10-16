@@ -538,7 +538,8 @@ const getUserDetails = asyncHandler(async (req, res) => {
       state: user.state,
       isEmailVerified: user.isEmailVerified,
       isMobileVerified: user.isMobileVerified,
-      organizationName: user.organizationId.name
+      organizationName: user.organizationId.name,
+      isActive: user.isActive
     }
     res.status(200).json(new ApiResponse(200, formattedUser, "Data fatched successfully"));
   } catch (error) {
