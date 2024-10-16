@@ -133,7 +133,7 @@ router.get("/therapist-list", getAllTherapistList);
 
 /*----------------------------------------corporate routes---------------------------------------- */
 router.post("/set-password", createPassword);
-router.post("/get-organization-list", list);
+router.get("/get-organization-list", list);
 
 router.post(
   "/therapist/register",
