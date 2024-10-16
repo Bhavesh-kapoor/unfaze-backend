@@ -225,7 +225,7 @@ const validateCoupon = asyncHandler(async (req, res) => {
 
 const coupon = asyncHandler(async (req, res) => {
     try {
-        const coupons = await Coupon.find({ isActive: true }).select("code discription").sort({ createdAt: -1 })
+        const coupons = await Coupon.find({ isActive: true, visibility: true, description: { $ne: "" } }).select("code description").sort({ createdAt: -1 })
         if (!coupons) {
             return res.status(200).json(new ApiResponse(200, null, "No active coupons found!"));
         }
