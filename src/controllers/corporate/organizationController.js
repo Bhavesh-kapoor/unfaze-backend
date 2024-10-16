@@ -135,4 +135,14 @@ const deleteById = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, null, 'Organization deleted successfully'));
 });
 
-export { register, update, getById, getAll, deleteById };
+const list = asyncHandler(async (req, res) => {
+    try {
+        const organizations = await Organization.find().select("name");
+        return res.status(200).json(new ApiResponse(200, { list: organizations }, "List fatched successfully"));
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(new ApiError(500, "somthing went wrong", error.message));
+    }
+})
+
+export { register, update, getById, getAll, deleteById, list };

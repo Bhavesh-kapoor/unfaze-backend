@@ -44,6 +44,7 @@ import {
 } from "../controllers/admin/seoController.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { createPassword } from "../controllers/corporate/corpController.js";
+import { list } from "../controllers/corporate/organizationController.js"
 
 const router = express.Router();
 
@@ -129,7 +130,10 @@ router.get("/slot/list/:therapist_id/:date", getSlotsByDate);
 router.get("/get-therapist-list-by-category", therapistListByGroup);
 
 router.get("/therapist-list", getAllTherapistList);
+
+/*----------------------------------------corporate routes---------------------------------------- */
 router.post("/set-password", createPassword);
+router.post("/get-organization-list", list);
 
 router.post(
   "/therapist/register",
