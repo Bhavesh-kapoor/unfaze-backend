@@ -11,6 +11,7 @@ import { sendMail } from "../../utils/sendMail.js";
 import { createPwdEmailContent } from "../../static/emailcontent.js";
 import { convertPathToUrl } from "../admin/TherepistController.js";
 import mongoose from "mongoose";
+import { json } from "express";
 const sendPwdCreationLink = (receiverEmail, name, link) => {
   const mailContent = createPwdEmailContent(name, link);
   const subject = "Create Your Password for Your New Account at Unfazed"
@@ -168,6 +169,17 @@ const getCorpAdminList = asyncHandler(async (req, res) => {
       .skip(skip)
       .limit(limitNumber);
     const totalCorpAdmin = await User.countDocuments({ role: 'corp-admin' })
+    const formattedAdmin = adminList.map((admin) => {
+      return {
+        _id: admin._id,
+        name: `${admin.firstName} ${admin.lastName}`,
+        email: admin.email,
+        mobile: admin.mobile,
+        organizationName: admin.organizationId ? admin.organizationId.name : null,
+        isActive: admin.isActive,
+      }
+    })
+
     return res.status(200).json(new ApiResponse(200, {
       pagination: {
         totalItems: totalCorpAdmin,
@@ -175,7 +187,7 @@ const getCorpAdminList = asyncHandler(async (req, res) => {
         currentPage: pageNumber,
         itemsPerPage: limitNumber,
       },
-      result: adminList,
+      result: formattedAdmin,
     }, "Admin List fatched successfully!"));
 
   } catch (error) {
@@ -483,5 +495,76 @@ const getOrganizationAdmin = asyncHandler(async (req, res) => {
   }
   return res.status(200).json(new ApiResponse(200, adminList, "Admin list fetched successfully"));
 })
+const getUserDetails = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOne(
+      { _id: id, role: { $in: ["corp-user", "corp-admin"] } },
+      {
+        _id: 1,
+        role: 1,
+        organizationId: 1,
+        profileImage: 1,
+        dateOfBirth: 1,
+        email: 1,
+        mobile: 1,
+        lastName: 1,
+        firstName: 1,
+        gender: 1,
+        country: 1,
+        city: 1,
+        state: 1,
+        isEmailVerified: 1,
+        isMobileVerified: 1,
+      }
+    ).populate("organizationId", "name")
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    const formattedUser = {
+      _id: user._id,
+      role: user.role,
+      profileImage: user.profileImage,
+      dateOfBirth: user.dateOfBirth,
+      email: user.email,
+      mobile: user.mobile,
+      lastName: user.lastName,
+      firstName: user.firstName,
+      gender: user.gender,
+      country: user.country,
+      city: user.city,
+      state: user.state,
+      isEmailVerified: user.isEmailVerified,
+      isMobileVerified: user.isMobileVerified,
+      organizationName: user.organizationId.name
+    }
+    res.status(200).json(new ApiResponse(200, formattedUser, "Data fatched successfully"));
+  } catch (error) {
+    console.error("Error fetching admin user:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+const deleteUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList }
+  // Find the user by ID and check the role
+  const user = await User.findOne({
+    _id: id,
+    role: { $in: ["corp-user", "corp-admin"] }
+  });
+
+  // Check if the user exists
+  if (!user) {
+    return res.status(404).json(new ApiError(404, null, "No user found!"));
+  }
+
+  // Delete the user
+  await user.deleteOne(); // Use deleteOne() for Mongoose
+
+  // Respond with success
+  res.status(200).json(new ApiResponse(200, null, "User deleted successfully"));
+});
+
+export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser }
