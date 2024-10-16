@@ -14,7 +14,7 @@ router.get("/details/:id", getUserDetails);
 router.delete("/delete-user/:id", deleteUser);
 
 /*------------------------------ package route for corp admin--------------------------*/
-router.post("/package-list", allPackagesByOrg);
+router.get("/package-list", allPackagesByOrg);
 
 
 
@@ -24,6 +24,5 @@ router.put("/edit-dist-package/:distributionId", validate, editAllottedSessions)
 router.get("/get-dist-package/:userId?", getAllottedSession);
 router.get("/get-list", getList);
 router.delete("/delete-alloted-session/:distributionId", deleteAllottedSessions);
-
 
 export default router;

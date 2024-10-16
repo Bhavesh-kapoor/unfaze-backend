@@ -429,11 +429,9 @@ const allUserBycompany = asyncHandler(async (req, res) => {
   if (orgId) {
     filter.organizationId = new mongoose.Types.ObjectId(orgId);
   }
-
   if (role) {
     filter.role = role;
   }
-
   if (search) {
     filter.$or = [
       { email: { $regex: search, $options: "i" } },
@@ -461,7 +459,6 @@ const allUserBycompany = asyncHandler(async (req, res) => {
       .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
       .skip(skip)
       .limit(limitNumber);
-    console.log(userList);
     if (!userList) {
       return res
         .status(400)
