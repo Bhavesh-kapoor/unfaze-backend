@@ -14,7 +14,7 @@ const coupenValidation = [
     check('expiryDate', 'Expiry date of coupon is required').notEmpty(),
     check('usageLimit', 'Limit of coupon is required').notEmpty().isInt({ min: 1 }),
     check('specializationId', 'Specialization ID must be a valid MongoDB ObjectId').notEmpty().isMongoId(),
-    check('discription', 'Discription is required').notEmpty()
+    check('description', 'Discription is required').notEmpty()
 ];
 
 // Store (Create) Coupon API
