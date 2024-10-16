@@ -45,7 +45,7 @@ const couponSchema = new mongoose.Schema({
         ref: 'Specialization',
         required: true
     },
-    discription: {
+    description: {
         type: String,
         required: true,
         trim: true,
