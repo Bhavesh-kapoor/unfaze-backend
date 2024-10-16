@@ -11,7 +11,7 @@ import { sendMail } from "../../utils/sendMail.js";
 import { createPwdEmailContent } from "../../static/emailcontent.js";
 import { convertPathToUrl } from "../admin/TherepistController.js";
 import mongoose from "mongoose";
-import { json } from "express";
+
 const sendPwdCreationLink = (receiverEmail, name, link) => {
   const mailContent = createPwdEmailContent(name, link);
   const subject = "Create Your Password for Your New Account at Unfazed"
@@ -461,20 +461,20 @@ const allUserBycompany = asyncHandler(async (req, res) => {
       .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
       .skip(skip)
       .limit(limitNumber);
-
+    console.log(userList);
     if (!userList) {
       return res
         .status(400)
         .json(new ApiError(404, "", "User list fetching failed!"));
     }
-    const flattendData = userList.map(() => {
+    const flattendData = userList.map((user) => {
       return {
         _id: user._id,
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
         mobile: user.mobile,
         role: user.role,
-        organizationName: user.organizationId.name,
+        organizationName: user.organizationId?.name || "",
         createdAt: user.createdAt,
         isActive: user.isActive
 
@@ -492,7 +492,7 @@ const allUserBycompany = asyncHandler(async (req, res) => {
             currentPage: pageNumber,
             itemsPerPage: limitNumber,
           },
-          result: userList,
+          result: flattendData,
         },
         "User list fetched successfully"
       )
