@@ -526,6 +526,7 @@ const getUserDetails = asyncHandler(async (req, res) => {
     const formattedUser = {
       _id: user._id,
       role: user.role,
+      organizationId:user.organizationId,
       profileImage: user.profileImage,
       dateOfBirth: user.dateOfBirth,
       email: user.email,
