@@ -156,6 +156,32 @@ const createPassword = asyncHandler(async (req, res) => {
     console.error(error)
     res.status(500).json(new ApiError(500, null, "Something went wrong while resetting password!"));
   }
+});
+
+const getCorpAdminList = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+  try {
+    const adminList = await User.find({ role: 'corp-admin' }).populate("organizationId").select('-password -refreshToken')
+      .skip(skip)
+      .limit(limitNumber);
+    const totalCorpAdmin = await User.countDocuments({ role: 'corp-admin' })
+    return res.status(200).json(new ApiResponse(200, {
+      pagination: {
+        totalItems: totalCorpAdmin,
+        totalPages: Math.ceil(totalCorpAdmin / limitNumber),
+        currentPage: pageNumber,
+        itemsPerPage: limitNumber,
+      },
+      result: adminList,
+    }, "Admin List fatched successfully!"));
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json(new ApiError(500, "", "Server error"));
+  }
 })
 const corpUserlogin = asyncHandler(async (req, res) => {
   try {
@@ -458,4 +484,4 @@ const getOrganizationAdmin = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, adminList, "Admin list fetched successfully"));
 })
 
-export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword }
+export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList }

@@ -63,7 +63,7 @@ const welcomeEmail = (name) => {
         <p style="color: #888;">Warm regards,</p>
         <p>Team Unfazed</p>
         <p><strong>Whatsapp:</strong> +91-6392-975-097</p>
-        <p><strong>Email:</strong> <a href="mailto:bds.unfazed@gmail.com" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
+        <p><strong>Email:</strong> <a href="mailto:contact@unfazed.in" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
         <p><strong>Website:</strong> <a href="http://www.unfazed.in" target="_blank" style="color: #0066cc; text-decoration: none;">www.unfazed.in</a></p>
     </div>`
   )
@@ -87,7 +87,7 @@ const passwordUpdatedEmail = (name) => `
     <p style="font-size: 16px; color: #555; margin-top: 20px;">
       Best regards,<br>
       <p> Team<strong> Unfazed</strong></p><br>
-      <a href="mailto:bds.unfazed@gmail.com" style="color: #1a73e8; text-decoration: none;">support@bds.unfazed@gmail.com</a>
+      <a href="mailto:contact@unfazed.in" style="color: #1a73e8; text-decoration: none;">support@-contact@unfazed.in</a>
     </p>
 
     <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
@@ -175,12 +175,65 @@ function createPwdEmailContent(name, link) {
             <p>Thank you,<br>Team Unfazed</p>
             <p>If you’re having trouble clicking the button, copy and paste this URL into your browser:<br><a href="${link}" style="color: #007bff;">${link}</a></p>
            <p><strong>Whatsapp:</strong> +91-6392-975-097</p>
-           <p><strong>Email:</strong> <a href="mailto:bds.unfazed@gmail.com" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
+           <p><strong>Email:</strong> <a href="mailto:contact@unfazed.in" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
             <p><strong>Website:</strong> <a href="http://www.unfazed.in" target="_blank" style="color: #0066cc; text-decoration: none;">www.unfazed.in</a></p>
         </div>
     </div>
   `;
 }
 
+function userSessionReminderEmailTemplate(userName, therapistName, sessionDate) {
+  return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; padding: 20px; margin: 0;">
+          <div style="background-color: #4CAF50; color: white; padding: 10px; border-radius: 5px 5px 0 0; text-align: center;">
+              <h1>Reminder: Your Session is Starting Soon!</h1>
+          </div>
+          <div style="padding: 20px; background: #fff; border-radius: 5px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+              <div>
+                  <p>Dear ${userName},</p>
+                  <p>This is a friendly reminder that your session with <strong>${therapistName}</strong> is scheduled to start in <strong>30 minutes</strong>.</p>
+              </div>
+              <div style="margin: 10px 0;">
+                  <h2>Session Details:</h2>
+                  <div><strong>Date:</strong> ${sessionDate}</div>
+              </div>
+              <div>
+                  <p>Please ensure you are prepared and available for your session. If you have any questions or need to reschedule, feel free to reach out.</p>
+                   <p><strong>Email:</strong> <a href="mailto:contact@unfazed.in" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
 
-export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation, createPwdEmailContent }
+              </div>
+              <p>Warm regards,</p>
+              <p>Team Unfazed</p>
+          </div>
+         
+      </div>
+  `;
+}
+
+function therapistSessionReminderEmailTemplate(therapistName, userName, sessionDate) {
+  return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; padding: 20px; margin: 0;">
+          <div style="background-color: #4CAF50; color: white; padding: 10px; border-radius: 5px 5px 0 0; text-align: center;">
+              <h1>Reminder: Your Session is Starting Soon!</h1>
+          </div>
+          <div style="padding: 20px; background: #fff; border-radius: 5px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+              <div>
+                  <p>Dear ${therapistName},</p>
+                  <p>This is a friendly reminder that you have a session with <strong>${userName}</strong> scheduled to start in <strong>30 minutes</strong>.</p>
+              </div>
+              <div style="margin: 10px 0;">
+                  <h2>Session Details:</h2>
+                  <div><strong>Date:</strong> ${sessionDate}</div>
+              </div>
+              <div>
+                  <p>Please ensure you are prepared and available for the session. If you have any questions or need to reschedule, feel free to reach out.</p>
+                   <p><strong>Email:</strong> <a href="mailto:contact@unfazed.in" style="color: #0066cc; text-decoration: none;">contact@unfazed.in</a></p>
+              </div>
+              <p>Warm regards,</p>
+              <p>Team Unfazed</p>
+          </div>
+      </div>
+  `;
+}
+
+export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation, createPwdEmailContent, userSessionReminderEmailTemplate, therapistSessionReminderEmailTemplate }
