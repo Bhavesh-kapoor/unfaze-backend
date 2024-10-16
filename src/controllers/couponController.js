@@ -31,13 +31,20 @@ const updateCoupon = asyncHandler(async (req, res) => {
 const deleteCoupon = asyncHandler(async (req, res) => {
     const { code, discountPercentage, startDate, expiryDate, usageLimit, } = req.body;
     const coupon = new Coupon({ code, discountPercentage, startDate, expiryDate, usageLimit })
-    cou
 })
 const couponList = asyncHandler(async (req, res) => {
-    const { code, discountPercentage, startDate, expiryDate, usageLimit, } = req.body;
-    const coupon = new Coupon({ code, discountPercentage, startDate, expiryDate, usageLimit })
-    cou
+    try {
+        const coupons = Coupon.find({});
+        if(!coupons){
+            return res.status(200).json(new ApiResponse(200,[]," no coupon found!"))
+        }
+        return res.status(200).json(new ApiResponse(200,coupons,"coupon fatched successfully!"))
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json(new ApiError(500, error.message))
+    }    
 })
+
 const couponById = asyncHandler(async (req, res) => {
     const { code, discountPercentage, startDate, expiryDate, usageLimit, } = req.body;
     const coupon = new Coupon({ code, discountPercentage, startDate, expiryDate, usageLimit })

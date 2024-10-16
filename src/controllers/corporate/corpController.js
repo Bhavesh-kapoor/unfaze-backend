@@ -330,7 +330,6 @@ const updateProfile = asyncHandler(async (req, res) => {
     return res.status(500).json(new ApiError(500, "", "Server error"));
   }
 });
-
 const allUser = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -404,12 +403,11 @@ const allUser = asyncHandler(async (req, res) => {
 
 const allUserBycompany = asyncHandler(async (req, res) => {
   const user = req.user
-  console.log("user", user)
   const {
     page = 1,
     limit = 10,
     search,
-    role,
+    role = 'corp-user',
     startDate,
     endDate,
     sortkey = "createdAt",
@@ -427,9 +425,13 @@ const allUserBycompany = asyncHandler(async (req, res) => {
   const skip = (pageNumber - 1) * limitNumber;
 
   // Search and Date Filter
-  let filter = { organizationId: new mongoose.Types.ObjectId(orgId) };
+  let filter = {};
+  if (orgId) {
+    filter.organizationId = new mongoose.Types.ObjectId(orgId);
+  }
+
   if (role) {
-    filter.role = { role: role };
+    filter.role = role;
   }
 
   if (search) {
@@ -453,37 +455,52 @@ const allUserBycompany = asyncHandler(async (req, res) => {
       $lt: endOfDay(addDays(parseISO(endDate), 1)),
     };
   }
-  // Fetching Users
-  console.log(filter)
-  const userList = await User.find(filter)
-    .select("-password -refreshToken")
-    .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
-    .skip(skip)
-    .limit(limitNumber);
+  try {
+    const userList = await User.find(filter)
+      .select("-password -refreshToken").populate("organizationId", "name")
+      .sort({ [sortkey]: sortdir === "desc" ? -1 : 1 })
+      .skip(skip)
+      .limit(limitNumber);
 
-  if (!userList) {
-    return res
-      .status(400)
-      .json(new ApiError(404, "", "User list fetching failed!"));
-  }
+    if (!userList) {
+      return res
+        .status(400)
+        .json(new ApiError(404, "", "User list fetching failed!"));
+    }
+    const flattendData = userList.map(() => {
+      return {
+        _id: user._id,
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        mobile: user.mobile,
+        role: user.role,
+        organizationName: user.organizationId.name,
+        createdAt: user.createdAt,
+        isActive: user.isActive
 
-  const totalUsers = await User.countDocuments(filter);
+      }
+    })
+    const totalUsers = await User.countDocuments(filter);
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        pagination: {
-          totalItems: totalUsers,
-          totalPages: Math.ceil(totalUsers / limitNumber),
-          currentPage: pageNumber,
-          itemsPerPage: limitNumber,
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          pagination: {
+            totalItems: totalUsers,
+            totalPages: Math.ceil(totalUsers / limitNumber),
+            currentPage: pageNumber,
+            itemsPerPage: limitNumber,
+          },
+          result: userList,
         },
-        result: userList,
-      },
-      "User list fetched successfully"
-    )
-  );
+        "User list fetched successfully"
+      )
+    );
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json(new ApiError(500, null, error.message));
+  }
 });
 const getOrganizationAdmin = asyncHandler(async (req, res) => {
   const orgId = req.params.orgId;

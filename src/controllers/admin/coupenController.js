@@ -222,6 +222,18 @@ const validateCoupon = asyncHandler(async (req, res) => {
     }
 });
 
+const coupon = asyncHandler(async (req, res) => {
+    try {
+        const coupons = await Coupon.find({ isActive: true }).select("code").sort({ createdAt: -1 })
+        if (!coupons) {
+            return res.status(200).json(new ApiResponse(200, null, "No active coupons found!"));
+        }
+        return res.status(200).json(new ApiResponse(200, coupons[0], "coupon fatched successfully!"));
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json(new ApiError(500, "Something went wrong while fetching coupons", error.message));
+    }
+})
 
 // Export the APIs
-export { coupenValidation, create, list, edit, update, deleteCoupon, validateCoupon };
+export { coupenValidation, create, list, edit, update, deleteCoupon, validateCoupon, coupon };

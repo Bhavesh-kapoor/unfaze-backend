@@ -45,6 +45,7 @@ import {
 import ApiResponse from "../utils/ApiResponse.js";
 import { createPassword } from "../controllers/corporate/corpController.js";
 import { list } from "../controllers/corporate/organizationController.js"
+import { coupon } from "../controllers/admin/coupenController.js";
 
 const router = express.Router();
 
@@ -134,6 +135,9 @@ router.get("/therapist-list", getAllTherapistList);
 /*----------------------------------------corporate routes---------------------------------------- */
 router.post("/set-password", createPassword);
 router.get("/get-organization-list", list);
+
+/*----------------------------------------coupon routes---------------------------------------- */
+router.get("/active-coupon", coupon)
 
 router.post(
   "/therapist/register",
