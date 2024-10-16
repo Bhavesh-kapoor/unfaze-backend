@@ -1345,8 +1345,8 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
         pipeline: [
           {
             $project: {
-             
-              name: 1 
+
+              name: 1
             }
           }
         ]
@@ -1376,7 +1376,8 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
         _id: 1,
         name: { $concat: ["$firstName", " ", "$lastName"] },
         bio: 1,
-        category: "$specializationDetails"
+        category: "$specializationDetails",
+        profileImageUrl: 1
         // category: {
         //   $reduce: {
         //     input: "$specializationDetails",
