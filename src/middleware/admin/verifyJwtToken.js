@@ -11,11 +11,10 @@ const verifyJwtToken = asyncHandler(async (req, res, next) => {
     const token =
       req.cookies?.accesstoken ||
       req.header("Authorization")?.replace("Bearer ", "");
-
+    
     if (!token) {
       throw new ApiError(404, "Token Not Found!");
     }
-
     // Verify JWT token
     const verified = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
 

@@ -117,7 +117,8 @@ const registerAdmin = asyncHandler(async (req, res) => {
 })
 const createPassword = asyncHandler(async (req, res) => {
   try {
-    const { password, token } = req.body;
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    const { password } = req.body;
     const passwordReset = await PasswordReset.findOne({ token });
     if (!passwordReset) {
       return res
@@ -592,7 +593,7 @@ const corpAdminDashboard = asyncHandler(async (req, res) => {
     if (user.role !== 'corp-admin') {
       return res.status(403).json(new ApiResponse(403, null, "Unauthorized Access"));
     }
-     const users = await user.find()
+    const users = await user.find()
     const totalUsers = await User.countDocuments({ role: "corp-user", organizationId: user.organizationId });
     const packageDetails = await CorpPackage.aggregate([
       {
