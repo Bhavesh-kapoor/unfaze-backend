@@ -43,7 +43,7 @@ import {
   getSeoDataBySlug,
 } from "../controllers/admin/seoController.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import { createPassword } from "../controllers/corporate/corpController.js";
+import { createPassword, verifyTokenUrl } from "../controllers/corporate/corpController.js";
 import { list } from "../controllers/corporate/organizationController.js"
 import { coupon } from "../controllers/admin/coupenController.js";
 
@@ -134,6 +134,7 @@ router.get("/therapist-list", getAllTherapistList);
 
 /*----------------------------------------corporate routes---------------------------------------- */
 router.post("/set-password", createPassword);
+router.post("/verify-url", verifyTokenUrl);
 router.get("/get-organization-list", list);
 
 /*----------------------------------------coupon routes---------------------------------------- */

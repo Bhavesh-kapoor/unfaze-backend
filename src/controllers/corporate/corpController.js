@@ -123,7 +123,7 @@ const createPassword = asyncHandler(async (req, res) => {
     if (!passwordReset) {
       return res
         .status(404)
-        .json(new ApiError(404, null, "Password reset token expired or in valid"));
+        .json(new ApiError(404, null, "Password reset token expired or in valid!"));
     }
     const user = await User.findById(passwordReset.userId);
     if (!user) {
@@ -133,7 +133,7 @@ const createPassword = asyncHandler(async (req, res) => {
     }
     user.password = password;
     await user.save();
-    await PasswordReset.findByIdAndDelete(passwordReset._id);
+    // await PasswordReset.findByIdAndDelete(passwordReset._id);
     let { accessToken, refreshToken } = await createAccessOrRefreshToken(
       user._id
     );
@@ -620,5 +620,21 @@ const corpAdminDashboard = asyncHandler(async (req, res) => {
     return res.status(500).json(new ApiResponse(500, null, "Internal server error"));
   }
 });
+const verifyTokenUrl = asyncHandler(async (req, res) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  const passwordReset = await PasswordReset.findOne({ token });
+  if (!passwordReset) {
+    return res
+      .status(404)
+      .json(new ApiError(404, null, "expired"));
+  }
+  const user = await User.findById(passwordReset.userId);
+  if (!user) {
+    return res
+      .status(404)
+      .json(new ApiError(404, null, "User not found!"));
+  }
+  return res.status(200).json(new ApiResponse(200, { email: user.email, name: `${user.firstName} ${user.lastName}` }));
+})
 
-export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard }
+export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard, verifyTokenUrl }
