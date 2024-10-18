@@ -573,7 +573,15 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
                 _id: null,
                 lastMessageTime: { $first: "$timestamp" }, // Last message timestamp
                 lastMessageText: { $first: "$message" }, // Last message text
-                unreadCount: { $sum: { $cond: [{ $eq: ["$read", false] }, 1, 0] } } // Unread messages count
+                unreadCount: { 
+                  $sum: { 
+                    $cond: [
+                      { $and: [{ $eq: ["$receiverId", userId] }, { $eq: ["$read", false] }] }, 
+                      1, 
+                      0
+                    ] 
+                  } 
+                } // Only count unread messages where the current user is the receiver
               }
             }
           ],
@@ -620,6 +628,7 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
       new ApiResponse(200, { therapists: therapistListData, user }, "Therapist list fetched successfully")
     );
   });
+  
   
 export {
     sendNewMessage,
