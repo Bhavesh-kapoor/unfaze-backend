@@ -197,6 +197,7 @@ const getList = asyncHandler(async (req, res) => {
             return {
                 _id: item._id,
                 userId: item.userId._id,
+                mainPackageId: item._id,
                 userName: `${item.userId.firstName} ${item.userId.lastName}`,
                 category: item.mainPackageId.specializationId.name,
                 sessions: item.sesAllotted,
@@ -241,7 +242,41 @@ const deleteAllottedSessions = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, null, "Allotted session deleted successfully"));
 });
+const getById = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params;
+        const packageData = await PackageDistribution.findById(id).populate({
+            path: "mainPackageId",
+            populate: {
+                path: "specializationId",
+                select: "name"
+            }
+        })
+            .populate("userId", "firstName lastName");
+        if (!packageData) {
+            return res.status(404).json(new ApiError(404, null, "Package distribution not found"));
+        }
+        console.log(packageData)
+        const flattenedResponse = {
+            _id: packageData._id,
+            userId: packageData.userId._id,
+            mainPackageId: packageData._id,
+            userName: `${packageData.userId.firstName} ${packageData.userId.lastName}`,
+            category: packageData.mainPackageId.specializationId.name,
+            sessions: packageData.sesAllotted,
+            usedSessions: packageData.used,
+            isActive: packageData.isActive,
+            createdAt: packageData.createdAt,
+        }
+
+        return res.status(200).json(new ApiResponse(200, { result: flattenedResponse }, "Data fatched successfully"))
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(new ApiError(500, null, error.message))
+    }
+})
 
 // const getListForAdmin = asyncHandler(async (req, res) => { })
 
-export { validate, AllotSessionsTocorpUser, editAllottedSessions, getAllottedSession, getList, deleteAllottedSessions }
+export { validate, AllotSessionsTocorpUser, editAllottedSessions, getAllottedSession, getList, deleteAllottedSessions, getById }

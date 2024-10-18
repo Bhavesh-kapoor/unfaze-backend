@@ -11,6 +11,8 @@ import { sendMail } from "../../utils/sendMail.js";
 import { createPwdEmailContent } from "../../static/emailcontent.js";
 import { convertPathToUrl } from "../admin/TherepistController.js";
 import mongoose from "mongoose";
+import { json } from "express";
+import { CorpPackage } from "../../models/corporate/packageModel.js";
 
 const sendPwdCreationLink = (receiverEmail, name, link) => {
   const mailContent = createPwdEmailContent(name, link);
@@ -583,5 +585,39 @@ const deleteUser = asyncHandler(async (req, res) => {
   // Respond with success
   res.status(200).json(new ApiResponse(200, null, "User deleted successfully"));
 });
+const corpAdminDashboard = asyncHandler(async (req, res) => {
+  try {
+    const user = req.user;
 
-export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser }
+    if (user.role !== 'corp-admin') {
+      return res.status(403).json(new ApiResponse(403, null, "Unauthorized Access"));
+    }
+     const users = await user.find()
+    const totalUsers = await User.countDocuments({ role: "corp-user", organizationId: user.organizationId });
+    const packageDetails = await CorpPackage.aggregate([
+      {
+        $match: { organizationId: user.organizationId }
+      },
+      {
+        $group: {
+          _id: null,
+          remainingSession: { $sum: "$remainingSessions" },
+          totalSession: { $sum: "$TotalSession" }
+        }
+      }
+    ]);
+
+    const packageData = packageDetails.length > 0 ? packageDetails[0] : { remainingSession: 0, totalSession: 0 };
+
+    return res.status(200).json(new ApiResponse(200, {
+      totalUsers,
+      remainingSession: packageData.remainingSession,
+      totalSession: packageData.totalSession
+    }, "Dashboard data retrieved successfully"));
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json(new ApiResponse(500, null, "Internal server error"));
+  }
+});
+
+export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard }

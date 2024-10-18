@@ -9,6 +9,8 @@ import { convertPathToUrl } from "./admin/TherepistController.js";
 import path from 'path';
 import fs from "fs"
 import { fileURLToPath } from 'url';
+import { json } from "express";
+import { body } from "express-validator";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -489,7 +491,31 @@ const deleteMessagebyId = asyncHandler(async (req, res) => {
         res.status(500).json(new ApiError(500, "Error deleting message"));
     }
 });
-
+const markMessagesAsRead = async (req, res) => {
+    const { receiverId } = req.params;
+    const user = req.user;
+    const senderId = user?._id
+    try {
+        await Message.updateMany(
+            { senderId: receiverId, receiverId: senderId, read: false },
+            { $set: { read: true } }
+        );
+        res.status(200).json(new ApiResponse(200, null, "messages mark as read!"));
+    } catch (err) {
+        res.status(500).json(new ApiError(500, null, err.message));
+    }
+}
+const getUnreadMessagesCount = asyncHandler(async (req, res) => {
+    const { receiverId } = req.params;
+    const user = req.user;
+    const senderId = user?._id
+    try {
+        const unreadMessagesCount = await Message.countDocuments({ receiverId: senderId, senderId: receiverId, isRead: false });
+        res.status(200).json(new ApiResponse(200, { unreadMessagesCount }, "unread messages count"));
+    } catch (err) {
+        res.status(500).json(ApiError(500, null, err.message));
+    }
+})
 export {
     sendNewMessage,
     getChatHistory,
@@ -497,4 +523,6 @@ export {
     getAllConversationList,
     getChatHistoryForAdmin,
     deleteMessagebyId,
+    markMessagesAsRead,
+    getUnreadMessagesCount
 };

@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import dotenv from "dotenv";
 
+
 dotenv.config();
 
 let users = [];
@@ -46,6 +47,12 @@ export const configureSocket = (httpServer, app) => {
           chatFile,
           text,
         });
+      }
+    });
+    socket.on("markAsRead", ({ senderId, receiverId }) => {
+      const user = getUser(senderId);
+      if (user) {
+        io.to(user.socketId).emit("messagesRead", { receiverId });
       }
     });
 

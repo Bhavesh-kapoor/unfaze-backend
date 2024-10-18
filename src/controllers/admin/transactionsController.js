@@ -1202,7 +1202,7 @@ const therapistTransactions = asyncHandler(async (req, res) => {
 
 const thankyou = asyncHandler(async (req, res) => {
   const { transactionId } = req.query;
-  const data = await Transaction.findOne({ transactionId: transactionId });
+  // const data = await Transaction.findOne({ transactionId: transactionId });
   const transaction = await Transaction.aggregate([
     {
       $match: {
