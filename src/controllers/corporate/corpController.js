@@ -66,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
       userId: newCorpUser._id,
       token: token
     });
-    const link = `${process.env.FRONTEND_URL}/create-password/?token=${token}`
+    const link = `${process.env.FRONTEND_URL}/secure-create-password?token=${token}`
     const name = `${newCorpUser?.firstName} ${newCorpUser?.lastName}`
     sendPwdCreationLink(newCorpUser.email, name, link)
     return res.status(200).json(new ApiResponse(200, newCorpUser, "Corporate user register successfully!"));
@@ -106,7 +106,7 @@ const registerAdmin = asyncHandler(async (req, res) => {
       userId: adminUser._id,
       token: token
     });
-    const link = `${process.env.FRONTEND_URL}/create-password/?token=${token}`
+    const link = `${process.env.FRONTEND_URL}/secure-create-password?token=${token}`
     const name = `${adminUser?.firstName} ${adminUser?.lastName}`
     sendPwdCreationLink(adminUser.email, name, link)
     return res.status(200).json(new ApiResponse(200, adminUser, "Corporate user register successfully!"));

@@ -14,4 +14,16 @@ const sendNotification = async (receiverId, receiverType, message, payload) => {
   return newNotification;
 };
 
-export { sendNotification };
+const getAllNotifications = asyncHandler(async (req, res) => {
+  const { userId } = req.user;
+  try {
+    const notifications = await Notification.find({ receiverId: userId, status: "unread" })
+      .sort({ createdAt: -1 })
+      .populate("sender", "name profilePic");
+    res.status(200).json(new ApiResponse(200, notifications, "notifications fetched"));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(new ApiResponse(500, null, "Server Error"));
+  }
+})
+export { sendNotification, getAllNotifications };

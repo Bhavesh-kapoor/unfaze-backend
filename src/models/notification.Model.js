@@ -11,7 +11,6 @@ const notificationSchema = new mongoose.Schema({
     },
     payload: { type: Map, of: String },
     status: { type: String, enum: ['unread', 'read'], default: 'unread' },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
-});
+}, { timestamps: true });
+
 export const Notification = mongoose.model('Notification', notificationSchema);
