@@ -7,10 +7,13 @@ import { Therapist } from "../models/therapistModel.js";
 import { Session } from "../models/sessionsModel.js";
 import { convertPathToUrl } from "./admin/TherepistController.js";
 import path from 'path';
-import fs from "fs"
+import fs, { read } from "fs"
 import { fileURLToPath } from 'url';
 import { json } from "express";
-import { body } from "express-validator";
+import { body, query } from "express-validator";
+import { all } from "axios";
+import { error } from "console";
+import { push } from "firebase/database";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -101,7 +104,6 @@ const getConversationList = async (req, res) => {
         const limitNumber = parseInt(limit);
         const skip = (pageNumber - 1) * limitNumber;
 
-        // Step 1: Search for users based on the search query
         let userSearchIds = [];
         if (search) {
             const exactMatch = await User.findOne({ email: search }).select('_id');
@@ -119,7 +121,6 @@ const getConversationList = async (req, res) => {
             }
         }
 
-        // Step 2: Modify message aggregation to match userSearchIds if available
         const matchCondition = userSearchIds.length > 0
             ? {
                 $or: [
@@ -186,8 +187,15 @@ const getConversationList = async (req, res) => {
             }).sort({ start_time: -1 }).select('start_time');
             const lastSessionTime = lastSession ? lastSession.start_time : null;
 
+            // Count unread messages for each conversation
+            const unreadCount = await Message.countDocuments({
+                senderId: id,
+                receiverId: userId,
+                read: false,  
+            });
+
             if (!conversation) {
-                return { _id: id, name: "Unknown", role: "Unknown", email: "Unknown", lastSessionTime };
+                return { _id: id, name: "Unknown", role: "Unknown", email: "Unknown", lastSessionTime, unreadCount };
             }
 
             return {
@@ -196,6 +204,7 @@ const getConversationList = async (req, res) => {
                 role: conversation.role,
                 email: conversation.email,
                 lastSessionTime,
+                unreadCount, 
             };
         }));
 
@@ -205,7 +214,6 @@ const getConversationList = async (req, res) => {
             role: req.user.role,
             email: req.user.email,
         };
-
 
         const totalConversations = await Message.aggregate([
             {
@@ -242,6 +250,7 @@ const getConversationList = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 
 const getAllConversationList = asyncHandler(async (req, res) => {
