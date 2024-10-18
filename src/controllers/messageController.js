@@ -525,6 +525,102 @@ const getUnreadMessagesCount = asyncHandler(async (req, res) => {
         res.status(500).json(ApiError(500, null, err.message));
     }
 })
+
+const geTherapistsforChat = asyncHandler(async (req, res) => {
+    const userId = req.user._id; // Current user's ID
+  
+    let pipeline = [
+      {
+        $match: {
+          isActive: true,
+        }
+      },
+      {
+        $lookup: {
+          from: "specializations",
+          localField: "specialization",
+          foreignField: "_id",
+          as: "specializationDetails",
+          pipeline: [
+            {
+              $project: {
+                name: 1
+              }
+            }
+          ]
+        }
+      },
+      {
+        $lookup: {
+          from: "messages",
+          let: { therapistId: "$_id" }, // Therapist ID
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $and: [{ $eq: ["$senderId", userId] }, { $eq: ["$receiverId", "$$therapistId"] }] },
+                    { $and: [{ $eq: ["$senderId", "$$therapistId"] }, { $eq: ["$receiverId", userId] }] }
+                  ]
+                }
+              }
+            },
+            {
+              $sort: { timestamp: -1 } // Sort by the most recent message
+            },
+            {
+              $group: {
+                _id: null,
+                lastMessageTime: { $first: "$timestamp" }, // Last message timestamp
+                lastMessageText: { $first: "$message" }, // Last message text
+                unreadCount: { $sum: { $cond: [{ $eq: ["$read", false] }, 1, 0] } } // Unread messages count
+              }
+            }
+          ],
+          as: "messageDetails"
+        }
+      },
+      {
+        $addFields: {
+          lastMessageTime: { $arrayElemAt: ["$messageDetails.lastMessageTime", 0] },
+          lastMessageText: { $arrayElemAt: ["$messageDetails.lastMessageText", 0] },
+          unreadCount: { $ifNull: [{ $arrayElemAt: ["$messageDetails.unreadCount", 0] }, 0] } // Default to 0 if no messages
+        }
+      },
+      {
+        $sort: { lastMessageTime: -1 } // Sort by last message time (if exists), otherwise therapist remains in the list
+      },
+      {
+        $project: {
+          _id: 1,
+          name: { $concat: ["$firstName", " ", "$lastName"] },
+          bio: 1,
+          category: "$specializationDetails",
+          profileImageUrl: 1,
+          lastMessageTime: 1,
+          lastMessageText: 1,
+          unreadCount: 1
+        }
+      }
+    ];
+  
+    const user = {
+      _id: req.user._id,
+      email: req.user.email,
+      fullName: `${req.user.firstName} ${req.user.lastName}`,
+    };
+  
+    const therapistListData = await Therapist.aggregate(pipeline);
+  
+    if (!therapistListData.length) {
+      return res.status(404).json(new ApiError(404, "", "No therapists found!"));
+    }
+  
+    return res.status(200).json(
+      new ApiResponse(200, { therapists: therapistListData, user }, "Therapist list fetched successfully")
+    );
+  });
+  
 export {
     sendNewMessage,
     getChatHistory,
@@ -533,5 +629,6 @@ export {
     getChatHistoryForAdmin,
     deleteMessagebyId,
     markMessagesAsRead,
-    getUnreadMessagesCount
+    getUnreadMessagesCount,
+    geTherapistsforChat
 };

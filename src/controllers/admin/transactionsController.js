@@ -1329,80 +1329,80 @@ const initiateRefund = asyncHandler(async (req, res) => {
 //     res.status(500).json({ message: 'Internal server error' });
 //   }
 // });
-const geTherapistsforChat = asyncHandler(async (req, res) => {
-  let pipeline = [
-    {
-      $match: {
-        isActive: true
-      }
-    },
-    {
-      $lookup: {
-        from: "specializations",
-        localField: "specialization",
-        foreignField: "_id",
-        as: "specializationDetails",
-        pipeline: [
-          {
-            $project: {
+// const geTherapistsforChat = asyncHandler(async (req, res) => {
+//   let pipeline = [
+//     {
+//       $match: {
+//         isActive: true
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "specializations",
+//         localField: "specialization",
+//         foreignField: "_id",
+//         as: "specializationDetails",
+//         pipeline: [
+//           {
+//             $project: {
 
-              name: 1
-            }
-          }
-        ]
-      },
-    },
-  ];
-  // if (search) {
-  //   pipeline.push({
-  //     $match: {
-  //       $or: [
-  //         { email: { $regex: search, $options: "i" } },
-  //         { mobile: { $regex: search, $options: "i" } },
-  //       ],
-  //     },
-  //   });
-  // }
-  const user = {
-    _id: req.user._id,
-    email: req.user.email,
-    fullName: req.user.firstName + " " + req.user.lastName
-  }
-  const therapistListData = await Therapist.aggregate([
-    ...pipeline,
-    { $sort: { createdAt: 1 } },
-    {
-      $project: {
-        _id: 1,
-        name: { $concat: ["$firstName", " ", "$lastName"] },
-        bio: 1,
-        category: "$specializationDetails",
-        profileImageUrl: 1
-        // category: {
-        //   $reduce: {
-        //     input: "$specializationDetails",
-        //     initialValue: "",
-        //     in: {
-        //       $cond: {
-        //         if: { $eq: ["$$value", ""] },
-        //         then: "$$this.name",
-        //         else: { $concat: ["$$value", ", ", "$$this.name"] },
-        //       },
-        //     },
-        //   },
-        // },
-      },
-    },
-  ]);
+//               name: 1
+//             }
+//           }
+//         ]
+//       },
+//     },
+//   ];
+//   // if (search) {
+//   //   pipeline.push({
+//   //     $match: {
+//   //       $or: [
+//   //         { email: { $regex: search, $options: "i" } },
+//   //         { mobile: { $regex: search, $options: "i" } },
+//   //       ],
+//   //     },
+//   //   });
+//   // }
+//   const user = {
+//     _id: req.user._id,
+//     email: req.user.email,
+//     fullName: req.user.firstName + " " + req.user.lastName
+//   }
+//   const therapistListData = await Therapist.aggregate([
+//     ...pipeline,
+//     { $sort: { createdAt: 1 } },
+//     {
+//       $project: {
+//         _id: 1,
+//         name: { $concat: ["$firstName", " ", "$lastName"] },
+//         bio: 1,
+//         category: "$specializationDetails",
+//         profileImageUrl: 1
+//         // category: {
+//         //   $reduce: {
+//         //     input: "$specializationDetails",
+//         //     initialValue: "",
+//         //     in: {
+//         //       $cond: {
+//         //         if: { $eq: ["$$value", ""] },
+//         //         then: "$$this.name",
+//         //         else: { $concat: ["$$value", ", ", "$$this.name"] },
+//         //       },
+//         //     },
+//         //   },
+//         // },
+//       },
+//     },
+//   ]);
 
-  if (!therapistListData.length) {
-    return res.status(404).json(new ApiError(404, "", "No therapists found!"));
-  }
+//   if (!therapistListData.length) {
+//     return res.status(404).json(new ApiError(404, "", "No therapists found!"));
+//   }
 
-  return res.status(200).json(
-    new ApiResponse(200, { therapists: therapistListData, user }, "Therapist list fetched successfully")
-  );
-});
+//   return res.status(200).json(
+//     new ApiResponse(200, { therapists: therapistListData, user }, "Therapist list fetched successfully")
+//   );
+// });
 
 export {
   calculateTotalSales,
@@ -1416,5 +1416,4 @@ export {
   therapistTransactions,
   thankyou,
   initiateRefund,
-  geTherapistsforChat
 };
