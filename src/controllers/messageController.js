@@ -527,7 +527,7 @@ const getUnreadMessagesCount = asyncHandler(async (req, res) => {
 })
 
 const geTherapistsforChat = asyncHandler(async (req, res) => {
-    const userId = req.user._id; // Current user's ID
+    const userId = req.user._id; 
   
     let pipeline = [
       {
@@ -553,7 +553,7 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
       {
         $lookup: {
           from: "messages",
-          let: { therapistId: "$_id" }, // Therapist ID
+          let: { therapistId: "$_id" }, 
           pipeline: [
             {
               $match: {
@@ -566,13 +566,13 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
               }
             },
             {
-              $sort: { timestamp: -1 } // Sort by the most recent message
+              $sort: { timestamp: -1 } 
             },
             {
               $group: {
                 _id: null,
-                lastMessageTime: { $first: "$timestamp" }, // Last message timestamp
-                lastMessageText: { $first: "$message" }, // Last message text
+                lastMessageTime: { $first: "$timestamp" },
+                lastMessageText: { $first: "$message" },
                 unreadCount: { 
                   $sum: { 
                     $cond: [
@@ -581,7 +581,7 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
                       0
                     ] 
                   } 
-                } // Only count unread messages where the current user is the receiver
+                } 
               }
             }
           ],
@@ -592,11 +592,11 @@ const geTherapistsforChat = asyncHandler(async (req, res) => {
         $addFields: {
           lastMessageTime: { $arrayElemAt: ["$messageDetails.lastMessageTime", 0] },
           lastMessageText: { $arrayElemAt: ["$messageDetails.lastMessageText", 0] },
-          unreadCount: { $ifNull: [{ $arrayElemAt: ["$messageDetails.unreadCount", 0] }, 0] } // Default to 0 if no messages
+          unreadCount: { $ifNull: [{ $arrayElemAt: ["$messageDetails.unreadCount", 0] }, 0] }
         }
       },
       {
-        $sort: { lastMessageTime: -1 } // Sort by last message time (if exists), otherwise therapist remains in the list
+        $sort: { lastMessageTime: -1 } 
       },
       {
         $project: {
