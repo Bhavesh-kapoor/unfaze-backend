@@ -134,7 +134,7 @@ router.get("/therapist-list", getAllTherapistList);
 
 /*----------------------------------------corporate routes---------------------------------------- */
 router.post("/set-password", createPassword);
-router.post("/verify-url", verifyTokenUrl);
+router.get("/verify-url", verifyTokenUrl);
 router.get("/get-organization-list", list);
 
 /*----------------------------------------coupon routes---------------------------------------- */
@@ -173,5 +173,6 @@ router.get(
   }),
   handleAuthRedirect
 );
+
 
 export default router;

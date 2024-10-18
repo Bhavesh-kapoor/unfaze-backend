@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, registerAdmin, validateRegister, allUserBycompany, allUser, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard } from "../../controllers/corporate/corpController.js";
+import { registerUser, registerAdmin, validateRegister, allUserBycompany, allUser, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard,sendUrlManully } from "../../controllers/corporate/corpController.js";
 import { upload, compressImage } from '../../middleware/admin/multer.middleware.js';
 import { allPackagesByOrg } from '../../controllers/corporate/packageController.js';
 import { AllotSessionsTocorpUser, validate, getById, editAllottedSessions, getAllottedSession, getList, deleteAllottedSessions, } from '../../controllers/corporate/packageDistributionController.js';
@@ -12,6 +12,8 @@ router.get("/all-corp-user", allUser);
 router.get("/all-corp-admin", getCorpAdminList);
 router.get("/details/:id", getUserDetails);
 router.delete("/delete-user/:id", deleteUser);
+router.get("/send-pw-reset-link/:id", sendUrlManully);
+
 
 /*------------------------------ package route for corp admin--------------------------*/
 router.get("/package-list", allPackagesByOrg);

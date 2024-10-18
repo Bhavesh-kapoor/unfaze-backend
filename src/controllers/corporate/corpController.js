@@ -11,8 +11,8 @@ import { sendMail } from "../../utils/sendMail.js";
 import { createPwdEmailContent } from "../../static/emailcontent.js";
 import { convertPathToUrl } from "../admin/TherepistController.js";
 import mongoose from "mongoose";
-import { json } from "express";
 import { CorpPackage } from "../../models/corporate/packageModel.js";
+import { isValidObjectId } from "../../utils/mongooseUtility.js";
 
 const sendPwdCreationLink = (receiverEmail, name, link) => {
   const mailContent = createPwdEmailContent(name, link);
@@ -133,7 +133,7 @@ const createPassword = asyncHandler(async (req, res) => {
     }
     user.password = password;
     await user.save();
-    // await PasswordReset.findByIdAndDelete(passwordReset._id);
+    await PasswordReset.findByIdAndDelete(passwordReset._id);
     let { accessToken, refreshToken } = await createAccessOrRefreshToken(
       user._id
     );
@@ -637,4 +637,26 @@ const verifyTokenUrl = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, { email: user.email, name: `${user.firstName} ${user.lastName}` }));
 })
 
-export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard, verifyTokenUrl }
+const sendUrlManully = asyncHandler(async (req, res) => {
+  const userId = req.params.id;
+  if (!isValidObjectId(userId)) {
+    return res.status(400).json(new ApiError(400, null, "Invalid user ID"));
+  }
+  const user = await User.findById(userId);
+  if (!user) {
+    return res
+      .status(404)
+      .json(new ApiError(404, null, "User not found!"));
+  }
+  const token = generateSixDigitNumber();
+  const passwordObject = await PasswordReset.create({
+    userId: userId,
+    token: token
+  });
+  const link = `${process.env.FRONTEND_URL}/secure-create-password?token=${token}`
+  const name = `${user?.firstName} ${user?.lastName}`
+  sendPwdCreationLink(user.email, name, link)
+  console.log(link)
+  return res.status(200).json(new ApiResponse(200, null, `password reset link has been sent to ${user.email}`))
+})
+export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard, verifyTokenUrl, sendUrlManully }
