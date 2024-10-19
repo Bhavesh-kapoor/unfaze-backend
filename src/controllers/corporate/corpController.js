@@ -1,4 +1,4 @@
-import { check, validationResult } from "express-validator";
+import { check, query, validationResult } from "express-validator";
 import { User } from "../../models/userModel.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
@@ -13,6 +13,9 @@ import { convertPathToUrl } from "../admin/TherepistController.js";
 import mongoose from "mongoose";
 import { CorpPackage } from "../../models/corporate/packageModel.js";
 import { isValidObjectId } from "../../utils/mongooseUtility.js";
+import { Organization } from "../../models/corporate/organizationModel.js";
+
+
 
 const sendPwdCreationLink = (receiverEmail, name, link) => {
   const mailContent = createPwdEmailContent(name, link);
@@ -589,36 +592,102 @@ const deleteUser = asyncHandler(async (req, res) => {
 const corpAdminDashboard = asyncHandler(async (req, res) => {
   try {
     const user = req.user;
+    const { page = 1, limit = 10 } = req.query;
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
 
     if (user.role !== 'corp-admin') {
       return res.status(403).json(new ApiResponse(403, null, "Unauthorized Access"));
     }
-    const users = await user.find()
-    const totalUsers = await User.countDocuments({ role: "corp-user", organizationId: user.organizationId });
+    const organization = await Organization.findById(user.organizationId).select('name');
+
+    // Aggregate query for users and package distribution
+    const users = await User.aggregate([
+      {
+        $match: {
+          role: "corp-user",
+          organizationId: user.organizationId,
+        },
+      },
+      {
+        $lookup: {
+          from: "packagedistributions",
+          localField: "_id",
+          foreignField: "userId",
+          as: "packageDistribution",
+        },
+      },
+      {
+        $unwind: {
+          path: "$packageDistribution",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          fullName: { $concat: ["$firstName", " ", "$lastName"] },
+          email: 1,
+          packageDisId: "$packageDistribution._id",
+          sesAllotted: { $ifNull: ["$packageDistribution.sesAllotted", 0] }, 
+          sesUsed: { $ifNull: ["$packageDistribution.used", 0] }, 
+        },
+      },
+      { $skip: skip },
+      { $limit: limitNumber },
+    ]);
+
+    const totalUsers = await User.countDocuments({
+      role: "corp-user",
+      organizationId: user.organizationId,
+    });
+
+    // Aggregate package details for the organization
     const packageDetails = await CorpPackage.aggregate([
       {
-        $match: { organizationId: user.organizationId }
+        $match: { organizationId: user.organizationId },
       },
       {
         $group: {
-          _id: null,
+          _id: "$_id",
           remainingSession: { $sum: "$remainingSessions" },
-          totalSession: { $sum: "$TotalSession" }
-        }
-      }
+          totalSession: { $sum: "$TotalSession" },
+        },
+      },
     ]);
+
+    // Default package data if no packages found
     const packageData = packageDetails.length > 0 ? packageDetails[0] : { remainingSession: 0, totalSession: 0 };
 
-    return res.status(200).json(new ApiResponse(200, {
-      totalUsers,
-      remainingSession: packageData.remainingSession,
-      totalSession: packageData.totalSession
-    }, "Dashboard data retrieved successfully"));
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          totalUsers,
+          result: {
+            organizationName: organization.name,
+            packageId: packageData._id || "", 
+            remainingSession: packageData.remainingSession,
+            totalSession: packageData.totalSession,
+          },
+          userList: users,
+          pagination: {
+            currentPage: pageNumber,
+            totalPages: Math.ceil(totalUsers / limitNumber),
+            totalItems: totalUsers,
+            itemsPerPage: limitNumber,
+          },
+        },
+        "Dashboard data retrieved successfully"
+      )
+    );
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json(new ApiResponse(500, null, "Internal server error"));
   }
 });
+
+
 const verifyTokenUrl = asyncHandler(async (req, res) => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
   const passwordReset = await PasswordReset.findOne({ token });
