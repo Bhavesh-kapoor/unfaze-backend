@@ -7,7 +7,7 @@ import { AllotSessionsTocorpUser, validate, getById, editAllottedSessions, getAl
 const router = express.Router();
 router.post("/admin-register", upload.single("userAvatarCorp"), compressImage, validateRegister, registerAdmin);
 router.post("/user-register", upload.single("userAvatarCorp"), compressImage, validateRegister, registerUser);
-router.post("/user-update/:userId", upload.single("userAvatarCorp"), compressImage, validateRegister, updateProfile);
+router.put("/user-update/:userId", upload.single("userAvatarCorp"), compressImage, validateRegister, updateProfile);
 router.get("/corp-user-by-company", allUserBycompany)
 router.get("/all-corp-user", allUser);
 router.get("/all-corp-admin", getCorpAdminList);
