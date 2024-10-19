@@ -629,8 +629,8 @@ const corpAdminDashboard = asyncHandler(async (req, res) => {
           fullName: { $concat: ["$firstName", " ", "$lastName"] },
           email: 1,
           packageDisId: "$packageDistribution._id",
-          sesAllotted: { $ifNull: ["$packageDistribution.sesAllotted", 0] }, 
-          sesUsed: { $ifNull: ["$packageDistribution.used", 0] }, 
+          sesAllotted: { $ifNull: ["$packageDistribution.sesAllotted", 0] },
+          sesUsed: { $ifNull: ["$packageDistribution.used", 0] },
         },
       },
       { $skip: skip },
@@ -663,14 +663,15 @@ const corpAdminDashboard = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
-          totalUsers,
           result: {
             organizationName: organization.name,
-            packageId: packageData._id || "", 
+            email: user.email,
+            packageId: packageData._id || "",
             remainingSession: packageData.remainingSession,
             totalSession: packageData.totalSession,
           },
           userList: users,
+          totalUsers,
           pagination: {
             currentPage: pageNumber,
             totalPages: Math.ceil(totalUsers / limitNumber),
