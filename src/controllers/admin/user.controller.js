@@ -96,7 +96,9 @@ const userlogin = asyncHandler(async (req, res) => {
         .json(new ApiError(400, "", "Please pass username or email"));
     }
 
-    let existUser = await User.findOne({ $and: [{ email }, { role: { $ne: "admin" } }] });
+    let existUser = await User.findOne({
+      $and: [{ email }, { role: { $ne: "admin" } }],
+    });
     if (!existUser)
       return res.status(400).json(new ApiError(400, "", "Email Not Found!"));
 
@@ -602,6 +604,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
         );
     }
     const otp = await createAndStoreOTP(email);
+    console.log(otp);
     const htmlContent = otpContent(otp);
     const options = mailOptions(
       user.email,
