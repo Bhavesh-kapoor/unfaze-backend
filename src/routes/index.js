@@ -13,6 +13,9 @@ import { callback } from "../middleware/admin/phonePayConfig.js";
 import chatRoute from "./message.routes.js";
 import corpAdminRoute from "./corporate/corpadminRoutes.js"
 import corpUserRoute from "./corporate/corpUserRoute.js"
+import { PackageDistribution } from "../models/corporate/packageDistributionModel.js";
+import mongoose from "mongoose";
+import ApiError from "../utils/ApiError.js";
 
 // Initialize the router
 const router = express.Router();
@@ -46,11 +49,39 @@ router.get(
   "/get-current-user",
   verifyJwtToken,
   asyncHandler(async (req, res) => {
-    return res
-      .status(200)
-      .json(new ApiResponse(200, req.user, "User fetched successfully"));
-  })
-);
+    let data = [];
+    if (req.user.role === "corp-user") {
+      try {
+        const packageDistribution = await PackageDistribution.findOne({ userId: new mongoose.Types.ObjectId(req.user._id) })
+          .populate({
+            path: "mainPackageId",
+            populate: {
+              path: "specializationId",
+              select: "name"
+            }
+          })
+          .populate("userId", "firstName lastName");
+        if (!packageDistribution) {
+          return res.status(404).json(new ApiError(404, null, "Package distribution not found!"));
+        }
+        data = {
+          category: packageDistribution.mainPackageId.specializationId.name,
+          sessions: packageDistribution.sesAllotted,
+          usedSessions: packageDistribution.used,
+          isActive: packageDistribution.isActive,
+          createdAt: packageDistribution.createdAt,
+        }
+        return res.status(200).json(new ApiResponse(200, {
+          result: data,
+          user: req.user
+        }, "user fatched successfully"));
+      } catch (error) {
+        console.log(error);
+        return res.status(500).json(new ApiError(500, null, error.message))
+      }
+    }
+  }
+  ));
 router.use("/admin/refund", verifyJwtToken, refundRoutes);
 router.use("/refund", verifyJwtToken, refundRoutes);
 router.use("/chat", verifyJwtToken, chatRoute);

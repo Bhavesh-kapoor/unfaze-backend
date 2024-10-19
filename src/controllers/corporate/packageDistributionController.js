@@ -7,7 +7,6 @@ import { CorpPackage } from "../../models/corporate/packageModel.js";
 import { isValidObjectId } from "../../utils/mongooseUtility.js";
 import mongoose from "mongoose";
 import { User } from "../../models/userModel.js";
-
 const validate = [
     check("userId", "userId is required").notEmpty(),
     check("mainPackageId", "mainPackageId is required").notEmpty(),
