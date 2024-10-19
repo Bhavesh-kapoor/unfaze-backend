@@ -1,4 +1,4 @@
-import { check, query, validationResult } from "express-validator";
+import { body, check, query, validationResult } from "express-validator";
 import { User } from "../../models/userModel.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
@@ -14,6 +14,7 @@ import mongoose from "mongoose";
 import { CorpPackage } from "../../models/corporate/packageModel.js";
 import { isValidObjectId } from "../../utils/mongooseUtility.js";
 import { Organization } from "../../models/corporate/organizationModel.js";
+import { json } from "express";
 
 
 
@@ -298,44 +299,46 @@ const corpAdminlogin = asyncHandler(async (req, res) => {
   }
 });
 const updateProfile = asyncHandler(async (req, res) => {
-  const userId = req.user?._id;
+  const userId = req.params.userId;
+
   if (!userId) {
-    return res
-      .status(401)
-      .json(new ApiError(401, "", "User not authenticated"));
+    return res.status(401).json(new ApiError(401, "", "User not authenticated"));
   }
-  const user = req.body;
+
+  const userData = req.body;
   let profileImage = req.file ? req.file.path : "";
 
   try {
     const existingUser = await User.findById(userId);
-
     if (!existingUser) {
       return res.status(404).json(new ApiError(404, "", "User not found"));
     }
+
     if (existingUser.profileImage && profileImage) {
       if (fs.existsSync(existingUser.profileImage)) {
-        fs.unlinkSync(existingUser.profileImage);
+        await fs.promises.unlink(existingUser.profileImage);
       }
     }
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { ...user, profileImage },
-      {
-        new: true,
-      }
-    );
+    const updatedData = profileImage ? { ...userData, profileImage } : userData;
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updatedData, {
+      new: true,
+    }).select("-password -refreshToken")
+
     if (!updatedUser) {
       return res.status(404).json(new ApiError(404, "", "User not found"));
     }
+
+
     return res
       .status(200)
       .json(new ApiResponse(200, updatedUser, "User updated successfully"));
   } catch (error) {
-    console.error(error);
+    console.error("Error updating user profile:", error);
     return res.status(500).json(new ApiError(500, "", "Server error"));
   }
 });
+
 const allUser = asyncHandler(async (req, res) => {
   const {
     page = 1,
