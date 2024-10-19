@@ -50,8 +50,9 @@ router.get(
   verifyJwtToken,
   asyncHandler(async (req, res) => {
     let data = [];
-    if (req.user.role === "corp-user") {
-      try {
+
+    try {
+      if (req.user.role === "corp-user") {
         const packageDistribution = await PackageDistribution.findOne({ userId: new mongoose.Types.ObjectId(req.user._id) })
           .populate({
             path: "mainPackageId",
@@ -71,14 +72,14 @@ router.get(
           isActive: packageDistribution.isActive,
           createdAt: packageDistribution.createdAt,
         }
-        return res.status(200).json(new ApiResponse(200, {
-          result: data,
-          user: req.user
-        }, "user fatched successfully"));
-      } catch (error) {
-        console.log(error);
-        return res.status(500).json(new ApiError(500, null, error.message))
       }
+      return res.status(200).json(new ApiResponse(200, {
+        result: data,
+        user: req.user
+      }, "user fatched successfully"));
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json(new ApiError(500, null, error.message))
     }
   }
   ));

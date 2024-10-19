@@ -607,7 +607,6 @@ const corpAdminDashboard = asyncHandler(async (req, res) => {
         }
       }
     ]);
-
     const packageData = packageDetails.length > 0 ? packageDetails[0] : { remainingSession: 0, totalSession: 0 };
 
     return res.status(200).json(new ApiResponse(200, {

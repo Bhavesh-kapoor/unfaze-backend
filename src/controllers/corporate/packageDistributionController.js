@@ -267,7 +267,6 @@ const getById = asyncHandler(async (req, res) => {
             isActive: packageData.isActive,
             createdAt: packageData.createdAt,
         }
-
         return res.status(200).json(new ApiResponse(200, { result: flattenedResponse }, "Data fatched successfully"))
 
     } catch (error) {

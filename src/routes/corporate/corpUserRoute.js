@@ -6,5 +6,4 @@ const router = express.Router();
 router.post('/book-session-cp', bookSessionFromCorpPackage);
 router.get('/get-allotted-sessions', getAllottedSession);
 
-
 export default router;
