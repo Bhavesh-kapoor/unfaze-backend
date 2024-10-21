@@ -72,6 +72,7 @@ router.get(
         data = {
           category: packageDistribution.mainPackageId.specializationId.name,
           sessions: packageDistribution.sesAllotted,
+          packageId: packageDistribution._id,
           usedSessions: packageDistribution.used,
           isActive: packageDistribution.isActive,
           createdAt: packageDistribution.createdAt,

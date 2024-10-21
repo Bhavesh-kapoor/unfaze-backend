@@ -135,6 +135,7 @@ const createPassword = asyncHandler(async (req, res) => {
         .json(new ApiError(404, null, "User not found!"));
     }
     user.password = password;
+    user.isEmailVerified = true;
     await user.save();
     await PasswordReset.findByIdAndDelete(passwordReset._id);
     let { accessToken, refreshToken } = await createAccessOrRefreshToken(
