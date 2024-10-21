@@ -42,7 +42,6 @@ const updatePackage = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { TotalSession } = req.body;
 
-    // Step 1: Check if the package has any session distribution
     const disSessionCount = await PackageDistribution.aggregate([
         {
             $match: { mainPackageId: new mongoose.Types.ObjectId(id) }
@@ -55,28 +54,20 @@ const updatePackage = asyncHandler(async (req, res) => {
         }
     ]);
 
-    // If no distributions found, return error
     if (!disSessionCount.length) {
         return res.status(404).json(new ApiError(404, "No sessions found for this package."));
     }
 
-    // Step 2: Validate that TotalSession is greater than the used sessions
     if (disSessionCount[0].usedSessionsCount >= TotalSession) {
         return res.status(400).json(new ApiError(400, null, "Total Session should be greater than sessions allotted by Corporate Admin!"));
     }
 
-    // Step 3: Fetch the existing package
     const existingPackage = await CorpPackage.findById(id);
     if (!existingPackage) {
         return res.status(404).json(new ApiError(404, "Package not found"));
     }
-
-    // Step 4: Calculate the difference in TotalSession
     const difference = TotalSession - existingPackage.TotalSession;
-    // Update remainingSessions based on the new TotalSession
     const remainingSessions = existingPackage.remainingSessions + difference;
-
-    // Step 5: Update the package and adjust remainingSessions
     const updatedPackage = await CorpPackage.findByIdAndUpdate(
         id,
         { ...req.body, remainingSessions },
@@ -86,19 +77,15 @@ const updatePackage = asyncHandler(async (req, res) => {
         }
     );
 
-    // Check if the update was successful
     if (!updatedPackage) {
         return res.status(404).json(new ApiError(404, "Failed to update package"));
     }
-
-    // Step 6: Respond with the updated package information
     return res.status(200).json(new ApiResponse(200, updatedPackage, "Package updated successfully"));
 });
 
 const getPackage = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    // Fetch the package and populate only the names of related fields
     const corpPackage = await CorpPackage.findById(id)
         .populate("organizationId", "name")
         .populate("specializationId", "name");
@@ -106,8 +93,6 @@ const getPackage = asyncHandler(async (req, res) => {
     if (!corpPackage) {
         return res.status(404).json(new ApiError(404, "Package not found"));
     }
-
-    // Flatten the response by extracting the required fields
     const flattenedPackage = {
         _id: corpPackage._id,
         organizationId: corpPackage.organizationId._id,
@@ -124,7 +109,6 @@ const getPackage = asyncHandler(async (req, res) => {
         __v: corpPackage.__v,
     };
 
-    // Return the flattened response
     return res
         .status(200)
         .json(new ApiResponse(200, flattenedPackage, "Package retrieved successfully"));
