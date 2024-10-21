@@ -37,7 +37,7 @@ const createPackage = asyncHandler(async (req, res) => {
 const updatePackage = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const updatedPackage = await CorpPackage.findByIdAndUpdate(id, { ...req.body, remainingSessions: req.body.TotalSession }, {
+    const updatedPackage = await CorpPackage.findByIdAndUpdate(id, req.body , {
         new: true,
         runValidators: true,
     });
