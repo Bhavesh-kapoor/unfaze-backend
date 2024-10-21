@@ -128,7 +128,7 @@ const getAllottedSession = asyncHandler(async (req, res) => {
             })
             .populate("userId", "firstName lastName");
         if (!packageDistributions) {
-            return res.status(404).json(new ApiError(404, null, "Package distribution not found"));
+            return res.status(200).json(new response(200, [], "Package distribution not found"));
         }
         const totalDistObj = await PackageDistribution.countDocuments({ userId: new mongoose.Types.ObjectId(userId) });
         const flattenedResponse = packageDistributions.map((item) => {

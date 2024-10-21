@@ -15,7 +15,7 @@ const sendNotification = async (receiverId, receiverType, message, payload) => {
 };
 
 const getAllNotifications = asyncHandler(async (req, res) => {
-  const { userId } = req.user;
+  const  userId  = req.user._id;
   try {
     const notifications = await Notification.find({ receiverId: userId, status: "unread" })
       .sort({ createdAt: -1 })
@@ -23,7 +23,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, notifications, "notifications fetched"));
   } catch (error) {
     console.error(error);
-    res.status(500).json(new ApiResponse(500, null, "Server Error"));
+    res.status(500).json(new ApiResponse(500, null, error.message));
   }
 })
 const markRead= asyncHandler(async(req,res)=>{
@@ -33,7 +33,7 @@ const markRead= asyncHandler(async(req,res)=>{
     res.status(200).json(new ApiResponse(200, null, "Notifications marked as read"));
   } catch (error) {
     console.error(error);
-    res.status(500).json(new ApiResponse(500, null, "Server Error"));
+    res.status(500).json(new ApiResponse(500, null,error.message));
   }
 })
-export { sendNotification, getAllNotifications };
+export { sendNotification, getAllNotifications,markRead };
