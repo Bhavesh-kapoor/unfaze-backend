@@ -35,10 +35,14 @@ const therapistList = asyncHandler(async (req, res) => {
     {
       $project: {
         _id: 1,
+        bio: 1,
         email: 1,
+        ratings: 1,
         createdAt: 1,
         firstName: 1,
+        sessionCount: 1,
         profileImageUrl: 1,
+        educationDetails: 1,
         isEmailVerified: 1,
         name: { $concat: ["$firstName", " ", "$lastName"] },
         specializationDetails: {
