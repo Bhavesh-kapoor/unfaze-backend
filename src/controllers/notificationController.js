@@ -26,4 +26,14 @@ const getAllNotifications = asyncHandler(async (req, res) => {
     res.status(500).json(new ApiResponse(500, null, "Server Error"));
   }
 })
+const markRead= asyncHandler(async(req,res)=>{
+  try {
+    const { userId } = req.user;
+    await Notification.updateMany({ receiverId: userId, status: "unread" }, { status: "read" });
+    res.status(200).json(new ApiResponse(200, null, "Notifications marked as read"));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(new ApiResponse(500, null, "Server Error"));
+  }
+})
 export { sendNotification, getAllNotifications };

@@ -236,33 +236,32 @@ function therapistSessionReminderEmailTemplate(therapistName, userName, sessionD
   `;
 }
 
-const reqForMoreSession = (companyName, adminName, email) => {
-  return `<body style="font-family: Arial, sans-serif; color: #333;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-    <h2 style="text-align: center; color: #4CAF50;">Request for Additional Therapy Sessions for Employees</h2>
-    
-    <p>Dear Admin,</p>
+const reqForMoreSession = (companyName, adminName, email, mobile) => {
+  return `
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <h2 style="text-align: center; color: #4CAF50; font-size: 24px; margin-bottom: 20px;">Request for Additional Therapy Sessions for Employees</h2>
+      
+      <p style="margin-bottom: 15px;">Dear Admin,</p>
 
-    <p>I hope this email finds you well. I am writing on behalf of ${companyName} to request additional therapy sessions for our employees. We have found the existing sessions to be very beneficial, and we would like to continue providing this support to our team as part of our employee wellness program.</p>
+      <p style="margin-bottom: 15px;">I hope this email finds you well. I am writing on behalf of <strong>${companyName}</strong> to request additional therapy sessions for our employees. We have found the existing sessions to be very beneficial, and we would like to continue providing this support to our team as part of our employee wellness program.</p>
 
-    <p>Could you please provide details on how we can schedule more sessions and any associated requirements for booking? Additionally, any other necessary information regarding the process would be appreciated.</p>
+      <p style="margin-bottom: 15px;">Could you please provide details on how we can schedule more sessions and any associated requirements for booking? Additionally, any other necessary information regarding the process would be appreciated.</p>
 
-    <p>We value this service and are keen to ensure our employees continue to benefit from it. Thank you for your assistance, and I look forward to your response.</p>
+      <p style="margin-bottom: 15px;">We value this service and are keen to ensure our employees continue to benefit from it. Thank you for your assistance, and I look forward to your response.</p>
 
-    <h3>Company and Contact Details:</h3>
-    <ul style="list-style-type: none; padding-left: 0;">
-      <li><strong>Company Name: ${companyName}</strong></li>
-      <li><strong>Admin Name:</strong> ${adminName}</li>
-      <li><strong>Email:</strong> ${email}</li>
-      <li><strong>Contact Number:</strong> ${companyName}</li>
-    </ul>
+      <h3 style="margin-bottom: 10px; font-size: 18px;">Company and Contact Details:</h3>
+      <ul style="list-style-type: none; padding-left: 0; margin-bottom: 20px;">
+        <li style="margin-bottom: 8px;"><strong>Company Name:</strong> ${companyName}</li>
+        <li style="margin-bottom: 8px;"><strong>Admin Name:</strong> ${adminName}</li>
+        <li style="margin-bottom: 8px;"><strong>Email:</strong> ${email}</li>
+        <li><strong>Contact Number:</strong> ${mobile}</li>
+      </ul>
 
-    <p>Best regards,<br/>
-    ${adminName}<br/>
-    ${companyName}</p>
-  </div>
-</body>
-`
+      <p style="margin-top: 20px;">Best regards,<br/>
+      <strong>${adminName}</strong><br/>
+      ${companyName}</p>
+    </div>
+  `;
 }
 
-export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation, createPwdEmailContent, userSessionReminderEmailTemplate, therapistSessionReminderEmailTemplate }
+export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation, createPwdEmailContent, userSessionReminderEmailTemplate, therapistSessionReminderEmailTemplate, reqForMoreSession }

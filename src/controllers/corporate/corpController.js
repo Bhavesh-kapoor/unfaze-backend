@@ -14,8 +14,7 @@ import mongoose from "mongoose";
 import { CorpPackage } from "../../models/corporate/packageModel.js";
 import { isValidObjectId } from "../../utils/mongooseUtility.js";
 import { Organization } from "../../models/corporate/organizationModel.js";
-import { json } from "express";
-
+import { reqForMoreSession } from "../../static/emailcontent.js";
 
 
 const sendPwdCreationLink = (receiverEmail, name, link) => {
@@ -731,4 +730,19 @@ const sendUrlManully = asyncHandler(async (req, res) => {
   console.log(link)
   return res.status(200).json(new ApiResponse(200, null, `password reset link has been sent to ${user.email}`))
 })
-export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard, verifyTokenUrl, sendUrlManully }
+
+const moreSessionRequest = asyncHandler(async (req, res) => {
+  const user = req.user;
+  if (user.role !== 'corp-admin') {
+    return res.status(403).json(new ApiResponse(403, null, "Unauthorized Access"));
+  }
+  const company = await Organization.findById(user.organizationId)
+  if (!company) {
+    return res.status(404).json(new ApiResponse(404, null, "Company not found"));
+  }
+  const emailContent = reqForMoreSession(company.name, `${user.firstName}.${user.lastName}`, user.email, user.mobile)
+  const subject = "Request for more corporate sessions"
+  sendMail('bhavesh.kapoor@unificars.com', subject, emailContent);
+  return res.status(200).json(new ApiResponse(200, null, "Request sent successfully"));
+})
+export { validateRegister, registerUser, corpAdminlogin, registerAdmin, corpUserlogin, updateProfile, allUser, allUserBycompany, getOrganizationAdmin, createPassword, getCorpAdminList, getUserDetails, deleteUser, corpAdminDashboard, verifyTokenUrl, sendUrlManully, moreSessionRequest }

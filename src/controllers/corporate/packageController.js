@@ -91,55 +91,60 @@ const getListOfPackages = asyncHandler(async (req, res) => {
     const limitNumber = parseInt(limit, 10) || 10;
     const skip = (pageNumber - 1) * limitNumber;
 
-    let organizationIds = [];
+    try {
+        let organizationIds = [];
 
-    if (search) {
-        const organizations = await Organization.find({
-            name: { $regex: search, $options: "i" }
-        }).select('_id');
+        if (search) {
+            const organizations = await Organization.find({
+                name: { $regex: search, $options: "i" }
+            }).select('_id');
 
-        organizationIds = organizations.map(org => org._id);
+            organizationIds = organizations.map(org => org._id);
+        }
+        const query = search
+            ? { organizationId: { $in: organizationIds } }
+            : {};
+
+        const packages = await CorpPackage.find(query)
+            .populate("organizationId", "name")
+            .populate("specializationId", "name")
+            .limit(limitNumber)
+            .skip(skip)
+            .exec();
+
+        const result = packages.map((item) => {
+            return {
+                _id: item._id,
+                organizationId: item.organizationId?._id,
+                organizationName: item.organizationId?.name,
+                specializationId: item.specializationId?._id,
+                specializationName: item.specializationId?.name,
+                TotalSession: item.TotalSession,
+                currency: item.currency,
+                price: item.price,
+                isActive: item.isActive,
+                remainingSessions: item.remainingSessions,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                __v: item.__v
+            }
+        })
+
+        const totalPackages = await CorpPackage.countDocuments(query);
+
+        return res.status(200).json(new ApiResponse(200, {
+            result: result,
+            pagination: {
+                totalPages: Math.ceil(totalPackages / limitNumber),
+                currentPage: pageNumber,
+                totalItems: totalPackages,
+                itemsPerPage: parseInt(limit)
+            }
+        }, "Packages retrieved successfully"));
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(new ApiError(500, null, error.message));
     }
-    const query = search
-        ? { organizationId: { $in: organizationIds } }
-        : {};
-
-    const packages = await CorpPackage.find(query)
-        .populate("organizationId", "name")
-        .populate("specializationId", "name")
-        .limit(limitNumber)
-        .skip(skip)
-        .exec();
-
-    const result = packages.map((item) => {
-        return {
-            _id: item._id,
-            organizationId: item.organizationId._id,
-            organizationName: item.organizationId.name,
-            specializationId: item.specializationId._id,
-            specializationName: item.specializationId.name,
-            TotalSession: item.TotalSession,
-            currency: item.currency,
-            price: item.price,
-            isActive: item.isActive,
-            remainingSessions: item.remainingSessions,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-            __v: item.__v
-        }
-    })
-
-    const totalPackages = await CorpPackage.countDocuments(query);
-
-    return res.status(200).json(new ApiResponse(200, {
-        result: result,
-        pagination: {
-            totalPages: Math.ceil(totalPackages / limitNumber),
-            currentPage: pageNumber,
-            totalItems: totalPackages,
-            itemsPerPage: parseInt(limit)
-        }
-    }, "Packages retrieved successfully"));
 });
 
 
