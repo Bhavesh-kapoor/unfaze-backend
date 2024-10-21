@@ -7,6 +7,7 @@ import { CorpPackage } from "../../models/corporate/packageModel.js";
 import { isValidObjectId } from "../../utils/mongooseUtility.js";
 import mongoose from "mongoose";
 import { User } from "../../models/userModel.js";
+
 const validate = [
     check("userId", "userId is required").notEmpty(),
     check("mainPackageId", "mainPackageId is required").notEmpty(),
@@ -18,47 +19,78 @@ const AllotSessionsTocorpUser = asyncHandler(async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json(new ApiError(400, "Validation Error", errors.array()));
     }
+
     const { userId, mainPackageId, sesAllotted } = req.body;
-    const user = req.user
+    const user = req.user;
+
     if (user.role !== "corp-admin") {
         return res.status(403).json(new ApiError(403, null, "Only corporate admin can allot sessions!"));
     }
+
     try {
+        // Validate object IDs
         if (!isValidObjectId(userId) || !isValidObjectId(mainPackageId)) {
             return res.status(400).json(new ApiError(400, null, "Invalid userId or mainPackageId!"));
         }
+
+        // Find the main package
         const mainPackage = await CorpPackage.findById(mainPackageId);
         if (!mainPackage) {
             return res.status(400).json(new ApiError(400, null, "mainPackageId is invalid!"));
         }
+
+        // Ensure the user has permission to allot sessions under this package
         if (!user.organizationId.equals(mainPackage.organizationId)) {
             return res.status(403).json(new ApiError(403, null, "You are not authorized to allot sessions under this package."));
         }
-        if (mainPackage.remainingSessions < sesAllotted) {
-            return res.status(200).json(new ApiResponse(200, { remainingSessions: mainPackage.remainingSessions }, "Not enough sessions available in main package."));
+
+        // Fetch the existing package distribution (if any)
+        let packageDistribution = await PackageDistribution.findOne({ userId, mainPackageId });
+
+        // Calculate the difference if package distribution exists
+        let difference = sesAllotted;
+        if (packageDistribution) {
+            // If sessions are already allotted, calculate the difference for adjustment
+            difference = sesAllotted - packageDistribution.sesAllotted;
+            if (difference < 0 && packageDistribution.used > sesAllotted) {
+                return res.status(400).json(new ApiError(400, null, "Cannot reduce the allotted sessions below the number of used sessions."));
+            }
         }
-        const existingDistribution = await PackageDistribution.findOne({ userId, mainPackageId });
-        if (existingDistribution) {
-            return res.status(400).json(new ApiError(400, null, "Sessions already allotted for this user under this package."));
+
+        // Check if there are enough sessions available in the main package
+        if (difference > mainPackage.remainingSessions) {
+            return res.status(400).json(new ApiError(400, null, "Not enough sessions available in main package."));
         }
-        console.log("existingDistribution", existingDistribution)
-        const packageDistribution = new PackageDistribution({
-            userId,
-            mainPackageId,
-            sesAllotted,
-        });
-        await packageDistribution.save();
-        mainPackage.remainingSessions = mainPackage.remainingSessions - sesAllotted;
+
+        // If no existing package distribution, create a new one
+        if (!packageDistribution) {
+            packageDistribution = new PackageDistribution({
+                userId,
+                mainPackageId,
+                sesAllotted,
+            });
+        } else {
+            // Update the allotted sessions for the existing distribution
+            packageDistribution.sesAllotted = sesAllotted;
+        }
+
+        // Adjust remaining sessions in the main package
+        mainPackage.remainingSessions -= difference;
         if (mainPackage.remainingSessions === 0) {
             mainPackage.isActive = false;
         }
+
+        // Save the changes to both package distribution and main package
+        await packageDistribution.save();
         await mainPackage.save();
-        res.status(201).json(new ApiResponse(201, packageDistribution, "Sessions allotted successfully"))
+
+        return res.status(201).json(new ApiResponse(201, packageDistribution, "Sessions allotted/updated successfully"));
     } catch (error) {
         console.log(error);
-        return res.status(500).json(new ApiError(500, null, error.message))
+        return res.status(500).json(new ApiError(500, null, error.message));
     }
 });
+
 
 const editAllottedSessions = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
