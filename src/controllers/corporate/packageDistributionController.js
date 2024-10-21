@@ -28,29 +28,29 @@ const AllotSessionsTocorpUser = asyncHandler(async (req, res) => {
     }
 
     try {
-        // Validate object IDs
         if (!isValidObjectId(userId) || !isValidObjectId(mainPackageId)) {
             return res.status(400).json(new ApiError(400, null, "Invalid userId or mainPackageId!"));
         }
+        const existingUser = await User.findById(userId);
+        if (!existingUser) {
+            return res.status(404).json(new ApiError(404, null, "invalid userId!"));
+        }
 
-        // Find the main package
         const mainPackage = await CorpPackage.findById(mainPackageId);
         if (!mainPackage) {
             return res.status(400).json(new ApiError(400, null, "mainPackageId is invalid!"));
         }
 
-        // Ensure the user has permission to allot sessions under this package
         if (!user.organizationId.equals(mainPackage.organizationId)) {
             return res.status(403).json(new ApiError(403, null, "You are not authorized to allot sessions under this package."));
         }
 
-        // Fetch the existing package distribution (if any)
         let packageDistribution = await PackageDistribution.findOne({ userId, mainPackageId });
 
-        // Calculate the difference if package distribution exists
+
         let difference = sesAllotted;
         if (packageDistribution) {
-            // If sessions are already allotted, calculate the difference for adjustment
+
             difference = sesAllotted - packageDistribution.sesAllotted;
             if (difference < 0 && packageDistribution.used > sesAllotted) {
                 return res.status(400).json(new ApiError(400, null, "Cannot reduce the allotted sessions below the number of used sessions."));
