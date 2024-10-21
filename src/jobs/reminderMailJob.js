@@ -37,7 +37,7 @@ cron.schedule('*/5 * * * *', async () => {
                 const therapistEmail = session.therapist_id.email;
                 const userName = `${session.user_id.firstName} ${session.user_id.lastName}`;
                 const therapistName = `${session.therapist_id.firstName} ${session.therapist_id.lastName}`;
-                const startTimeFormatted = format(session.start_time, 'PPpp'); // Adjust format if needed
+                const startTimeFormatted = format(session.start_time, 'PPPP');
                 const subject = "Reminder: Session is Starting Soon!";
 
                 // Send email to user

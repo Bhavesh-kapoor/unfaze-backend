@@ -180,7 +180,7 @@ const bookedSessions = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, sessions, "Session fetched successfully!"));
 });
-// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------new Updated controllers---------------------------------
 const sessionCompleted = asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { status } = req.query;
@@ -286,10 +286,11 @@ const rescheduleSession = asyncHandler(async (req, res) => {
     }
   );
   if (process.env.DEV_MODE === 'prod') {
+    const startTimeFormatted = format(session.start_time, 'PPPP');
     const message = `${user.firstName} ${user.lastName} has reschedule a session.`;
     const subject = "Session Reschedule Confirmation";
-    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
   }
   res.status(201).json(new ApiResponse(201, rescheduled, "session recheduled"));
 });
@@ -333,10 +334,11 @@ const bookSessionManully = asyncHandler(async (req, res) => {
     session.channelName = channelName;
     await session.save();
     if (process.env.DEV_MODE === 'prod') {
+      const startTimeFormatted = format(session.start_time, 'PPPP');
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
-      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
     }
     res
       .status(201)
@@ -454,7 +456,6 @@ const getUserSessions = async (req, res) => {
         .json(new ApiResponse(200, null, "No sessions found"));
     }
 
-    // Calculate total pages
     const totalPages = Math.ceil(totalSessions / limitNumber);
 
     res.status(200).json({
@@ -709,13 +710,14 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
 
     // Send notifications and emails if in production mode
     if (process.env.DEV_MODE === 'prod') {
+      const startTimeFormatted = format(session.start_time, 'PPPP');
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
       const htmlContent = sessionBookingConfirmation(
         `${user.firstName} ${user.lastName}`,
-        `${therapist.firstName} ${therapist.lastName}`
+        `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted
       );
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
     }
 
     return res.status(200).json(new ApiResponse(200, session, "Session booked successfully"));
@@ -838,10 +840,11 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
         "timeslots.$.isBooked": true,
       },
     })
+    const startTimeFormatted = format(session.start_time, 'PPPP');
     const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
     const subject = "Session Booking Confirmation";
     const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
     return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
 
   } catch (error) {
@@ -972,11 +975,11 @@ const bookSessionFromCorpPackage = asyncHandler(async (req, res) => {
 
     corpPackage.used += 1;
     await corpPackage.save();
-
+    const startTimeFormatted = format(session.start_time, 'PPPP');
     const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
     const subject = "Session Booking Confirmation";
-    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
     return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
 
   } catch (error) {

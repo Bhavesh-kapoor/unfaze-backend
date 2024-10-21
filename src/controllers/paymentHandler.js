@@ -6,19 +6,20 @@ import { transporter, mailOptions } from "../config/nodeMailer.js";
 import { Therapist } from "../models/therapistModel.js";
 import { Session } from "../models/sessionsModel.js";
 import { Slot } from "../models/slotModal.js";
-import { sessionBookingConfirmation } from "../static/emailcontent.js";
 import { Coupon } from "../models/couponModel.js";
 import { Course } from "../models/courseModel.js";
 import { User } from "../models/userModel.js";
 import { EnrolledCourse } from "../models/enrolledCourseModel.js";
-import { courseEnrollmentConfirmation } from "../static/emailcontent.js";
+import { courseEnrollmentConfirmation, sessionBookingConfirmation, newSessionAlert } from "../static/emailcontent.js";
+import { sendMail } from "../utils/sendMail.js";
+import { format } from "date-fns";
 // function convertUTCtoIST(utcDate) {
 //   const date = new Date(utcDate);
 //   const istDateTime = date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 //   const [istDate, istTime] = istDateTime.split(', ');
 //   return { date: istDate, time: istTime };
 // }
-export const sendNotificationsAndEmails = async (user, therapist, htmlContent, message, subject) => {
+export const sendNotificationsAndEmails = async (user, therapist, htmlContent, message, subject, startTimeFormatted) => {
   const receiverId = therapist._id;
   const payload = {
     therapist_id: therapist._id,
@@ -50,6 +51,8 @@ export const sendNotificationsAndEmails = async (user, therapist, htmlContent, m
       console.log("Email sent successfully:", info.response);
     }
   });
+  const emailContent = newSessionAlert(`${therapist.firstName} ${therapist.lastName}`, `${user.firstName} ${user.lastName}`, startTimeFormatted)
+  sendMail(therapist.email, subject, emailContent,)
 
 };
 
@@ -189,10 +192,11 @@ const handlePhonepayPayment = asyncHandler(async (req, res) => {
       // });
       // monetization.count = monetization.count + 1;
       // await monetization.save();
+      const startTimeFormatted = format(session.start_time, 'PPPP');
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
-      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
       res
         .status(201)
         .json(new ApiResponse(201, session, "Session booked successfully"));
@@ -282,11 +286,11 @@ const handleCashfreePayment = asyncHandler(async (req, res) => {
       // });
       // monetization.count = monetization.count + 1;
       // await monetization.save();
-
+      const startTimeFormatted = format(session.start_time, 'PPPP');
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
-      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
       return res
         .status(201)
         .json(new ApiResponse(201, session, "Session booked successfully"));
@@ -450,9 +454,10 @@ const manualPaymentValidator = asyncHandler(async (req, res) => {
         // });
         // monetization.count = monetization.count + 1;
         // await monetization.save();
+        const startTimeFormatted = format(session.start_time, 'PPPP');
         const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
         const subject = "Session Booking Confirmation";
-        const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
+        const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
         await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject);
         res
           .status(201)

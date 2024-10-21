@@ -16,6 +16,7 @@ import corpUserRoute from "./corporate/corpUserRoute.js"
 import { PackageDistribution } from "../models/corporate/packageDistributionModel.js";
 import mongoose from "mongoose";
 import ApiError from "../utils/ApiError.js";
+import notificationRoutes from "./notification.routes.js"
 
 // Initialize the router
 const router = express.Router();
@@ -42,6 +43,9 @@ router.use("/auth/therapist", verifyJwtToken, therapistRoute);
 
 router.use("/payment", verifyJwtToken, paymentRoutes);
 router.post("/payment/callback/:transactionId", callback);
+
+/* ------------------------notification------------------------------------*/
+router.use("/notification", verifyJwtToken, notificationRoutes)
 
 
 // Get current user data when JWT token is valid

@@ -98,7 +98,7 @@ const passwordUpdatedEmail = (name) => `
   </div>
 `;
 
-const sessionBookingConfirmation = (name, therapist) => {
+const sessionBookingConfirmation = (name, therapist, sessionDate) => {
   return (
     `<div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
   <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
@@ -116,6 +116,10 @@ const sessionBookingConfirmation = (name, therapist) => {
       <div style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
         <p><strong>Therapist:</strong>${therapist}</p>
       </div>
+       <div style="margin: 10px 0;">
+        <h2>Session Details:</h2>
+        <div><strong>Date:</strong> ${sessionDate}</div>
+        </div>
       
       <p>If you have any questions, feel free to reach out to us at contact@unfazed.in.</p>
       <p>We look forward to helping you on your journey!</p>
@@ -263,5 +267,35 @@ const reqForMoreSession = (companyName, adminName, email, mobile) => {
     </div>
   `;
 }
+const newSessionAlert = (therapistName, clientName, sessionDate) => {
+  return (
+    `<div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+      <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+        
+        <div style="background-color: #007bff; color: #ffffff; padding: 15px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h2>New Session Booking Alert!</h2>
+        </div>
+        
+        <div style="padding: 20px;">
+          <p>Dear <strong>${therapistName}</strong>,</p>
+          <p>You have a new therapy session booked with a client.</p>
+          
+          <div style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+            <p><strong>Client:</strong> ${clientName}</p>
+            <p><strong>Date:</strong> ${sessionDate}</p>
+          </div>
+          
+          <p>If you have any questions or need to reschedule, please contact us at <a href="mailto:contact@unfazed.in">contact@unfazed.in</a>.</p>
+          <p>Thank you for your commitment to supporting your clients!</p>
+          
+          <p>Best regards,</p>
+          <p>Team Unfazed</p>
+        </div>
+        
+      </div>
+    </div>`
+  );
+}
 
-export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation, createPwdEmailContent, userSessionReminderEmailTemplate, therapistSessionReminderEmailTemplate, reqForMoreSession }
+
+export { contactUsContent, otpContent, loginCredentialEmail, welcomeEmail, passwordUpdatedEmail, sessionBookingConfirmation, courseEnrollmentConfirmation, createPwdEmailContent, userSessionReminderEmailTemplate, therapistSessionReminderEmailTemplate, reqForMoreSession, newSessionAlert }

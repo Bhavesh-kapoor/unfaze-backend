@@ -476,6 +476,7 @@ const allUserBycompany = asyncHandler(async (req, res) => {
       return {
         _id: user._id,
         email: user.email,
+        isEmailVerified: user.isEmailVerified,
         name: `${user.firstName} ${user.lastName}`,
         mobile: user.mobile,
         role: user.role,
