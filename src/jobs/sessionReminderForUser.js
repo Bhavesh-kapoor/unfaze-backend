@@ -1,8 +1,8 @@
+import chalk from "chalk";
 import cron from "node-cron";
 import { format, addMinutes } from "date-fns";
-import { Session } from "../models/sessionsModel.js"; // Assuming you have a session model
+import { Session } from "../models/sessionsModel.js";
 import { sendTemplateMessage } from "../controllers/wattiTemplates.js";
-import chalk from "chalk";
 
 /**
  * Utility function to format the session start time based on type.
@@ -19,12 +19,15 @@ const formatSessionStartTime = (date, type) => {
   return format(date, "PPPP"); // Default format
 };
 
+// Utility function to create a delay (e.g., 1 second between emails)
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // Cron job to run every 30 minutes
-cron.schedule("30,0 * * * *", async () => {
+cron.schedule("47,0 * * * *", async () => {
   try {
     const now = new Date();
     const sessionStartWindowStart = addMinutes(now, 29); // Start window 29 minutes from now
-    const sessionStartWindowEnd = addMinutes(now, 44); // End window 44 minutes from now
+    const sessionStartWindowEnd = addMinutes(now, 31); // End window 31 minutes from now
 
     console.log(
       chalk.blue(
@@ -39,7 +42,7 @@ cron.schedule("30,0 * * * *", async () => {
     const upcomingSessions = await Session.find({
       start_time: {
         $gte: sessionStartWindowStart,
-        $lte: sessionStartWindowEnd, // Get sessions starting within the 30-45 minute window
+        $lte: sessionStartWindowEnd, // Get sessions starting within the 29-31 minute window
       },
       status: { $in: ["upcoming", "rescheduled"] }, // Ensure the session is upcoming or rescheduled
     }).populate("user_id therapist_id"); // Populate user and therapist details
@@ -76,6 +79,10 @@ cron.schedule("30,0 * * * *", async () => {
             mobile: userMobile,
             session_url: sessionUserUrl,
           });
+
+          // Add a delay between sending user and therapist emails
+          await delay(250); // 0.25 second delay before sending the next email
+
           await sendTemplateMessage("session_reminder_for_therapists", {
             ...data,
             client_name: userName,
@@ -88,6 +95,10 @@ cron.schedule("30,0 * * * *", async () => {
               `Reminder sent successfully for session: ${session._id}`
             )
           );
+
+          // Add a delay before processing the next session
+          await delay(250); // 0.25 second delay before the next iteration
+
         } catch (sendError) {
           console.error(
             chalk.red(
@@ -99,7 +110,7 @@ cron.schedule("30,0 * * * *", async () => {
       }
     } else {
       console.log(
-        chalk.yellow("No sessions starting in the next 30-45 minutes.")
+        chalk.yellow("No sessions starting in the next 30 minutes.")
       );
     }
   } catch (error) {
