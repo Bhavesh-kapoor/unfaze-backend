@@ -7,8 +7,8 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { otpContent } from "../static/emailcontent.js";
 import { Therapist } from "../models/therapistModel.js";
-import { transporter, mailOptions } from "../config/nodeMailer.js";
 import { sendOtpMessage } from "../config/msg91.config.js";
+import { transporter, mailOptions } from "../config/nodeMailer.js";
 
 dotenv.config();
 async function verifyOTP(email, otp) {
@@ -62,6 +62,7 @@ const createAndStoreMobileOTP = async (mobile) => {
 const sendOtp = async (req, res) => {
   const { email } = req.body;
   const otp = await createAndStoreOTP(email);
+  if (process.env.NODE_ENV === "dev") console.log(otp);
   const htmlContent = otpContent(otp);
   const options = mailOptions(
     email,
@@ -143,13 +144,13 @@ const sendMobileOtp = asyncHandler(async (req, res) => {
     const otp = await createAndStoreMobileOTP(mobile);
     const result = await sendOtpMessage(mobile, otp);
     console.log(result);
-    return res.status(200).json(new ApiResponse(200, result,))
+    return res.status(200).json(new ApiResponse(200, result));
   } catch (error) {
-    return res.status(500).json(new ApiError(500, error, "Error sending OTP"))
+    return res.status(500).json(new ApiError(500, error, "Error sending OTP"));
   }
-})
+});
 const mobileVerify = async (req, res) => {
-  const user = req.user
+  const user = req.user;
   const { mobile, otp } = req.body;
   if (!mobile || !otp) {
     return res
@@ -201,4 +202,13 @@ const mobileVerify = async (req, res) => {
 //       .json(new ApiResponse(200, info, "message sent successfully!"));
 //   });
 // });
-export { sendOtp, userEmailVerify, therapistEmailVerify, verifyOTP, mobileVerify, sendMobileOtp, createAndStoreOTP, createAndStoreMobileOTP };
+export {
+  sendOtp,
+  userEmailVerify,
+  therapistEmailVerify,
+  verifyOTP,
+  mobileVerify,
+  sendMobileOtp,
+  createAndStoreOTP,
+  createAndStoreMobileOTP,
+};

@@ -1,9 +1,12 @@
+import mongoose from "mongoose";
 import ApiError from "../utils/ApiError.js";
 import Feedback from "../models/feedbackModel.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import { CustomerFeedback } from "../models/reviewsModal.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import mongoose from "mongoose";
+import { Therapist } from "../models/therapistModel.js";
+import { sendTemplateMessage } from "./wattiTemplates.js";
+import { CustomerFeedback } from "../models/reviewsModal.js";
+import { Session } from "../models/sessionsModel.js";
 
 export const createFeedback = asyncHandler(async (req, res) => {
   try {
@@ -14,6 +17,14 @@ export const createFeedback = asyncHandler(async (req, res) => {
         .json({ message: "You are not allow to submit a review!" });
     }
     const feedback = new CustomerFeedback({ ...req.body, user: _id });
+    if (req.body.therapist) {
+      const therapistData = await Therapist.findById(req.body.therapist);
+      sendTemplateMessage("feedback_by_user", {
+        mobile: req?.user?.mobile,
+        name: `${req?.user?.firstName} ${req?.user?.lastName}`,
+        therapist_name: `${therapistData?.firstName} ${therapistData?.lastName}`,
+      });
+    }
     await feedback.save();
     res
       .status(201)
@@ -222,7 +233,16 @@ export const createSessionFeedback = async (req, res) => {
       star: star || 0,
       feedback,
     });
-
+    const getSessionDetail = await Session.findById(session_id)
+      .populate("therapist_id")
+      .exec();
+    if (!getSessionDetail) throw new Error("Session not found");
+    const therapistDetails = getSessionDetail.therapist_id;
+    sendTemplateMessage("feedback_by_user", {
+      mobile: req?.user?.mobile,
+      name: `${req?.user?.firstName} ${req?.user?.lastName}`,
+      therapist_name: `${therapistDetails?.firstName} ${therapistDetails?.lastName}`,
+    });
     await feedbackInstance.save();
 
     res

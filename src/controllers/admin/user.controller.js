@@ -15,9 +15,10 @@ import {
   welcomeEmail,
   passwordUpdatedEmail,
 } from "../../static/emailcontent.js";
-import { transporter, mailOptions } from "../../config/nodeMailer.js";
+import { sendTemplateMessage } from "../wattiTemplates.js";
 import { check, validationResult } from "express-validator";
 import { Transaction } from "../../models/transactionModel.js";
+import { transporter, mailOptions } from "../../config/nodeMailer.js";
 
 export const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
@@ -182,6 +183,14 @@ const register = asyncHandler(async (req, res) => {
     }
     console.log("welcome mail sent: %s", info.messageId);
   });
+
+  // WATTI WELCOME MESSAGE
+  const wattiRequest = {
+    mobile: req.body.mobile,
+    last_name: `${req.body.firstName} ${req.body.lastName}`,
+  };
+  sendTemplateMessage("welcomeMessage", wattiRequest);
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
