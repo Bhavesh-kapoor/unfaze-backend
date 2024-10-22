@@ -129,7 +129,6 @@ export async function sendTemplateMessage(templateKey, request) {
       console.log("-------SENT SUCCESSFULLY-------", response?.data);
     if (response?.data?.result) return true;
   } catch (error) {
-    console.log(error);
     console.error(
       "Error sending message:",
       error.response ? error.response.data : error.message

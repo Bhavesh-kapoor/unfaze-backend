@@ -13,8 +13,9 @@ import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
 import "./jobs/transactionJobs.js";
 import "./jobs/sessionJobs.js";
-import "./jobs/reminderMailJob.js"
-
+import "./jobs/reminderMailJob.js";
+// import "./jobs/sessionReminderForUser.js";
+// import "./jobs/missedSessionReminder.js";
 
 // Load environment variables
 dotenv.config();
@@ -84,12 +85,12 @@ app.use((req, res, next) => {
       res.statusCode >= 500
         ? chalk.red
         : res.statusCode >= 400
-          ? chalk.yellow
-          : res.statusCode >= 300
-            ? chalk.cyan
-            : res.statusCode >= 200
-              ? chalk.green
-              : chalk.white;
+        ? chalk.yellow
+        : res.statusCode >= 300
+        ? chalk.cyan
+        : res.statusCode >= 200
+        ? chalk.green
+        : chalk.white;
 
     logger.info(
       `${chalk.blue("METHOD:")} ${chalk.yellow(req.method)} - ${chalk.blue(
