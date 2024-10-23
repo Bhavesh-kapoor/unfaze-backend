@@ -14,10 +14,11 @@ import passport from "./config/passportUser.js";
 import "./jobs/sessionJobs.js";
 import "./jobs/transactionJobs.js";
 import "./jobs/reminderMailJob.js";
+import "./jobs/chatReminderForUser.js";
+import "./jobs/missedSessionReminder.js";
+import "./jobs/sessionReminderForUser.js";
+import "./jobs/chatReminderForTherapist.js";
 import { timeZoneMiddleware } from "./middleware/timeZone.middlewere.js";
-// import "./jobs/sessionReminderForUser.js";
-// import "./jobs/missedSessionReminder.js";
-
 // Load environment variables
 dotenv.config();
 
@@ -126,7 +127,7 @@ app.get("/images/therapists/:subfolder/:image", (req, res) => {
   });
 });
 
-app.use("/api",timeZoneMiddleware, routes);
+app.use("/api", timeZoneMiddleware, routes);
 // import { updateUserPasswords } from "./config/scripts/user.js";
 // updateUserPasswords("unfazed123")
 
