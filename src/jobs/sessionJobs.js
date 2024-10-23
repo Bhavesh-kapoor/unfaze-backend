@@ -8,7 +8,7 @@ import { Session } from "../models/sessionsModel.js";
 cron.schedule("*/15 * * * *", async () => {
   const currentTime = new Date();
   console.log(
-    chalk.blue(`[Cron Job Started] Time: ${currentTime.toISOString()}`)
+    chalk.blue(`[Cron Job - [MISSED MARKED] Started] Time: ${currentTime.toISOString()}`)
   );
 
   try {
@@ -26,20 +26,20 @@ cron.schedule("*/15 * * * *", async () => {
 
       console.log(
         chalk.green(
-          `[Cron Job] Updated ${missedSessions.modifiedCount} sessions to 'missed' status.`
+          `[Cron Job - [MISSED MARKED] ] Updated ${missedSessions.modifiedCount} sessions to 'missed' status.`
         )
       );
     } catch (updateError) {
       console.error(
-        chalk.red("[Error] While updating sessions status:"),
+        chalk.red("[Error] [MISSED MARKED] While updating sessions status:"),
         updateError
       );
     }
   } catch (error) {
-    console.error(chalk.red("[Error] in cron job execution:"), error);
+    console.error(chalk.red("[Error] [MISSED MARKED] in cron job execution:"), error);
   } finally {
     console.log(
-      chalk.blue(`[Cron Job Ended] Time: ${new Date().toISOString()}`)
+      chalk.blue(`[Cron Job - [MISSED MARKED] Ended] Time: ${new Date().toISOString()}`)
     );
   }
 });
