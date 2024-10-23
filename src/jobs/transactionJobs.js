@@ -29,7 +29,7 @@ cron.schedule("*/10 * * * *", async () => {
     if (transactions.length > 0) {
       console.log(
         chalk.yellow(
-          `[Cron Job] Found ${transactions.length} transactions to check.`
+          `[Cron Job - [TRANSACTION JOB]] Found ${transactions.length} transactions to check.`
         )
       );
 
@@ -51,21 +51,21 @@ cron.schedule("*/10 * * * *", async () => {
               updatedCount++;
               console.log(
                 chalk.green(
-                  `[Cron Job] Slot ${transaction.slotId} is now marked as available.`
+                  `[Cron Job - [TRANSACTION JOB]] Slot ${transaction.slotId} is now marked as available.`
                 )
               );
             }
           } else {
             console.log(
               chalk.red(
-                `[Cron Job] Slot not found or already unbooked for transaction ${transaction._id}.`
+                `[Cron Job - [TRANSACTION JOB]] Slot not found or already unbooked for transaction ${transaction._id}.`
               )
             );
           }
         } catch (slotError) {
           console.error(
             chalk.red(
-              `[Error] Processing slot for transaction ${transaction._id}:`
+              `[Error] [TRANSACTION JOB] Processing slot for transaction ${transaction._id}:`
             ),
             slotError
           );
@@ -73,16 +73,27 @@ cron.schedule("*/10 * * * *", async () => {
       }
     } else {
       console.log(
-        chalk.gray("[Cron Job] No transactions found that meet the criteria.")
+        chalk.gray(
+          "[Cron Job - [TRANSACTION JOB]] No transactions found that meet the criteria."
+        )
       );
     }
 
-    console.log(chalk.blue(`[Cron Job] Total slots updated: ${updatedCount}`));
+    console.log(
+      chalk.blue(
+        `[Cron Job - [TRANSACTION JOB]] Total slots updated: ${updatedCount}`
+      )
+    );
   } catch (error) {
-    console.error(chalk.red("[Error] in cron job execution:"), error);
+    console.error(
+      chalk.red("[Error] [TRANSACTION JOB] in cron job execution:"),
+      error
+    );
   } finally {
     console.log(
-      chalk.blue(`[Cron Job Ended] Time: ${new Date().toISOString()}`)
+      chalk.blue(
+        `[Cron Job - [TRANSACTION JOB] Ended] Time: ${new Date().toISOString()}`
+      )
     );
   }
 });
