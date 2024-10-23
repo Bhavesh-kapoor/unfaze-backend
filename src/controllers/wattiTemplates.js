@@ -5,50 +5,50 @@ dotenv.config();
 
 const templateConfig = {
   welcomeMessage: {
-    template_name: "register_user",
+    template_name: "register_userv2",
     broadcast_name: "register_user_221020241628",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
   booking_confirmation_for_user: {
-    template_name: "booking_confirmation_for_user",
-    broadcast_name: "booking_confirmation_for_user_221020241538",
+    template_name: "booking_confirmation_for_userv2",
+    broadcast_name: "booking_confirmation_for_userv2_231020241559",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
   feedback_by_user: {
-    template_name: "feedback_by_user",
-    broadcast_name: "feedback_by_user_221020241540",
+    template_name: "feedback_for_user_v2",
+    broadcast_name: "feedback_for_user_v2_231020241600",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
   package_purchase: {
-    template_name: "package_purchase",
-    broadcast_name: "package_purchase_221020241541",
+    template_name: "package_purchase_v2",
+    broadcast_name: "package_purchase_v2_231020241602",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
   session_missed_by_user: {
-    template_name: "session_missed_by_user",
-    broadcast_name: "session_missed_by_user_221020241541",
+    template_name: "session_missed_by_user_v2",
+    broadcast_name: "session_missed_by_user_v2_231020241605",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
   session_rescheduled_by_user: {
-    template_name: "session_rescheduled_by_user",
-    broadcast_name: "session_rescheduled_by_user_221020241541",
+    template_name: "session_rescheduled_for_user_v2",
+    broadcast_name: "session_rescheduled_for_user_v2_231020241609",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
   session_reminder_for_user: {
-    template_name: "session_reminder_for_user",
-    broadcast_name: "session_reminder_for_user_221020241541",
+    template_name: "session_reminder_for_user_v2",
+    broadcast_name: "session_reminder_for_user_v2_231020241607",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
   session_reminder_for_therapists: {
-    template_name: "session_reminder_for_therapists",
-    broadcast_name: "session_reminder_for_therapists_221020241542",
+    template_name: "session_reminder_for_therapist_v2",
+    broadcast_name: "session_reminder_for_therapist_v2_231020241611",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
