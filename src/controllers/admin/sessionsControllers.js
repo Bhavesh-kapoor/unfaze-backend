@@ -12,10 +12,13 @@ import { sendNotificationsAndEmails } from "../paymentHandler.js";
 import { User } from "../../models/userModel.js";
 import { EnrolledCourse } from "../../models/enrolledCourseModel.js";
 import { convertTo24HourFormat } from "../../utils/convertTo24HrFormat.js";
-import { sessionBookingConfirmation } from "../../static/emailcontent.js";
+import { sessionBookingConfirmation, newSessionAlert } from "../../static/emailcontent.js";
 import { Specialization } from "../../models/specilaizationModel.js";
 import { TherapistPay } from "../../models/therapistPayModel.js";
 import { PackageDistribution } from "../../models/corporate/packageDistributionModel.js";
+import { formatInTimeZone } from 'date-fns-tz';
+import { sendMail } from "../../utils/sendMail.js";
+import { sendTemplateMessage } from "../wattiTemplates.js";
 const SESSION_DURATION_MINUTES = 30;
 const GAP_BETWEEN_SESSIONS_MINUTES = 15;
 const START_HOUR = 9;
@@ -286,11 +289,33 @@ const rescheduleSession = asyncHandler(async (req, res) => {
     }
   );
   if (process.env.DEV_MODE === 'prod') {
-    const startTimeFormatted = format(session.start_time, 'PPPP');
+    const startDateFormatted = formatInTimeZone(session.start_time, timeZone, 'MMM-dd yyyy');
+    const timeFormatted = formatInTimeZone(session.start_time, timeZone, 'hh:mm a');
     const message = `${user.firstName} ${user.lastName} has reschedule a session.`;
     const subject = "Session Reschedule Confirmation";
-    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
-    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
+    const sessionTherapistUrl = `${process.env.FRONTEND_URL}/therapist-profile/sessions`
+    const sessionUserUrl = `${process.env.FRONTEND_URL}/profile/therapy-sessions`
+    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, `${startDateFormatted} ${timeFormatted}`, sessionUserUrl)
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startDateFormatted, timeFormatted);
+    const emailContent = newSessionAlert(`${therapist.firstName} ${therapist.lastName}`, `${user.firstName} ${user.lastName}`, `${startDateFormatted} ${timeFormatted}`, sessionTherapistUrl)
+    sendMail(therapist.email, subject, emailContent);
+    // send whatapp message
+    await sendTemplateMessage("session_rescheduled_by_user", {
+      name: `${user.firstName} ${user.lastName}`,
+      therapist_name: `${therapist.firstName} ${therapist.lastName}`,
+      session_date: startDateFormatted,
+      session_time: timeFormatted,
+      mobile: user.mobile,
+      session_url: sessionUserUrl
+    });
+    await sendTemplateMessage("session_alerttherapist", {
+      name: `${therapist.firstName} ${therapist.lastName}`,
+      client_name: `${user.firstName} ${user.lastName}`,
+      session_date: startDateFormatted,
+      session_time: timeFormatted,
+      mobile: user.mobile,
+      session_url: sessionTherapistUrl
+    });
   }
   res.status(201).json(new ApiResponse(201, rescheduled, "session recheduled"));
 });
@@ -334,11 +359,33 @@ const bookSessionManully = asyncHandler(async (req, res) => {
     session.channelName = channelName;
     await session.save();
     if (process.env.DEV_MODE === 'prod') {
-      const startTimeFormatted = format(session.start_time, 'PPPP');
+      const startDateFormatted = formatInTimeZone(transaction.start_Time, timeZone, 'MMM-dd yyyy');
+      const timeFormatted = formatInTimeZone(transaction.start_Time, timeZone, 'hh:mm a');
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
-      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
+      const sessionTherapistUrl = `${process.env.FRONTEND_URL}/therapist-profile/sessions`
+      const sessionUserUrl = `${process.env.FRONTEND_URL}/profile/therapy-sessions`
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startDateFormatted, sessionUserUrl)
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startDateFormatted, timeFormatted);
+      const emailContent = newSessionAlert(`${therapist.firstName} ${therapist.lastName}`, `${user.firstName} ${user.lastName}`, `${startDate} ${startTime}`, sessionTherapistUrl)
+      sendMail(therapist.email, subject, emailContent);
+      // send whatapp message
+      await sendTemplateMessage("booking_confirmation_for_user", {
+        name: `${user.firstName} ${user.lastName}`,
+        therapist_name: `${therapist.firstName} ${therapist.lastName}`,
+        session_date: startDateFormatted,
+        session_time: timeFormatted,
+        mobile: user.mobile,
+        session_url: sessionUserUrl
+      });
+      await sendTemplateMessage("session_alerttherapist", {
+        name: `${therapist.firstName} ${therapist.lastName}`,
+        client_name: `${user.firstName} ${user.lastName}`,
+        session_date: startDateFormatted,
+        session_time: timeFormatted,
+        mobile: user.mobile,
+        session_url: sessionTherapistUrl
+      });
     }
     res
       .status(201)
@@ -710,14 +757,33 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
 
     // Send notifications and emails if in production mode
     if (process.env.DEV_MODE === 'prod') {
-      const startTimeFormatted = format(session.start_time, 'PPPP');
+      const startDateFormatted = formatInTimeZone(startDateTime, timeZone, 'MMM-dd yyyy');
+      const timeFormatted = formatInTimeZone(startDateTime, timeZone, 'hh:mm a');
       const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
       const subject = "Session Booking Confirmation";
-      const htmlContent = sessionBookingConfirmation(
-        `${user.firstName} ${user.lastName}`,
-        `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted
-      );
-      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
+      const sessionTherapistUrl = `${process.env.FRONTEND_URL}/therapist-profile/sessions`
+      const sessionUserUrl = `${process.env.FRONTEND_URL}/profile/therapy-sessions`
+      const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, `${startDateFormatted} ${timeFormatted}`, sessionUserUrl)
+      await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startDateFormatted, timeFormatted);
+      const emailContent = newSessionAlert(`${therapist.firstName} ${therapist.lastName}`, `${user.firstName} ${user.lastName}`, `${startDateFormatted} ${timeFormatted}`, sessionTherapistUrl)
+      sendMail(therapist.email, subject, emailContent);
+      // send whatapp message
+      await sendTemplateMessage("booking_confirmation_for_user", {
+        name: `${user.firstName} ${user.lastName}`,
+        therapist_name: `${therapist.firstName} ${therapist.lastName}`,
+        session_date: startDateFormatted,
+        session_time: timeFormatted,
+        mobile: user.mobile,
+        session_url: sessionUserUrl
+      });
+      await sendTemplateMessage("session_alerttherapist", {
+        name: `${therapist.firstName} ${therapist.lastName}`,
+        client_name: `${user.firstName} ${user.lastName}`,
+        session_date: startDateFormatted,
+        session_time: timeFormatted,
+        mobile: user.mobile,
+        session_url: sessionTherapistUrl
+      });
     }
 
     return res.status(200).json(new ApiResponse(200, session, "Session booked successfully"));
@@ -840,11 +906,33 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
         "timeslots.$.isBooked": true,
       },
     })
-    const startTimeFormatted = format(session.start_time, 'PPPP');
+    const startDateFormatted = formatInTimeZone(startDateTime, timeZone, 'MMM-dd yyyy');
+    const timeFormatted = formatInTimeZone(startDateTime, timeZone, 'hh:mm a');
     const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
     const subject = "Session Booking Confirmation";
-    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`)
-    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
+    const sessionTherapistUrl = `${process.env.FRONTEND_URL}/therapist-profile/sessions`
+    const sessionUserUrl = `${process.env.FRONTEND_URL}/profile/therapy-sessions`
+    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, `${startDateFormatted} ${timeFormatted}`, sessionUserUrl)
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startDateFormatted, timeFormatted);
+    const emailContent = newSessionAlert(`${therapist.firstName} ${therapist.lastName}`, `${user.firstName} ${user.lastName}`, `${startDateFormatted} ${timeFormatted}`, sessionTherapistUrl)
+    sendMail(therapist.email, subject, emailContent);
+    // send whatapp message
+    await sendTemplateMessage("booking_confirmation_for_user", {
+      name: `${user.firstName} ${user.lastName}`,
+      therapist_name: `${therapist.firstName} ${therapist.lastName}`,
+      session_date: startDateFormatted,
+      session_time: timeFormatted,
+      mobile: user.mobile,
+      session_url: sessionUserUrl
+    });
+    await sendTemplateMessage("session_alerttherapist", {
+      name: `${therapist.firstName} ${therapist.lastName}`,
+      client_name: `${user.firstName} ${user.lastName}`,
+      session_date: startDateFormatted,
+      session_time: timeFormatted,
+      mobile: user.mobile,
+      session_url: sessionTherapistUrl
+    });
     return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
 
   } catch (error) {
@@ -975,11 +1063,25 @@ const bookSessionFromCorpPackage = asyncHandler(async (req, res) => {
 
     corpPackage.used += 1;
     await corpPackage.save();
-    const startTimeFormatted = format(session.start_time, 'PPPP');
+    const startDateFormatted = formatInTimeZone(startDateTime, timeZone, 'MMM-dd yyyy');
+    const timeFormatted = formatInTimeZone(startDateTime, timeZone, 'hh:mm a');
     const message = `${user.firstName} ${user.lastName} has successfully booked a session.`;
     const subject = "Session Booking Confirmation";
-    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, startTimeFormatted)
-    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startTimeFormatted);
+    const sessionTherapistUrl = `${process.env.FRONTEND_URL}/therapist-profile/sessions`
+    const sessionUserUrl = `${process.env.FRONTEND_URL}/profile/therapy-sessions`
+    const htmlContent = sessionBookingConfirmation(`${user.firstName} ${user.lastName}`, `${therapist.firstName} ${therapist.lastName}`, `${startDateFormatted} ${timeFormatted}`, sessionUserUrl)
+    await sendNotificationsAndEmails(user, therapist, htmlContent, message, subject, startDateFormatted, timeFormatted);
+    const emailContent = newSessionAlert(`${therapist.firstName} ${therapist.lastName}`, `${user.firstName} ${user.lastName}`, `${startDateFormatted} ${timeFormatted}`, sessionTherapistUrl)
+    sendMail(therapist.email, subject, emailContent);
+    // send whatapp message
+    await sendTemplateMessage("booking_confirmation_for_user", {
+      name: `${user.firstName} ${user.lastName}`,
+      therapist_name: `${therapist.firstName} ${therapist.lastName}`,
+      session_date: startDateFormatted,
+      session_time: timeFormatted,
+      mobile: user.mobile,
+      session_url: sessionUserUrl
+    });
     return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
 
   } catch (error) {
@@ -988,5 +1090,17 @@ const bookSessionFromCorpPackage = asyncHandler(async (req, res) => {
   }
 })
 
+export const getRandomSessionFortest = asyncHandler(async (req, res) => {
+  const { timeZone } = req
+  console.log(timeZone);
+  const session = await Session.find().limit(1);
+  console.log(session)
+  const start_Time = session[0].start_time
+  console.log(start_Time);
+  const formattedDate = formatInTimeZone(start_Time, timeZone, 'hh:mm a');
+  const formattedTime = formatInTimeZone(start_Time, timeZone, 'MMM-dd yyyy');
+  console.log(formattedDate, formattedTime)
+  return res.status(200).json(new ApiResponse(200, timeZone, "shjkd"));
+})
 
 export { sessionCompleted, rescheduleSession, bookSessionManully, getUserSessions, getTherapistSession, BookSessionFromCourse, manualSessionBooking, bookSessionFromCorpPackage }

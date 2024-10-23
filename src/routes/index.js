@@ -18,12 +18,14 @@ import verifyJwtToken from "../middleware/admin/verifyJwtToken.js";
 import publicAdminRoute from "../routes/admin/adminpublic.route.js";
 import therapistRoute from "../routes/therapist/therapist.route.js";
 import { PackageDistribution } from "../models/corporate/packageDistributionModel.js";
+import { getRandomSessionFortest } from "../controllers/admin/sessionsControllers.js";
 
 // Initialize the router
 const router = express.Router();
 
 // handle public routes
 router.use("/public", publicRoute);
+router.get("/test", getRandomSessionFortest);
 
 // handle watti webhooks
 router.use("/wati/webhook", WattiWebhookRoute);

@@ -98,7 +98,7 @@ const passwordUpdatedEmail = (name) => `
   </div>
 `;
 
-const sessionBookingConfirmation = (name, therapist, sessionDate) => {
+const sessionBookingConfirmation = (name, therapist, sessionDate, sessionUrl) => {
   return (
     `<div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
   <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
@@ -119,6 +119,7 @@ const sessionBookingConfirmation = (name, therapist, sessionDate) => {
        <div style="margin: 10px 0;">
         <h2>Session Details:</h2>
         <div><strong>Date:</strong> ${sessionDate}</div>
+         <p><a href="${sessionUrl}">Session Link: ${sessionUrl}</a></p>
         </div>
       
       <p>If you have any questions, feel free to reach out to us at contact@unfazed.in.</p>
@@ -267,7 +268,7 @@ const reqForMoreSession = (companyName, adminName, email, mobile) => {
     </div>
   `;
 }
-const newSessionAlert = (therapistName, clientName, sessionDate) => {
+const newSessionAlert = (therapistName, clientName, sessionDate, sessionUrl) => {
   return (
     `<div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
       <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
@@ -283,6 +284,7 @@ const newSessionAlert = (therapistName, clientName, sessionDate) => {
           <div style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
             <p><strong>Client:</strong> ${clientName}</p>
             <p><strong>Date:</strong> ${sessionDate}</p>
+            <p><a href="${sessionUrl}">Session Link: ${sessionUrl}</a></p>
           </div>
           
           <p>If you have any questions or need to reschedule, please contact us at <a href="mailto:contact@unfazed.in">contact@unfazed.in</a>.</p>

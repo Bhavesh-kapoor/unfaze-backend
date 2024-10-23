@@ -14,6 +14,7 @@ import passport from "./config/passportUser.js";
 import "./jobs/transactionJobs.js";
 import "./jobs/sessionJobs.js";
 import "./jobs/reminderMailJob.js";
+import { timeZoneMiddleware } from "./middleware/timeZone.middlewere.js";
 // import "./jobs/sessionReminderForUser.js";
 // import "./jobs/missedSessionReminder.js";
 
@@ -125,7 +126,7 @@ app.get("/images/therapists/:subfolder/:image", (req, res) => {
   });
 });
 
-app.use("/api", routes);
+app.use("/api",timeZoneMiddleware, routes);
 // import { updateUserPasswords } from "./config/scripts/user.js";
 // updateUserPasswords("unfazed123")
 

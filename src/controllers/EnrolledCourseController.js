@@ -8,7 +8,7 @@ import { Therapist } from "../models/therapistModel.js";
 import { sendNotificationsAndEmails } from "./paymentHandler.js";
 import { courseEnrollmentConfirmation } from "../static/emailcontent.js";
 import { Coupon } from "../models/couponModel.js";
-
+import { sendTemplateMessage } from "./wattiTemplates.js";
 const findById = asyncHandler(async (req, res) => {
   const { _id } = req.params;
   const enrolledCourse = await EnrolledCourse.findById(
@@ -85,6 +85,13 @@ const getEnrolledInCourse = asyncHandler(async (req, res) => {
         message,
         subject
       );
+
+      await sendTemplateMessage("package_purchase", {
+        name: `${user.firstName} ${user.lastName}`,
+        number_of_sessions: course.sessionOffered,
+        therapist_name: `${therapist.firstName} ${therapist.lastName}`,
+        mobile: user.mobile,
+      });
       res
         .status(201)
         .json(

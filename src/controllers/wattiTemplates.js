@@ -94,6 +94,12 @@ const templateConfig = {
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
+  session_alerttherapist: {
+    template_name: "session_alerttherapist",
+    broadcast_name: "session_alerttherapist_231020241429",
+    endpoint:
+      "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
+  },
 };
 
 const makeParameterForWATTI = (data) => {
