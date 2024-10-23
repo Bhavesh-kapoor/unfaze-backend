@@ -1082,6 +1082,14 @@ const bookSessionFromCorpPackage = asyncHandler(async (req, res) => {
       mobile: user.mobile,
       session_url: sessionUserUrl
     });
+    await sendTemplateMessage("session_alerttherapist", {
+      name: `${therapist.firstName} ${therapist.lastName}`,
+      client_name: `${user.firstName} ${user.lastName}`,
+      session_date: startDateFormatted,
+      session_time: timeFormatted,
+      mobile: user.mobile,
+      session_url: sessionTherapistUrl
+    });
     return res.status(200).json(new ApiResponse(200, session, "session booked successfully"))
 
   } catch (error) {

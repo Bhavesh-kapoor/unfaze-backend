@@ -179,6 +179,13 @@ const getEnrolledCashfree = asyncHandler(async (req, res) => {
         message,
         subject
       );
+
+      await sendTemplateMessage("package_purchase", {
+        name: `${user.firstName} ${user.lastName}`,
+        number_of_sessions: course.sessionOffered,
+        therapist_name: `${therapist.firstName} ${therapist.lastName}`,
+        mobile: user.mobile,
+      });
       res
         .status(201)
         .json(

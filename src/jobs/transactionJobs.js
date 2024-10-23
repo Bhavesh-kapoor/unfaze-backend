@@ -15,30 +15,25 @@ cron.schedule("*/10 * * * *", async () => {
   );
 
   try {
-    const tenMinutesAgo = subMinutes(new Date(), 10);
-
+    const tenMinutesAgo = subMinutes(new Date(currentTime), 1);
     // Find transactions where payment is not successful, older than 10 minutes, and manuallyBooked is false
     const transactions = await Transaction.find({
-      payment_status: { $ne: "SUCCESSFUL" },
+      payment_status: { $ne: "successful" },
       createdAt: { $lte: tenMinutesAgo },
-      manuallyBooked: false,
     });
-
     let updatedCount = 0;
-
     if (transactions.length > 0) {
       console.log(
         chalk.yellow(
           `[Cron Job - [TRANSACTION JOB]] Found ${transactions.length} transactions to check.`
         )
       );
-
       // Loop through transactions and update the slot status if it's booked
       for (const transaction of transactions) {
         try {
           const slot = await Slot.findOne({
             "timeslots._id": transaction.slotId,
-            "timeslots.isBooked": true, // Only consider slots that are marked as booked
+            "timeslots.isBooked": true,
           });
 
           if (slot) {
@@ -48,6 +43,7 @@ cron.schedule("*/10 * * * *", async () => {
             if (timeslot && timeslot.isBooked) {
               timeslot.isBooked = false;
               await slot.save();
+
               updatedCount++;
               console.log(
                 chalk.green(
