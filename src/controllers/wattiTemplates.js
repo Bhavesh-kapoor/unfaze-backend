@@ -62,7 +62,7 @@ const templateConfig = {
     template_name: "new_offer_for_user",
     broadcast_name: "new_offer_for_user_221020241542",
     endpoint:
-      "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
+      "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessages",
   },
   payment_issue_for_user: {
     template_name: "payment_issue_for_user",
@@ -96,7 +96,7 @@ const templateConfig = {
   },
 };
 
-const makeParameterForWATTI = (data) => {
+export const makeParameterForWATTI = (data) => {
   return Object.keys(data).map((key) => ({
     name: key,
     value: data[key] || "",
@@ -116,6 +116,38 @@ export async function sendTemplateMessage(templateKey, request) {
     template_name: template.template_name,
     broadcast_name: template.broadcast_name,
     parameters: makeParameterForWATTI(request),
+  };
+
+  try {
+    const response = await axios.post(url, data, {
+      headers: {
+        Authorization: `${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (process.env.NODE_ENV !== "prod")
+      console.log("-------SENT SUCCESSFULLY-------", response?.data);
+    if (response?.data?.result) return true;
+  } catch (error) {
+    console.error(
+      "Error sending message:",
+      error.response ? error.response.data : error.message
+    );
+  }
+}
+
+export async function sendTemplateMultipleUserMessages(templateKey, request) {
+  const accessToken = process.env.ACCESS_TOKEN;
+
+  const template = templateConfig[templateKey]; // to get the template configuration
+  if (!template) return console.error(`Invalid templateKey: ${templateKey}`);
+
+  const url = template?.endpoint; // to get the template configuration url
+
+  const data = {
+    receivers: request,
+    template_name: template.template_name,
+    broadcast_name: template.broadcast_name,
   };
 
   try {

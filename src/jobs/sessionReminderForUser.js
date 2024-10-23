@@ -10,7 +10,7 @@ import { sendTemplateMessage } from "../controllers/wattiTemplates.js";
  * @param {string} type - The format type ('date' or 'time').
  * @returns {string} - Formatted date or time.
  */
-const formatSessionStartTime = (date, type) => {
+export const formatSessionStartTime = (date, type) => {
   if (type === "date") {
     return format(date, "dd-MM-yyyy"); // Format as '20-10-2024'
   } else if (type === "time") {
@@ -23,7 +23,7 @@ const formatSessionStartTime = (date, type) => {
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Cron job to run every 30 minutes
-cron.schedule("47,0 * * * *", async () => {
+cron.schedule("30,0 * * * *", async () => {
   try {
     const now = new Date();
     const sessionStartWindowStart = addMinutes(now, 29); // Start window 29 minutes from now
@@ -50,10 +50,10 @@ cron.schedule("47,0 * * * *", async () => {
     if (upcomingSessions.length > 0) {
       for (const session of upcomingSessions) {
         try {
-          const userName = `${session.user_id.firstName} ${session.user_id.lastName}`;
+          const userName = `${session?.user_id?.firstName} ${session?.user_id?.lastName}`;
           const userMobile = session?.user_id?.mobile;
           const therapistMobile = session?.therapist_id?.mobile;
-          const therapistName = `${session.therapist_id.firstName} ${session.therapist_id.lastName}`;
+          const therapistName = `${session?.therapist_id?.firstName} ${session?.therapist_id?.lastName}`;
 
           // Construct URLs based on roles
           const sessionUserUrl =
@@ -98,7 +98,6 @@ cron.schedule("47,0 * * * *", async () => {
 
           // Add a delay before processing the next session
           await delay(250); // 0.25 second delay before the next iteration
-
         } catch (sendError) {
           console.error(
             chalk.red(
@@ -109,9 +108,7 @@ cron.schedule("47,0 * * * *", async () => {
         }
       }
     } else {
-      console.log(
-        chalk.yellow("No sessions starting in the next 30 minutes.")
-      );
+      console.log(chalk.yellow("No sessions starting in the next 30 minutes."));
     }
   } catch (error) {
     console.error(chalk.red("Error during session reminder cron job:", error));
