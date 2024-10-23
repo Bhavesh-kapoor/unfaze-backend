@@ -82,15 +82,15 @@ const templateConfig = {
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
-  chat_pending_for_6_hours_for_user: {
-    template_name: "chat_pending_for_6_hours_for_user",
-    broadcast_name: "chat_pending_for_6_hours_for_user_221020241607",
+  chat_pending_for_user: {
+    template_name: "pending_chat_reminder_user",
+    broadcast_name: "pending_chat_reminder_user_231020241751",
     endpoint:
-      "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
+      "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessages",
   },
   chat_reminder_for_therapists: {
-    template_name: "chat_reminder_for_therapists",
-    broadcast_name: "chat_reminder_for_therapists_221020241607",
+    template_name: "chat_reminder_therapist_v2",
+    broadcast_name: "chat_reminder_therapist_v2_231020241713",
     endpoint:
       "https://live-mt-server.wati.io/355255/api/v1/sendTemplateMessage?whatsappNumber=",
   },
@@ -159,7 +159,7 @@ export async function sendTemplateMultipleUserMessages(templateKey, request) {
     });
     if (process.env.NODE_ENV !== "prod")
       console.log("-------SENT SUCCESSFULLY-------", response?.data);
-    if (response?.data?.result) return true;
+    if (response?.data?.result) return response?.data?.result;
   } catch (error) {
     console.error(
       "Error sending message:",

@@ -15,18 +15,19 @@ const sentReminders = new Set();
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Cron job to run every 5 minutes
-cron.schedule("*/5 * * * *", async () => {
+cron.schedule("30,0 * * * *", async () => {
   try {
     const now = new Date();
-    const timeWindowEnd = addMinutes(now, 30);
+    const sessionStartWindowStart = addMinutes(now, 29); // Start window 29 minutes from now
+    const sessionStartWindowEnd = addMinutes(now, 31); // End window 31 minutes from now
 
     let sessions;
     try {
       // Find sessions that are upcoming or rescheduled
       sessions = await Session.find({
         start_time: {
-          $gte: now,
-          $lte: timeWindowEnd,
+          $gte: sessionStartWindowStart,
+          $lte: sessionStartWindowEnd, // Get sessions starting within the 29-31 minute window
         },
         status: { $in: ["upcoming", "rescheduled"] },
       }).populate("user_id therapist_id");
