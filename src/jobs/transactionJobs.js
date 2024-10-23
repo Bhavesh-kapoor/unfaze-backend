@@ -15,7 +15,7 @@ cron.schedule("*/10 * * * *", async () => {
   );
 
   try {
-    const tenMinutesAgo = subMinutes(new Date(currentTime), 1);
+    const tenMinutesAgo = subMinutes(new Date(currentTime), 10);
     // Find transactions where payment is not successful, older than 10 minutes, and manuallyBooked is false
     const transactions = await Transaction.find({
       payment_status: { $ne: "successful" },
