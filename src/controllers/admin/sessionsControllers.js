@@ -205,6 +205,7 @@ const sessionCompleted = asyncHandler(async (req, res) => {
 const rescheduleSession = asyncHandler(async (req, res) => {
   const { session_id, slot_id } = req.body;
   const user = req.user
+  const { timeZone } = req
   if (!session_id || !slot_id) {
     return res
       .status(400)
@@ -643,6 +644,7 @@ const getTherapistSession = asyncHandler(async (req, res) => {
 
 const BookSessionFromCourse = asyncHandler(async (req, res) => {
   try {
+    const { timeZone } = req
     const { enrolledCourseId, slotId } = req.query;
     const user = req.user;
 
@@ -793,10 +795,10 @@ const BookSessionFromCourse = asyncHandler(async (req, res) => {
   }
 });
 
-
 const manualSessionBooking = asyncHandler(async (req, res) => {
   try {
     const { user_id, therapist_id, specialization_id, slot_id } = req.body
+    const { timeZone } = req
     if (!user_id || !therapist_id || !specialization_id || !slot_id) {
       return res.status(400).json(new ApiError(400, "", "user_id, therapist_id, specialization_id and slot_id are required!"));
     }
@@ -943,6 +945,7 @@ const manualSessionBooking = asyncHandler(async (req, res) => {
 const bookSessionFromCorpPackage = asyncHandler(async (req, res) => {
   try {
     const user_id = req.user._id
+    const { timeZone } = req
     const { therapist_id, corpPackageId, slot_id } = req.body
     if (!user_id || !therapist_id || !corpPackageId || !slot_id) {
       return res.status(400).json(new ApiError(400, "", "user_id, therapist_id, specialization_id and slot_id are required!"));
