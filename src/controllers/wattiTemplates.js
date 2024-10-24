@@ -166,6 +166,7 @@ export async function sendTemplateMultipleUserMessages(templateKey, request) {
     if (process.env.NODE_ENV !== "prod")
       console.log("-------SENT SUCCESSFULLY-------", response?.data);
     if (response?.data?.result) return response?.data?.result;
+    else return { message: response?.data?.errors?.error };
   } catch (error) {
     console.error(
       "Error sending message:",

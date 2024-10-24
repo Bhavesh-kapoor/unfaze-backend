@@ -195,23 +195,31 @@ export const sendMessageToWhatsapp = async (req, res) => {
       (userList.length === receivers.length &&
         process.env.NODE_ENV === "prod") ||
       (receivers.length === 2 && process.env.NODE_ENV === "dev")
-    )
-      sendTemplateMultipleUserMessages("new_offer_for_user", receivers);
+    ) {
+      const resp = await sendTemplateMultipleUserMessages(
+        "new_offer_for_user",
+        receivers
+      );
+      if (resp && !resp?.message) {
+        const body = {
+          sentToUsersAt: new Date(),
+          title: getOfferDetails?.title,
+          isActive: getOfferDetails?.isActive,
+          couponId: getOfferDetails?.couponId,
+          description: getOfferDetails?.description,
+          notificationCount: (getOfferDetails?.notificationCount ?? 0) + 1,
+        };
+        const offer = await Offer.findByIdAndUpdate(req.params.id, body, {
+          new: true,
+        });
 
-    const body = {
-      sentToUsersAt: new Date(),
-      title: getOfferDetails?.title,
-      isActive: getOfferDetails?.isActive,
-      couponId: getOfferDetails?.couponId,
-      description: getOfferDetails?.description,
-      notificationCount: (getOfferDetails?.notificationCount ?? 0) + 1,
-    };
-    const offer = await Offer.findByIdAndUpdate(req.params.id, body, {
-      new: true,
-    });
-    return res
-      .status(200)
-      .json(new ApiResponse(true, offer, "Sent Successfully"));
+        return res.status(200).json(new ApiResponse(true, offer, "sent"));
+      } else {
+        return res
+          .status(200)
+          .json(new ApiResponse(true, { data: "" }, resp?.message));
+      }
+    }
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
