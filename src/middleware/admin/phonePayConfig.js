@@ -91,8 +91,10 @@ export async function processPayment(req, res) {
     let existingTransaction = await Transaction.find({
       slotId: slot_id,
       user_id: user._id,
+      method: "phonepay",
       therapist_id: therapist_id,
       category: specialization_id,
+      payment_status: "PAYMENT_INITIATED",
       createdAt: {
         $gte: lowerBoundTime, // Greater than or equal to the lower bound
         $lte: upperBoundTime, // Less than or equal to the upper bound
@@ -341,9 +343,18 @@ export async function processPaymentForcourse(req, res) {
         fixDiscount = coupon.fixDiscount;
       }
     }
-    let transactionId;
-    transactionId = uniqid();
-    transactionId = `unfazed${transactionId}`;
+
+    let existingTransaction = await Transaction.find({
+      user_id: user._id,
+      courseId: courseId,
+      method: "phonepay",
+      therapist_id: therapist_id,
+      category: course.specializationId,
+      payment_status: "PAYMENT_INITIATED",
+    });
+
+    let transactionId = `unfazed${uniqid()}`;
+
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
       merchantTransactionId: transactionId,
@@ -378,22 +389,35 @@ export async function processPaymentForcourse(req, res) {
 
     try {
       const response = await axios.request(options);
-      const initiatedTransaction = new Transaction({
-        transactionId,
-        user_id: user._id,
-        therapist_id,
-        courseId,
-        category: course.specializationId,
-        amount_INR: Math.round((amountToPay * 100) / 10000),
-        payment_status: "PAYMENT_INITIATED",
-        type,
-        discountPercent: discountPercent,
-        fixDiscount: fixDiscount,
-        couponCode: coupon_code,
-        method: "phonepay",
-      });
-
-      await initiatedTransaction.save();
+      if (existingTransaction && existingTransaction.length > 0) {
+        console.log("Updating Existing transaction...");
+        existingTransaction = existingTransaction[0];
+        existingTransaction.type = type;
+        existingTransaction.courseId = courseId;
+        existingTransaction.couponCode = coupon_code;
+        existingTransaction.fixDiscount = fixDiscount;
+        existingTransaction.transactionId = transactionId;
+        existingTransaction.amount_INR = therapist.inrPrice;
+        existingTransaction.discountPercent = discountPercent;
+        existingTransaction.category = course.specializationId;
+        await existingTransaction.save();
+      } else {
+        const initiatedTransaction = new Transaction({
+          transactionId,
+          user_id: user._id,
+          therapist_id,
+          courseId,
+          category: course.specializationId,
+          amount_INR: Math.round((amountToPay * 100) / 10000),
+          payment_status: "PAYMENT_INITIATED",
+          type,
+          discountPercent: discountPercent,
+          fixDiscount: fixDiscount,
+          couponCode: coupon_code,
+          method: "phonepay",
+        });
+        await initiatedTransaction.save();
+      }
       res.status(200).json(
         new ApiResponse(200, {
           redirect_url: response.data.data.instrumentResponse.redirectInfo.url,
