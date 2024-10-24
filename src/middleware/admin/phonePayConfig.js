@@ -88,7 +88,7 @@ export async function processPayment(req, res) {
     const lowerBoundTime = subMinutes(createdAt, 4.5); // 4.5 minutes earlier
     const upperBoundTime = addMinutes(createdAt, 4.5); // 4.5 minutes later
 
-    const response = await Transaction.find({
+    let existingTransaction = await Transaction.find({
       slotId: slot_id,
       user_id: user._id,
       therapist_id: therapist_id,
@@ -139,7 +139,7 @@ export async function processPayment(req, res) {
       },
     ];
     let timeSlots = [];
-    if (response && response.length > 0)
+    if (existingTransaction && existingTransaction.length > 0)
       timeSlots = await Slot.aggregate(pipelineSlot);
     else timeSlots = await Slot.aggregate(pipeline);
 
@@ -182,27 +182,13 @@ export async function processPayment(req, res) {
 
     // Find therapist
     const therapist = await Therapist.findOne({ _id: therapist_id });
-    // console.log(therapist);
     if (!therapist) {
       return res
         .status(404)
         .json(new ApiError(404, "", "Invalid therapist !!!"));
     }
-    // const existingT=ransaction = await Transaction.findOne({
-    //   user_id: user._id,
-    //   therapist_id: new mongoose.Types.ObjectId(therapist_id),
-    //   specialization_id: new mongoose.Types.ObjectId(specialization_id),
-    //   payment_status: { $ne: "successful" }
-    // })
-    let transactionId;
-    transactionId = uniqid();
-    transactionId = `unfazed${transactionId}`;
-    // if (existingTransaction) {
-    //   transactionId = existingTransaction.transactionId
-    // } else {
-    //   transactionId = uniqid();
-    //   transactionId = `unfazed${transactionId}`;
-    // }
+
+    let transactionId = `unfazed${uniqid()}`;
 
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
@@ -213,9 +199,7 @@ export async function processPayment(req, res) {
       callbackUrl: `${process.env.BACKEND_URL}/api/payment/callback/${transactionId}`,
       redirectMode: "REDIRECT",
       mobileNumber: user.mobile,
-      paymentInstrument: {
-        type: "PAY_PAGE",
-      },
+      paymentInstrument: { type: "PAY_PAGE" },
       payMode: "PAY_PAGE",
     };
     const bufferObj = Buffer.from(JSON.stringify(normalPayLoad), "utf8");
@@ -238,57 +222,45 @@ export async function processPayment(req, res) {
     };
     try {
       const response = await axios.request(options);
-      // if (existingTransaction) {
-      //   existingTransaction.transactionId = transactionId;
-      //   existingTransaction.therapist_id = new mongoose.Types.ObjectId(therapist_id);
-      //   existingTransaction.slotId = slot_id;
-      //   existingTransaction.category = new mongoose.Types.ObjectId(specialization_id);
-      //   existingTransaction.amount_INR = therapist.inrPrice;
-      //   existingTransaction.payment_status = "PAYMENT_INITIATED";
-      //   existingTransaction.start_time = startDateTime;
-      //   existingTransaction.end_time = endDateTime;
-      //   await existingTransaction.save();
-      // } else {
-      //   const initiatedTransaction = new Transaction({
-      //     transactionId,
-      //     user_id: user._id,
-      //     therapist_id,
-      //     slotId: slot_id,
-      //     category: specialization_id,
-      //     amount_INR: therapist.inrPrice,
-      //     payment_status: "PAYMENT_INITIATED",
-      //     start_time: startDateTime,
-      //     end_time: endDateTime,
-      //   });
-      //   await initiatedTransaction.save();
-      // }
-      const initiatedTransaction = new Transaction({
-        transactionId,
-        user_id: user._id,
-        therapist_id,
-        slotId: slot_id,
-        category: specialization_id,
-        amount_INR: Math.round((amountToPay * 100) / 10000),
-        payment_status: "PAYMENT_INITIATED",
-        start_time: startDateTime,
-        end_time: endDateTime,
-        discountPercent: discountPercent,
-        fixDiscount: fixDiscount,
-        couponCode: coupon_code,
-        type: "single",
-        method: "phonepay",
-      });
-      await initiatedTransaction.save();
+      if (existingTransaction && existingTransaction.length > 0) {
+        console.log("Updating Existing transaction...");
+        existingTransaction = existingTransaction[0];
+        existingTransaction.slotId = slot_id;
+        existingTransaction.end_time = endDateTime;
+        existingTransaction.couponCode = coupon_code;
+        existingTransaction.fixDiscount = fixDiscount;
+        existingTransaction.start_time = startDateTime;
+        existingTransaction.category = specialization_id;
+        existingTransaction.transactionId = transactionId;
+        existingTransaction.amount_INR = therapist.inrPrice;
+        existingTransaction.discountPercent = discountPercent;
+        existingTransaction.payment_status = "PAYMENT_INITIATED";
+        await existingTransaction.save();
+      } else {
+        const initiatedTransaction = new Transaction({
+          transactionId,
+          therapist_id,
+          type: "single",
+          slotId: slot_id,
+          method: "phonepay",
+          user_id: user._id,
+          end_time: endDateTime,
+          couponCode: coupon_code,
+          fixDiscount: fixDiscount,
+          start_time: startDateTime,
+          category: specialization_id,
+          discountPercent: discountPercent,
+          payment_status: "PAYMENT_INITIATED",
+          amount_INR: Math.round((amountToPay * 100) / 10000),
+        });
+        await initiatedTransaction.save();
+      }
       await Slot.updateOne(
         {
           therapist_id: new mongoose.Types.ObjectId(therapist_id),
           "timeslots._id": new mongoose.Types.ObjectId(slot_id),
         },
-        {
-          $set: {
-            "timeslots.$.isBooked": true,
-          },
-        }
+        { $set: { "timeslots.$.isBooked": true } }
       );
       res.status(200).json(
         new ApiResponse(200, {
