@@ -7,7 +7,14 @@ import { Slot } from "../../models/slotModal.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
-import { parseISO, isValid, addMinutes, format, addDays } from "date-fns";
+import {
+  parseISO,
+  isValid,
+  addMinutes,
+  format,
+  addDays,
+  subMinutes,
+} from "date-fns";
 import { Course } from "../../models/courseModel.js";
 import dotenv from "dotenv";
 import asyncHandler from "../../utils/asyncHandler.js";
@@ -25,7 +32,9 @@ export async function processPayment(req, res) {
     const { therapist_id, specialization_id, slot_id, coupon_code } = req.body;
     const specialization = await Specialization.findById(specialization_id);
     if (!specialization) {
-      return res.status(200).json(new ApiResponse(200, "", "Specialization not found"));
+      return res
+        .status(200)
+        .json(new ApiResponse(200, "", "Specialization not found"));
     }
     //  const monetization = await TherapistPay.findOne({
     //   $and: [
@@ -40,33 +49,63 @@ export async function processPayment(req, res) {
     if (coupon_code) {
       const coupon = await Coupon.findOne({ code: coupon_code });
       if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
-        return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
-      }
-      if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(specialization_id))) {
         return res
           .status(200)
-          .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
+          .json(new ApiResponse(200, "", "Coupon not found or expired"));
+      }
+      if (
+        !coupon.specializationId.equals(
+          new mongoose.Types.ObjectId(specialization_id)
+        )
+      ) {
+        return res
+          .status(200)
+          .json(
+            new ApiResponse(
+              200,
+              "",
+              "this coupon is not valid for this category"
+            )
+          );
       }
       if (coupon.currencyType !== "INR") {
-        return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid in india"));
+        return res
+          .status(200)
+          .json(new ApiResponse(200, "", "This coupon is not valid in india"));
       }
       if (coupon.type === "percentage") {
-        amountToPay = (specialization?.inrPrice * 100) * (100 - coupon.discountPercentage) / 100;
-        discountPercent = coupon.discountPercentage
+        amountToPay =
+          (specialization?.inrPrice * 100 * (100 - coupon.discountPercentage)) /
+          100;
+        discountPercent = coupon.discountPercentage;
       } else {
-        amountToPay = (specialization?.inrPrice * 100) - coupon.fixDiscount * 100;
-        fixDiscount = coupon.fixDiscount
+        amountToPay = specialization?.inrPrice * 100 - coupon.fixDiscount * 100;
+        fixDiscount = coupon.fixDiscount;
       }
     }
-    const timeSlots = await Slot.aggregate([
+
+    const createdAt = new Date(); // or your specific transaction createdAt time
+    const lowerBoundTime = subMinutes(createdAt, 4.5); // 4.5 minutes earlier
+    const upperBoundTime = addMinutes(createdAt, 4.5); // 4.5 minutes later
+
+    const response = await Transaction.find({
+      slotId: slot_id,
+      user_id: user._id,
+      therapist_id: therapist_id,
+      category: specialization_id,
+      createdAt: {
+        $gte: lowerBoundTime, // Greater than or equal to the lower bound
+        $lte: upperBoundTime, // Less than or equal to the upper bound
+      },
+    });
+
+    let pipeline = [
       {
         $match: {
           therapist_id: new mongoose.Types.ObjectId(therapist_id),
         },
       },
-      {
-        $unwind: "$timeslots",
-      },
+      { $unwind: "$timeslots" },
       {
         $match: {
           "timeslots._id": new mongoose.Types.ObjectId(slot_id),
@@ -83,7 +122,27 @@ export async function processPayment(req, res) {
           isBooked: "$timeslots.isBooked",
         },
       },
-    ]);
+    ];
+    let pipelineSlot = [
+      { $match: { therapist_id: new mongoose.Types.ObjectId(therapist_id) } },
+      { $unwind: "$timeslots" },
+      { $match: { "timeslots._id": new mongoose.Types.ObjectId(slot_id) } },
+      {
+        $project: {
+          _id: "$timeslots._id",
+          therapist_id: 1,
+          date: "$timeslots.date",
+          startTime: "$timeslots.startTime",
+          endTime: "$timeslots.endTime",
+          isBooked: "$timeslots.isBooked",
+        },
+      },
+    ];
+    let timeSlots = [];
+    if (response && response.length > 0)
+      timeSlots = await Slot.aggregate(pipelineSlot);
+    else timeSlots = await Slot.aggregate(pipeline);
+
     if (timeSlots.length === 0) {
       return res
         .status(404)
@@ -144,7 +203,6 @@ export async function processPayment(req, res) {
     //   transactionId = uniqid();
     //   transactionId = `unfazed${transactionId}`;
     // }
-
 
     const normalPayLoad = {
       merchantId: process.env.MERCHANT_ID,
@@ -210,7 +268,7 @@ export async function processPayment(req, res) {
         therapist_id,
         slotId: slot_id,
         category: specialization_id,
-        amount_INR: Math.round(amountToPay * 100 / 10000),
+        amount_INR: Math.round((amountToPay * 100) / 10000),
         payment_status: "PAYMENT_INITIATED",
         start_time: startDateTime,
         end_time: endDateTime,
@@ -218,7 +276,7 @@ export async function processPayment(req, res) {
         fixDiscount: fixDiscount,
         couponCode: coupon_code,
         type: "single",
-        method: "phonepay"
+        method: "phonepay",
       });
       await initiatedTransaction.save();
       await Slot.updateOne(
@@ -278,22 +336,37 @@ export async function processPaymentForcourse(req, res) {
     if (coupon_code) {
       const coupon = await Coupon.findOne({ code: coupon_code });
       if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
-        return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
-      }
-      if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(course.specializationId))) {
         return res
           .status(200)
-          .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
+          .json(new ApiResponse(200, "", "Coupon not found or expired"));
+      }
+      if (
+        !coupon.specializationId.equals(
+          new mongoose.Types.ObjectId(course.specializationId)
+        )
+      ) {
+        return res
+          .status(200)
+          .json(
+            new ApiResponse(
+              200,
+              "",
+              "this coupon is not valid for this category"
+            )
+          );
       }
       if (coupon.currencyType !== "INR") {
-        return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid in india"));
+        return res
+          .status(200)
+          .json(new ApiResponse(200, "", "This coupon is not valid in india"));
       }
       if (coupon.type === "percentage") {
-        amountToPay = (course.inrPrice * 100) * (100 - coupon.discountPercentage) / 100;
-        discountPercent = coupon.discountPercentage
+        amountToPay =
+          (course.inrPrice * 100 * (100 - coupon.discountPercentage)) / 100;
+        discountPercent = coupon.discountPercentage;
       } else {
-        amountToPay = (course.inrPrice * 100) - coupon.fixDiscount * 100;
-        fixDiscount = coupon.fixDiscount
+        amountToPay = course.inrPrice * 100 - coupon.fixDiscount * 100;
+        fixDiscount = coupon.fixDiscount;
       }
     }
     let transactionId;
@@ -339,13 +412,13 @@ export async function processPaymentForcourse(req, res) {
         therapist_id,
         courseId,
         category: course.specializationId,
-        amount_INR: Math.round(amountToPay * 100 / 10000),
+        amount_INR: Math.round((amountToPay * 100) / 10000),
         payment_status: "PAYMENT_INITIATED",
         type,
         discountPercent: discountPercent,
         fixDiscount: fixDiscount,
         couponCode: coupon_code,
-        method: "phonepay"
+        method: "phonepay",
       });
 
       await initiatedTransaction.save();
@@ -414,22 +487,22 @@ export const callback = asyncHandler(async (req, res) => {
     // Find the transaction by transactionId
     const transaction = await Transaction.findOne({ transactionId });
     if (!transaction) {
-      return res.status(404).json({ error: 'Transaction not found' });
+      return res.status(404).json({ error: "Transaction not found" });
     }
     const { status, amount, paymentMode } = req.body;
-    console.log("call back response-------------", req.body)
+    console.log("call back response-------------", req.body);
 
     // Verify the status and update the transaction accordingly
-    if (status === 'SUCCESS') {
-      transaction.payment_status = 'successful';
-    } else if (status === 'FAILURE') {
-      transaction.payment_status = 'failed';
+    if (status === "SUCCESS") {
+      transaction.payment_status = "successful";
+    } else if (status === "FAILURE") {
+      transaction.payment_status = "failed";
       // You might also want to roll back any booking or slot reservation here
     }
 
-    res.status(200).json({ message: 'Payment status updated' });
+    res.status(200).json({ message: "Payment status updated" });
   } catch (error) {
-    console.error('Error handling payment callback:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error handling payment callback:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-}) 
+});
