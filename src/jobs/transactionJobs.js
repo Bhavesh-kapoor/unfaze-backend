@@ -6,7 +6,7 @@ import { Slot } from "../models/slotModal.js";
 import { Transaction } from "../models/transactionModel.js";
 
 // Cron job to run every 10 minutes
-cron.schedule("*/10 * * * *", async () => {
+cron.schedule("*/5 * * * *", async () => {
   const currentTime = new Date().toISOString();
   console.log(
     chalk.blue(
@@ -15,11 +15,12 @@ cron.schedule("*/10 * * * *", async () => {
   );
 
   try {
-    const tenMinutesAgo = subMinutes(new Date(currentTime), 10);
+    const tenMinutesAgo = subMinutes(new Date(currentTime), 5);
+    const twelveMinutesAgo = subMinutes(new Date(currentTime), 10);
     // Find transactions where payment is not successful, older than 10 minutes, and manuallyBooked is false
     const transactions = await Transaction.find({
       payment_status: { $ne: "successful" },
-      createdAt: { $lte: tenMinutesAgo },
+      createdAt: { $gte: twelveMinutesAgo, $lte: tenMinutesAgo },
     });
     let updatedCount = 0;
     if (transactions.length > 0) {

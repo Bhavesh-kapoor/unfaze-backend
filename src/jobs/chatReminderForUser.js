@@ -56,18 +56,14 @@ cron.schedule("0 */6 * * *", async () => {
           "chat_pending_for_user",
           receivers
         );
-        if (resp)
+        if (resp && !resp?.message)
           console.log(
             chalk.green(
               `[PENDING CHATS FOR USERS] Notifications sent to ${unreadChats.length} users.`
             )
           );
         else
-          console.log(
-            chalk.red(
-              `[PENDING CHATS FOR USERS] Notifications not sent to users.`
-            )
-          );
+          console.log(chalk.red(`[PENDING CHATS FOR USERS] ${resp?.message}.`));
       } catch (sendError) {
         console.error(
           chalk.red(

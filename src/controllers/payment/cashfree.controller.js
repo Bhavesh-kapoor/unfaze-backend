@@ -3,7 +3,14 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import { Therapist } from "../../models/therapistModel.js";
 import { Transaction } from "../../models/transactionModel.js";
-import { parseISO, isValid, addMinutes, format, addDays } from "date-fns";
+import {
+  parseISO,
+  isValid,
+  addMinutes,
+  format,
+  addDays,
+  subMinutes,
+} from "date-fns";
 import uniqid from "uniqid";
 import Cashfree from "../../config/cashfree.config.js";
 import mongoose from "mongoose";
@@ -20,10 +27,10 @@ const createOrder = asyncHandler(async (req, res) => {
   try {
     const { therapist_id, specialization_id, slot_id, coupon_code } = req.body;
     let order_currency;
-    if (process.env.DEV_MODE == "dev") {
-      order_currency = "INR"
+    if (process.env.NODE_ENV == "dev") {
+      order_currency = "INR";
     } else {
-      order_currency = "USD"
+      order_currency = "USD";
     }
     const user = req.user;
     const specialization = await Specialization.findById(specialization_id);
@@ -33,33 +40,69 @@ const createOrder = asyncHandler(async (req, res) => {
     if (coupon_code) {
       const coupon = await Coupon.findOne({ code: coupon_code });
       if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
-        return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
-      }
-      if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(specialization_id))) {
         return res
           .status(200)
-          .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
+          .json(new ApiResponse(200, "", "Coupon not found or expired"));
+      }
+      if (
+        !coupon.specializationId.equals(
+          new mongoose.Types.ObjectId(specialization_id)
+        )
+      ) {
+        return res
+          .status(200)
+          .json(
+            new ApiResponse(
+              200,
+              "",
+              "this coupon is not valid for this category"
+            )
+          );
       }
       if (coupon.currencyType !== "USD") {
-        return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid for your location"));
+        return res
+          .status(200)
+          .json(
+            new ApiResponse(
+              200,
+              "",
+              "This coupon is not valid for your location"
+            )
+          );
       }
       if (coupon.type === "percentage") {
-        amountToPay = (specialization?.usdPrice) * (100 - coupon.discountPercentage) / 100;
-        discountPercent = coupon.discountPercentage
+        amountToPay =
+          (specialization?.usdPrice * (100 - coupon.discountPercentage)) / 100;
+        discountPercent = coupon.discountPercentage;
       } else {
-        amountToPay = (specialization?.usdPrice) - coupon.fixDiscount;
-        fixDiscount = coupon.fixDiscount
+        amountToPay = specialization?.usdPrice - coupon.fixDiscount;
+        fixDiscount = coupon.fixDiscount;
       }
     }
-    const timeSlots = await Slot.aggregate([
+
+    const createdAt = new Date(); // or your specific transaction createdAt time
+    const lowerBoundTime = subMinutes(createdAt, 4.5); // 4.5 minutes earlier
+    const upperBoundTime = addMinutes(createdAt, 4.5); // 4.5 minutes later
+
+    let existingTransaction = await Transaction.find({
+      slotId: slot_id,
+      user_id: user._id,
+      therapist_id: therapist_id,
+      category: specialization_id,
+      payment_status: "PAYMENT_INITIATED",
+      createdAt: {
+        $gte: lowerBoundTime, // Greater than or equal to the lower bound
+        $lte: upperBoundTime, // Less than or equal to the upper bound
+      },
+    });
+
+    let pipeline = [
       {
         $match: {
           therapist_id: new mongoose.Types.ObjectId(therapist_id),
         },
       },
-      {
-        $unwind: "$timeslots",
-      },
+      { $unwind: "$timeslots" },
       {
         $match: {
           "timeslots._id": new mongoose.Types.ObjectId(slot_id),
@@ -76,29 +119,57 @@ const createOrder = asyncHandler(async (req, res) => {
           isBooked: "$timeslots.isBooked",
         },
       },
-    ]);
-    // console.log(timeSlots)
+    ];
+    let pipelineSlot = [
+      { $match: { therapist_id: new mongoose.Types.ObjectId(therapist_id) } },
+      { $unwind: "$timeslots" },
+      { $match: { "timeslots._id": new mongoose.Types.ObjectId(slot_id) } },
+      {
+        $project: {
+          _id: "$timeslots._id",
+          therapist_id: 1,
+          date: "$timeslots.date",
+          startTime: "$timeslots.startTime",
+          endTime: "$timeslots.endTime",
+          isBooked: "$timeslots.isBooked",
+        },
+      },
+    ];
+    let timeSlots = [];
+    if (existingTransaction && existingTransaction.length > 0)
+      timeSlots = await Slot.aggregate(pipelineSlot);
+    else timeSlots = await Slot.aggregate(pipeline);
     if (timeSlots.length === 0) {
-      return res.status(404).json(new ApiError(404, "", "Timeslot not found or already booked"));
+      return res
+        .status(404)
+        .json(new ApiError(404, "", "Timeslot not found or already booked"));
     }
     const { date, startTime, endTime } = timeSlots[0];
     const formattedDate = format(new Date(date), "yyyy-MM-dd");
-    const startDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(startTime)}`);
-    const [start_Time, startModifier] = startTime.split(' ');
-    const [end_Time, endModifier] = endTime.split(' ');
-    let endDateTime = new Date(`${formattedDate}T${convertTo24HourFormat(endTime)}`);
+    const startDateTime = new Date(
+      `${formattedDate}T${convertTo24HourFormat(startTime)}`
+    );
+    const [start_Time, startModifier] = startTime.split(" ");
+    const [end_Time, endModifier] = endTime.split(" ");
+    let endDateTime = new Date(
+      `${formattedDate}T${convertTo24HourFormat(endTime)}`
+    );
 
-    if (startModifier === 'PM' && endModifier === 'AM') {
+    if (startModifier === "PM" && endModifier === "AM") {
       endDateTime = addDays(endDateTime, 1);
     }
 
     if (!isValid(startDateTime) || !isValid(endDateTime)) {
       console.error("Invalid date-time format:", startDateTime, endDateTime);
-      return res.status(400).json(new ApiError(400, "", "Invalid date or time format"));
+      return res
+        .status(400)
+        .json(new ApiError(400, "", "Invalid date or time format"));
     }
 
     if (startDateTime >= endDateTime) {
-      return res.status(400).send({ error: "End time must be after start time" });
+      return res
+        .status(400)
+        .send({ error: "End time must be after start time" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
@@ -114,20 +185,14 @@ const createOrder = asyncHandler(async (req, res) => {
         .json(new ApiError(404, "", "Invalid therapist !!!"));
     }
 
-    let transactionId;
-    transactionId = uniqid();
-    transactionId = `unfazed${transactionId}`;
-
-    // book the slot first to avoid collisions
-
-    await Slot.updateOne({
-      therapist_id: new mongoose.Types.ObjectId(therapist_id),
-      "timeslots._id": new mongoose.Types.ObjectId(slot_id),
-    }, {
-      $set: {
-        "timeslots.$.isBooked": true,
+    let transactionId = `unfazed${uniqid()}`;
+    await Slot.updateOne(
+      {
+        therapist_id: new mongoose.Types.ObjectId(therapist_id),
+        "timeslots._id": new mongoose.Types.ObjectId(slot_id),
       },
-    })
+      { $set: { "timeslots.$.isBooked": true } }
+    );
     let request = {
       order_amount: `${amountToPay}`,
       order_currency: `${order_currency}`,
@@ -141,40 +206,53 @@ const createOrder = asyncHandler(async (req, res) => {
       },
     };
     // const response = await Cashfree.PGCreateOrder("2023-08-01", request);
-    const response = await axios.post(
-      process.env.CASHFREE_API_URL,
-      request,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-client-id': process.env.CASHFREE_APP_ID,
-          'x-client-secret': process.env.CASHFREE_SECRET_KEY,
-          'x-api-version': '2023-08-01'
-        },
-      }
-    );
+    const response = await axios.post(process.env.CASHFREE_API_URL, request, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-client-id": process.env.CASHFREE_APP_ID,
+        "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+        "x-api-version": "2023-08-01",
+      },
+    });
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
     const rate = await getExchangeRate("USD", "INR");
     let rate_USD = rate * 100;
-    const initiatedTransaction = new Transaction({
-      transactionId: order_id,
-      user_id: user._id,
-      therapist_id,
-      slotId: slot_id,
-      category: specialization_id,
-      amount_USD: Math.round(amountToPay * 100 / 100),
-      rate_USD: rate_USD,
-      payment_status: "PAYMENT_INITIATED",
-      start_time: startDateTime,
-      end_time: endDateTime,
-      discountPercent: discountPercent,
-      fixDiscount: fixDiscount,
-      couponCode: coupon_code,
-      type: "single",
-      method: "cashfree"
-    });
-    await initiatedTransaction.save();
+    if (existingTransaction && existingTransaction.length > 0) {
+      console.log("Updating CASHFREE Existing transaction...");
+      existingTransaction = existingTransaction[0];
+      existingTransaction.rate_USD = rate_USD;
+      existingTransaction.method = "cashfree";
+      existingTransaction.end_time = endDateTime;
+      existingTransaction.couponCode = coupon_code;
+      existingTransaction.transactionId = order_id;
+      existingTransaction.fixDiscount = fixDiscount;
+      existingTransaction.start_time = startDateTime;
+      existingTransaction.category = specialization_id;
+      existingTransaction.discountPercent = discountPercent;
+      existingTransaction.payment_status = "PAYMENT_INITIATED";
+      existingTransaction.amount_USD = Math.round((amountToPay * 100) / 100);
+      await existingTransaction.save();
+    } else {
+      const initiatedTransaction = new Transaction({
+        transactionId: order_id,
+        user_id: user._id,
+        therapist_id,
+        slotId: slot_id,
+        category: specialization_id,
+        amount_USD: Math.round((amountToPay * 100) / 100),
+        rate_USD: rate_USD,
+        payment_status: "PAYMENT_INITIATED",
+        start_time: startDateTime,
+        end_time: endDateTime,
+        discountPercent: discountPercent,
+        fixDiscount: fixDiscount,
+        couponCode: coupon_code,
+        type: "single",
+        method: "cashfree",
+      });
+      await initiatedTransaction.save();
+    }
     // const response = await axios.post(
     //   'https://api.cashfree.com/pg/orders',
     //   request,
@@ -208,13 +286,13 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 });
 const createOrderForCourse = asyncHandler(async (req, res) => {
-  const { therapist_id, courseId, coupon_code,type = "course" } = req.body;
+  const { therapist_id, courseId, coupon_code, type = "course" } = req.body;
   const user = req.user;
   let order_currency;
-  if (process.env.DEV_MODE == "dev") {
-    order_currency = "INR"
+  if (process.env.NODE_ENV == "dev") {
+    order_currency = "INR";
   } else {
-    order_currency = "USD"
+    order_currency = "USD";
   }
   if (!mongoose.Types.ObjectId.isValid(therapist_id)) {
     return res
@@ -224,13 +302,11 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
 
   const therapist = await Therapist.findOne({ _id: therapist_id });
   if (!therapist) {
-    return res
-      .status(404)
-      .json(new ApiError(404, "", "Invalid therapist !!!"));
+    return res.status(404).json(new ApiError(404, "", "Invalid therapist !!!"));
   }
   const course = await Course.findById(courseId);
   if (!course) {
-    throw new ApiError(404, "Course not found or invalid!")
+    throw new ApiError(404, "Course not found or invalid!");
   }
   let amountToPay = course.usdPrice;
   let discountPercent = 0;
@@ -238,27 +314,47 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
   if (coupon_code) {
     const coupon = await Coupon.findOne({ code: coupon_code });
     if (!coupon || coupon.expiryDate < new Date() || !coupon.isActive) {
-      return res.status(200).json(new ApiResponse(200, "", "Coupon not found or expired"));
-    }
-    if (!coupon.specializationId.equals(new mongoose.Types.ObjectId(course.specializationId))) {
       return res
         .status(200)
-        .json(new ApiResponse(200, "", "this coupon is not valid for this category"));
+        .json(new ApiResponse(200, "", "Coupon not found or expired"));
+    }
+    if (
+      !coupon.specializationId.equals(
+        new mongoose.Types.ObjectId(course.specializationId)
+      )
+    ) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, "", "this coupon is not valid for this category")
+        );
     }
     if (coupon.currencyType !== "USD") {
-      return res.status(200).json(new ApiResponse(200, "", "This coupon is not valid at your Location!"));
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, "", "This coupon is not valid at your Location!")
+        );
     }
     if (coupon.type === "percentage") {
-      amountToPay = (course.usdPrice) * (100 - coupon.discountPercentage) / 100;
-      discountPercent = coupon.discountPercentage
+      amountToPay = (course.usdPrice * (100 - coupon.discountPercentage)) / 100;
+      discountPercent = coupon.discountPercentage;
     } else {
-      amountToPay = (course.usdPrice) - coupon.fixDiscount;
-      fixDiscount = coupon.fixDiscount
+      amountToPay = course.usdPrice - coupon.fixDiscount;
+      fixDiscount = coupon.fixDiscount;
     }
   }
-  let transactionId
-  transactionId = uniqid();
-  transactionId = `unfazed${transactionId}`;
+
+  let existingTransaction = await Transaction.find({
+    user_id: user._id,
+    courseId: courseId,
+    therapist_id: therapist_id,
+    category: course.specializationId,
+    payment_status: "PAYMENT_INITIATED",
+  });
+
+  let transactionId = `unfazed${uniqid()}`;
+
   let request = {
     order_amount: `${amountToPay}`,
     order_currency: `${order_currency}`,
@@ -273,39 +369,50 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
   };
   try {
     // const response = await Cashfree.PGCreateOrder("2023-08-01", request);
-    const response = await axios.post(
-      process.env.CASHFREE_API_URL,
-      request,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-client-id': process.env.CASHFREE_APP_ID,
-          'x-client-secret': process.env.CASHFREE_SECRET_KEY,
-          'x-api-version': '2023-08-01'
-        },
-      }
-    );
+    const response = await axios.post(process.env.CASHFREE_API_URL, request, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-client-id": process.env.CASHFREE_APP_ID,
+        "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+        "x-api-version": "2023-08-01",
+      },
+    });
     const paymentSessionId = response.data.payment_session_id;
     const order_id = response.data.order_id;
     const rate = await getExchangeRate("USD", "INR");
     let rate_USD = rate * 100;
-    const initiatedTransaction = new Transaction({
-      courseId,
-      category: course.specializationId,
-      type,
-      transactionId: order_id,
-      user_id: user._id,
-      therapist_id,
-      amount_USD: Math.round(amountToPay * 100 / 100),
-      rate_USD: rate_USD,
-      payment_status: "PAYMENT_INITIATED",
-      discountPercent: discountPercent,
-      fixDiscount: fixDiscount,
-      couponCode: coupon_code,
-      method: "cashfree"
-    });
-    await initiatedTransaction.save();
-
+    if (existingTransaction && existingTransaction.length > 0) {
+      console.log("Updating CASHFREE Existing transaction...");
+      existingTransaction = existingTransaction[0];
+      existingTransaction.type = type;
+      existingTransaction.method = "cashfree";
+      existingTransaction.rate_USD = rate_USD;
+      existingTransaction.courseId = courseId;
+      existingTransaction.couponCode = coupon_code;
+      existingTransaction.transactionId = order_id;
+      existingTransaction.fixDiscount = fixDiscount;
+      existingTransaction.amount_USD = Math.round((amountToPay * 100) / 100);
+      existingTransaction.discountPercent = discountPercent;
+      existingTransaction.category = course.specializationId;
+      await existingTransaction.save();
+    } else {
+      const initiatedTransaction = new Transaction({
+        courseId,
+        category: course.specializationId,
+        type,
+        transactionId: order_id,
+        user_id: user._id,
+        therapist_id,
+        amount_USD: Math.round((amountToPay * 100) / 100),
+        rate_USD: rate_USD,
+        payment_status: "PAYMENT_INITIATED",
+        discountPercent: discountPercent,
+        fixDiscount: fixDiscount,
+        couponCode: coupon_code,
+        method: "cashfree",
+      });
+      await initiatedTransaction.save();
+    }
     return res
       .status(200)
       .json(
@@ -328,9 +435,7 @@ const createOrderForCourse = asyncHandler(async (req, res) => {
 const verifyPayment = asyncHandler(async (req, res, next) => {
   const { order_id } = req.params;
   if (!order_id) {
-    return res
-      .status(501)
-      .json(new ApiError(501, "", "order_id is required"));
+    return res.status(501).json(new ApiError(501, "", "order_id is required"));
   }
   try {
     // Make the request to Cashfree's API with the correct version
@@ -339,10 +444,10 @@ const verifyPayment = asyncHandler(async (req, res, next) => {
       {},
       {
         headers: {
-          'Content-Type': 'application/json',
-          'x-client-id': process.env.CASHFREE_APP_ID,
-          'x-client-secret': process.env.CASHFREE_SECRET_KEY,
-          'x-api-version': "2023-08-01"
+          "Content-Type": "application/json",
+          "x-client-id": process.env.CASHFREE_APP_ID,
+          "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+          "x-api-version": "2023-08-01",
         },
       }
     );
