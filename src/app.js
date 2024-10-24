@@ -11,6 +11,7 @@ import session from "express-session";
 import routes from "./routes/index.js";
 import rateLimit from "express-rate-limit";
 import passport from "./config/passportUser.js";
+import "./jobs/slotRemove.js";
 import "./jobs/sessionJobs.js";
 import "./jobs/transactionJobs.js";
 import "./jobs/reminderMailJob.js";
@@ -18,6 +19,7 @@ import "./jobs/chatReminderForUser.js";
 import "./jobs/missedSessionReminder.js";
 import "./jobs/sessionReminderForUser.js";
 import "./jobs/chatReminderForTherapist.js";
+import "./jobs/transactionInitiatedRemove.js";
 import { timeZoneMiddleware } from "./middleware/timeZone.middlewere.js";
 // Load environment variables
 dotenv.config();
